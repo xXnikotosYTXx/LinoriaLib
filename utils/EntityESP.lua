@@ -1,28 +1,19 @@
--- EntityESP.lua
-local makeESP = require(game.ServerScriptService.makeESP)
+-- utils/EntityESP.lua
 
 local EntityESP = {}
-EntityESP.espObjects = {}
 
--- Function to create ESP for a single entity
-function EntityESP:CreateEntityESP(entity, options)
-    local esp = makeESP.create(entity, options)
-    table.insert(self.espObjects, esp)
-end
-
--- Function to toggle ESP visibility for all entities
-function EntityESP:ToggleAllVisibility(visible)
-    for _, esp in ipairs(self.espObjects) do
-        esp:ToggleVisibility(visible)
+-- Function to create entity-specific ESP
+function EntityESP.createEntityESP(entity, options)
+    local esp = require(game:HttpGet('https://raw.githubusercontent.com/xXnikotosYTXx/LinoriaLib/main/utils/createBaseESP.lua')).createESP(entity:FindFirstChild("HumanoidRootPart"), options)
+    
+    -- Customize ESP for different entities (e.g., players or NPCs)
+    if entity:IsA("Player") then
+        esp.BackgroundColor3 = Color3.fromRGB(0, 255, 0)  -- Green for players
+    elseif entity:FindFirstChild("NPC") then
+        esp.BackgroundColor3 = Color3.fromRGB(255, 0, 0)  -- Red for NPCs
     end
-end
 
--- Function to clear all ESP objects
-function EntityESP:ClearAllESP()
-    for _, esp in ipairs(self.espObjects) do
-        esp.espPart:Destroy()
-    end
-    self.espObjects = {}
+    return esp
 end
 
 return EntityESP
