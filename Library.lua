@@ -3523,7 +3523,7 @@ function Library:CreateWindow(...)
 
             task.spawn(function()
                 -- TODO: add cursor fade?
-                local State = InputService.MouseIconEnabled;
+                local State = InputService.MouseIconDisabled;
 
                 local Cursor = Drawing.new('Triangle');
                 Cursor.Thickness = 1;
