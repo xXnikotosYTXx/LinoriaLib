@@ -1,4 +1,5 @@
-local httpService = game:GetService('HttpService')
+local cloneref = cloneref or function(a) return a; end;
+local httpService = cloneref(game:GetService('HttpService'));
 
 local SaveManager = {} do
 	SaveManager.Folder = 'LinoriaLibSettings'
@@ -9,8 +10,8 @@ local SaveManager = {} do
 				return { type = 'Toggle', idx = idx, value = object.Value } 
 			end,
 			Load = function(idx, data)
-				if Toggles[idx] then 
-					Toggles[idx]:SetValue(data.value)
+				if RainToggles[idx] then 
+					RainToggles[idx]:SetValue(data.value)
 				end
 			end,
 		},
@@ -19,8 +20,8 @@ local SaveManager = {} do
 				return { type = 'Slider', idx = idx, value = tostring(object.Value) }
 			end,
 			Load = function(idx, data)
-				if Options[idx] then 
-					Options[idx]:SetValue(data.value)
+				if RainOptions[idx] then 
+					RainOptions[idx]:SetValue(data.value)
 				end
 			end,
 		},
@@ -29,8 +30,8 @@ local SaveManager = {} do
 				return { type = 'Dropdown', idx = idx, value = object.Value, mutli = object.Multi }
 			end,
 			Load = function(idx, data)
-				if Options[idx] then 
-					Options[idx]:SetValue(data.value)
+				if RainOptions[idx] then 
+					RainOptions[idx]:SetValue(data.value)
 				end
 			end,
 		},
@@ -39,8 +40,8 @@ local SaveManager = {} do
 				return { type = 'ColorPicker', idx = idx, value = object.Value:ToHex(), transparency = object.Transparency }
 			end,
 			Load = function(idx, data)
-				if Options[idx] then 
-					Options[idx]:SetValueRGB(Color3.fromHex(data.value), data.transparency)
+				if RainOptions[idx] then 
+					RainOptions[idx]:SetValueRGB(Color3.fromHex(data.value), data.transparency)
 				end
 			end,
 		},
@@ -49,8 +50,8 @@ local SaveManager = {} do
 				return { type = 'KeyPicker', idx = idx, mode = object.Mode, key = object.Value }
 			end,
 			Load = function(idx, data)
-				if Options[idx] then 
-					Options[idx]:SetValue({ data.key, data.mode })
+				if RainOptions[idx] then 
+					RainOptions[idx]:SetValue({ data.key, data.mode })
 				end
 			end,
 		},
@@ -60,8 +61,8 @@ local SaveManager = {} do
 				return { type = 'Input', idx = idx, text = object.Value }
 			end,
 			Load = function(idx, data)
-				if Options[idx] and type(data.text) == 'string' then
-					Options[idx]:SetValue(data.text)
+				if RainOptions[idx] and type(data.text) == 'string' then
+					RainOptions[idx]:SetValue(data.text)
 				end
 			end,
 		},
@@ -79,32 +80,61 @@ local SaveManager = {} do
 	end
 
 	function SaveManager:Save(name)
-		if (not name) then
-			return false, 'no config file is selected'
+		if not name then
+			return false, "no config file is selected"
 		end
 
-		local fullPath = self.Folder .. '/settings/' .. name .. '.json'
+		local fullPath = self.Folder .. "/Settings/" .. name .. ".json"
+
+		local function udimToTable(udim)
+			return {
+				["S"] = udim.Scale,
+				["O"] = udim.Offset,
+			}
+		end
+
+		local function udim2ToTable(udim2)
+			return {
+				["X"] = udimToTable(udim2.X),
+				["Y"] = udimToTable(udim2.Y),
+				["W"] = udimToTable(udim2.Width),
+				["H"] = udimToTable(udim2.Height),
+			}
+		end
 
 		local data = {
-			objects = {}
+			objects = {},
+			infoLoggerPosition = udim2ToTable(Library.InfoLoggerFrame.Position),
+			keybindPosition = udim2ToTable(Library.KeybindFrame.Position),
 		}
 
-		for idx, toggle in next, Toggles do
-			if self.Ignore[idx] then continue end
+		if game:GetService("CoreGui"):FindFirstChild("thisisachatloggerpleasebanme") then
+			data.chatLoggerPosition = udim2ToTable(game:GetService("CoreGui").thisisachatloggerpleasebanme.Frame.Position);
+			data.chatLoggerSize = udim2ToTable(game:GetService("CoreGui").thisisachatloggerpleasebanme.Frame.Size);
+		end;
+
+		for idx, toggle in next, RainToggles do
+			if self.Ignore[idx] then
+				continue
+			end
 
 			table.insert(data.objects, self.Parser[toggle.Type].Save(idx, toggle))
 		end
 
-		for idx, option in next, Options do
-			if not self.Parser[option.Type] then continue end
-			if self.Ignore[idx] then continue end
+		for idx, option in next, RainOptions do
+			if not self.Parser[option.Type] then
+				continue
+			end
+			if self.Ignore[idx] then
+				continue
+			end
 
 			table.insert(data.objects, self.Parser[option.Type].Save(idx, option))
-		end	
+		end
 
 		local success, encoded = pcall(httpService.JSONEncode, httpService, data)
 		if not success then
-			return false, 'failed to encode data'
+			return false, "failed to encode data"
 		end
 
 		writefile(fullPath, encoded)
@@ -112,25 +142,50 @@ local SaveManager = {} do
 	end
 
 	function SaveManager:Load(name)
-		if (not name) then
-			return false, 'no config file is selected'
+		if not name then
+			return false, "no config file is selected"
 		end
-		
-		local file = self.Folder .. '/settings/' .. name .. '.json'
-		if not isfile(file) then return false, 'invalid file' end
+
+		local file = self.Folder .. "/Settings/" .. name .. ".json"
+		if not isfile(file) then
+			return false, "invalid file"
+		end
 
 		local success, decoded = pcall(httpService.JSONDecode, httpService, readfile(file))
-		if not success then return false, 'decode error' end
+		if not success then
+			return false, "decode error"
+		end
 
 		for _, option in next, decoded.objects do
 			if self.Parser[option.type] then
-				task.spawn(function() self.Parser[option.type].Load(option.idx, option) end) -- task.spawn() so the config loading wont get stuck.
+				self.Parser[option.type].Load(option.idx, option)
 			end
+		end
+
+		local function tableToUdim(table)
+			return UDim.new(table["S"], table["O"])
+		end
+
+		local function tableToUdim2(table)
+			return UDim2.new(
+				tableToUdim(table["X"]),
+				tableToUdim(table["Y"]),
+				tableToUdim(table["W"]),
+				tableToUdim(table["H"])
+			)
+		end
+
+		if decoded.keybindPosition and decoded.infoLoggerPosition then
+			Library.KeybindFrame.Position = tableToUdim2(decoded.keybindPosition)
+			Library.InfoLoggerFrame.Position = tableToUdim2(decoded.infoLoggerPosition)
+			if decoded.chatLoggerSize and game:GetService("CoreGui"):FindFirstChild("thisisachatloggerpleasebanme") then
+				game:GetService("CoreGui").thisisachatloggerpleasebanme.Frame.Size = tableToUdim2(decoded.chatLoggerSize);
+				game:GetService("CoreGui").thisisachatloggerpleasebanme.Frame.Position = tableToUdim2(decoded.chatLoggerPosition);
+			end;
 		end
 
 		return true
 	end
-
 	function SaveManager:IgnoreThemeSettings()
 		self:SetIgnoreIndexes({ 
 			"BackgroundColor", "MainColor", "AccentColor", "OutlineColor", "FontColor", -- themes
@@ -203,13 +258,46 @@ local SaveManager = {} do
 
 		local section = tab:AddRightGroupbox('Configuration')
 
+		section:AddToggle('KeybindShower', {
+			Text = 'Show Keybinds',
+			false,
+			'Shows Keybinds'
+		})
+		
+		section:AddToggle('OnlyShowEnabledKeybinds', {
+			Text = 'Only Show Enabled Keybinds',
+			false,
+			'Only Show Enabled Keybinds'
+		})
+
+		RainToggles.OnlyShowEnabledKeybinds:OnChanged(function()
+			task.spawn(function()
+				xpcall(function()
+					task.wait(2.5)
+					if not self.Library or not self.Library.RegistryMap then return; end
+					for i, v in pairs(self.Library.RegistryMap[ContainerLabel]) do
+						if v.KEYBINDLABEL and v.Properties.TextColor3 ~= "AccentColor" then
+							v.Visible = not RainToggles.OnlyShowEnabledKeybinds.Value;
+						end;
+					end;
+				end,warn);
+			end);
+		end);
+		RainToggles.KeybindShower:OnChanged(function()
+			self.Library.KeybindFrame.Visible = RainToggles.KeybindShower.Value;
+		end)
+		
+        section:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })
+
+        self.Library.ToggleKeybind = RainOptions.MenuKeybind -- Allows you to have a custom keybind for the menu
+
 		section:AddInput('SaveManager_ConfigName',    { Text = 'Config name' })
 		section:AddDropdown('SaveManager_ConfigList', { Text = 'Config list', Values = self:RefreshConfigList(), AllowNull = true })
 
 		section:AddDivider()
 
 		section:AddButton('Create config', function()
-			local name = Options.SaveManager_ConfigName.Value
+			local name = RainOptions.SaveManager_ConfigName.Value
 
 			if name:gsub(' ', '') == '' then 
 				return self.Library:Notify('Invalid config name (empty)', 2)
@@ -222,10 +310,10 @@ local SaveManager = {} do
 
 			self.Library:Notify(string.format('Created config %q', name))
 
-			Options.SaveManager_ConfigList:SetValues(self:RefreshConfigList())
-			Options.SaveManager_ConfigList:SetValue(nil)
+			RainOptions.SaveManager_ConfigList:SetValues(self:RefreshConfigList())
+			RainOptions.SaveManager_ConfigList:SetValue(nil)
 		end):AddButton('Load config', function()
-			local name = Options.SaveManager_ConfigList.Value
+			local name = RainOptions.SaveManager_ConfigList.Value
 
 			local success, err = self:Load(name)
 			if not success then
@@ -236,7 +324,7 @@ local SaveManager = {} do
 		end)
 
 		section:AddButton('Overwrite config', function()
-			local name = Options.SaveManager_ConfigList.Value
+			local name = RainOptions.SaveManager_ConfigList.Value
 
 			local success, err = self:Save(name)
 			if not success then
@@ -247,12 +335,12 @@ local SaveManager = {} do
 		end)
 
 		section:AddButton('Refresh list', function()
-			Options.SaveManager_ConfigList:SetValues(self:RefreshConfigList())
-			Options.SaveManager_ConfigList:SetValue(nil)
+			RainOptions.SaveManager_ConfigList:SetValues(self:RefreshConfigList())
+			RainOptions.SaveManager_ConfigList:SetValue(nil)
 		end)
 
 		section:AddButton('Set as autoload', function()
-			local name = Options.SaveManager_ConfigList.Value
+			local name = RainOptions.SaveManager_ConfigList.Value
 			writefile(self.Folder .. '/settings/autoload.txt', name)
 			SaveManager.AutoloadLabel:SetText('Current autoload config: ' .. name)
 			self.Library:Notify(string.format('Set %q to auto load', name))
