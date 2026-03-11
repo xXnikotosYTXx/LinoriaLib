@@ -739,14 +739,23 @@ function Library:Notify(Text, Time)
         Parent = Notification;
     });
     
-    local NotificationLabel = Library:CreateLabel({
+    local NotificationLabel = Library:Create('TextLabel', {
+        BackgroundTransparency = 1;
+        Font = Library.Font;
         Position = UDim2.new(0, 10, 0, 0);
         Size = UDim2.new(1, -20, 1, 0);
         Text = Text;
-        TextXAlignment = Enum.TextXAlignment.Left;
+        TextColor3 = Library.FontColor;
         TextSize = 14;
+        TextStrokeTransparency = 0;
+        TextXAlignment = Enum.TextXAlignment.Left;
         ZIndex = 10002;
         Parent = Notification;
+    });
+    
+    Library:ApplyTextStroke(NotificationLabel);
+    Library:AddToRegistry(NotificationLabel, {
+        TextColor3 = 'FontColor';
     });
     
     -- Smooth slide-in animation
@@ -1659,8 +1668,8 @@ function Library:CreateButton(Groupbox, Options)
     return Button;
 end;
 
--- Enhanced Label Creation
-function Library:CreateLabel(Groupbox, Text, WrapText)
+-- Enhanced Label Creation for Groupboxes
+function Library:CreateGroupboxLabel(Groupbox, Text, WrapText)
     local Label = {};
     
     local ElementHeight = WrapText and 40 or 20;
@@ -1676,17 +1685,21 @@ function Library:CreateLabel(Groupbox, Text, WrapText)
     });
     
     -- Enhanced label text with better styling
-    local LabelText = Library:CreateLabel({
+    local LabelText = Library:Create('TextLabel', {
+        BackgroundTransparency = 1;
+        Font = Library.Font;
         Size = UDim2.new(1, 0, 1, 0);
         Text = Text or 'Label';
+        TextColor3 = Color3.fromRGB(200, 200, 200);
+        TextSize = 13;
         TextXAlignment = Enum.TextXAlignment.Left;
         TextYAlignment = Enum.TextYAlignment.Top;
-        TextSize = 13;
         TextWrapped = WrapText or false;
-        TextColor3 = Color3.fromRGB(200, 200, 200);
         ZIndex = 6;
         Parent = LabelFrame;
     });
+    
+    Library:ApplyTextStroke(LabelText);
     
     Label.Frame = LabelFrame;
     Label.SetText = function(NewText)
@@ -1960,7 +1973,7 @@ function Library:AddButton(Groupbox, Options)
 end;
 
 function Library:AddLabel(Groupbox, Text, WrapText)
-    return self:CreateLabel(Groupbox, Text, WrapText);
+    return self:CreateGroupboxLabel(Groupbox, Text, WrapText);
 end;
 
 function Library:AddDropdown(Groupbox, Flag, Options)
@@ -2617,24 +2630,35 @@ end;
 -- Enhanced Initialization
 function Library:Init()
     -- Set up save manager
-    self.SaveManager:SetLibrary(self);
-    self.SaveManager:SetFolder('LinoriaConfigs');
+    if self.SaveManager then
+        self.SaveManager:SetLibrary(self);
+        self.SaveManager:SetFolder('LinoriaConfigs');
+    end;
     
     -- Set up theme manager
-    self.ThemeManager:SetLibrary(self);
+    if self.ThemeManager then
+        self.ThemeManager:SetLibrary(self);
+        
+        -- Apply default theme
+        pcall(function()
+            self.ThemeManager:ApplyTheme('Default');
+        end);
+    end;
     
-    -- Apply default theme
-    self.ThemeManager:ApplyTheme('Default');
-    
-    -- Create notification system
-    self:Notify('✨ Enhanced Linoria Library loaded!', 3);
+    -- Create notification system (with delay to ensure GUI is ready)
+    task.spawn(function()
+        task.wait(0.1);
+        pcall(function()
+            self:Notify('✨ Enhanced Linoria Library loaded!', 3);
+        end);
+    end);
     
     print('🚀 Enhanced Linoria Library initialized with ESP Preview support');
     return self;
 end;
 
 -- Enhanced Window Creation (Main API)
-function Library:CreateWindow(Options)
+function Library:CreateMainWindow(Options)
     Options = Options or {};
     
     -- Enhanced default options
@@ -2668,7 +2692,7 @@ function Library:CreateWindow(Options)
 end;
 
 -- Enhanced Tab Creation (Main API)
-function Library:CreateTab(Window, Name, Icon)
+function Library:CreateMainTab(Window, Name, Icon)
     local Tab = self:CreateTab(Window, Icon and (Icon .. ' ' .. Name) or Name);
     return Tab;
 end;
