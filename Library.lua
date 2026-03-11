@@ -2686,8 +2686,8 @@ local RunService = game:GetService('RunService')
 local Players = game:GetService('Players')
 local Stats = game:GetService('Stats')
 
--- ВОЛНОВАЯ СИСТЕМА ДЛЯ LIBRARY
-Library.WaveSystem = {
+-- ВОЛНОВАЯ СИСТЕМА ДЛЯ LIBRARY (БЕЗ ОБРАЩЕНИЯ К LIBRARY)
+local WaveSystem = {
     -- Элементы UI
     Container = nil,
     IconLabel = nil,
@@ -2695,9 +2695,9 @@ Library.WaveSystem = {
     NicknameLetters = {},
     FPSLetters = {},
     PingLetters = {},
-    TimeLetters = {}, -- Добавляем буквы времени
-    KeybindHeaderLetters = {}, -- Буквы заголовка кейбиндов
-    KeybindItems = {}, -- Элементы кейбиндов
+    TimeLetters = {},
+    KeybindHeaderLetters = {},
+    KeybindItems = {},
     TimeLabel = nil,
     
     -- Волны с разными параметрами (реалистичные)
@@ -2705,8 +2705,8 @@ Library.WaveSystem = {
     NicknameWave = {pos = 0, speed = 0.07, width = 5, intensity = 0.12},
     FPSWave = {pos = 0, speed = 0.06, width = 3, intensity = 0.1},
     PingWave = {pos = 0, speed = 0.055, width = 3, intensity = 0.1},
-    TimeWave = {pos = 0, speed = 0.04, width = 6, intensity = 0.08}, -- Самая плавная волна для времени
-    KeybindHeaderWave = {pos = 0, speed = 0.065, width = 4, intensity = 0.12}, -- Волна для заголовка кейбиндов
+    TimeWave = {pos = 0, speed = 0.04, width = 6, intensity = 0.08},
+    KeybindHeaderWave = {pos = 0, speed = 0.065, width = 4, intensity = 0.12},
     
     -- Состояние
     IsAnimating = false,
@@ -2717,46 +2717,31 @@ Library.WaveSystem = {
     LastPing = 0,
     LastTime = "",
     FrameCounter = 0,
-    UpdateInterval = 20, -- Обновляем каждые 20 кадров для оптимизации
+    UpdateInterval = 20,
     
-    -- ЦВЕТОВЫЕ ТЕМЫ
+    -- ЦВЕТОВЫЕ ТЕМЫ (СТАТИЧНЫЕ, БЕЗ ОБРАЩЕНИЯ К LIBRARY)
     Colors = {
-        -- Иконка молнии
-        Lightning = Color3.fromRGB(255, 120, 200), -- Розовая по умолчанию
-        
-        -- Название проекта
+        Lightning = Color3.fromRGB(255, 120, 200),
         ProjectNormal = Color3.fromRGB(220, 220, 220),
         ProjectWave = Color3.fromRGB(255, 255, 255),
-        
-        -- Никнейм
         NicknameNormal = Color3.fromRGB(160, 160, 160),
         NicknameWave = Color3.fromRGB(200, 200, 200),
-        
-        -- FPS (цифры и буквы)
         FPSDigitsNormal = Color3.fromRGB(100, 255, 100),
         FPSDigitsWave = Color3.fromRGB(150, 255, 150),
         FPSLettersNormal = Color3.fromRGB(140, 140, 140),
         FPSLettersWave = Color3.fromRGB(200, 200, 200),
-        
-        -- Пинг (цифры и буквы)
         PingDigitsNormal = Color3.fromRGB(100, 255, 100),
         PingDigitsWave = Color3.fromRGB(150, 255, 150),
         PingLettersNormal = Color3.fromRGB(140, 140, 140),
         PingLettersWave = Color3.fromRGB(200, 200, 200),
-        
-        -- Время
         TimeNormal = Color3.fromRGB(120, 120, 120),
         TimeWave = Color3.fromRGB(160, 160, 160),
-        
-        -- Кейбинды
         KeybindHeaderNormal = Color3.fromRGB(200, 200, 200),
         KeybindHeaderWave = Color3.fromRGB(255, 255, 255),
         KeybindName = Color3.fromRGB(180, 180, 180),
         KeybindKey = Color3.fromRGB(120, 120, 120),
         KeybindStateOn = Color3.fromRGB(100, 255, 100),
         KeybindStateOff = Color3.fromRGB(255, 100, 100),
-        
-        -- Разделители
         Separator = Color3.fromRGB(100, 100, 100),
     },
 }
@@ -2776,20 +2761,32 @@ Library.WaveSystem.Themes = {
         TimeWave = Color3.fromRGB(160, 160, 160),
     },
     
-    -- Акцентная тема (использует Library.AccentColor)
-    Accent = {
-        Lightning = nil, -- Будет использовать Library.AccentColor
-        ProjectNormal = nil, -- Будет использовать Library.FontColor
-        ProjectWave = nil, -- Будет использовать Library.AccentColor
+-- ЦВЕТОВЫЕ ТЕМЫ (БУДУТ ИНИЦИАЛИЗИРОВАНЫ ПОСЛЕ СОЗДАНИЯ LIBRARY)
+local WaveThemes = {
+    Default = {
+        Lightning = Color3.fromRGB(255, 120, 200),
+        ProjectNormal = Color3.fromRGB(220, 220, 220),
+        ProjectWave = Color3.fromRGB(255, 255, 255),
         NicknameNormal = Color3.fromRGB(160, 160, 160),
-        NicknameWave = nil, -- Будет использовать Library.AccentColor
+        NicknameWave = Color3.fromRGB(200, 200, 200),
         FPSDigitsNormal = Color3.fromRGB(100, 255, 100),
-        FPSDigitsWave = nil, -- Будет использовать Library.AccentColor
+        FPSDigitsWave = Color3.fromRGB(150, 255, 150),
         TimeNormal = Color3.fromRGB(120, 120, 120),
-        TimeWave = nil, -- Будет использовать Library.AccentColor
+        TimeWave = Color3.fromRGB(160, 160, 160),
     },
     
-    -- Монохромная тема
+    Accent = {
+        Lightning = "AccentColor", -- Строка, будет заменена на Library.AccentColor
+        ProjectNormal = "FontColor",
+        ProjectWave = "AccentColor",
+        NicknameNormal = Color3.fromRGB(160, 160, 160),
+        NicknameWave = "AccentColor",
+        FPSDigitsNormal = Color3.fromRGB(100, 255, 100),
+        FPSDigitsWave = "AccentColor",
+        TimeNormal = Color3.fromRGB(120, 120, 120),
+        TimeWave = "AccentColor",
+    },
+    
     Mono = {
         Lightning = Color3.fromRGB(255, 255, 255),
         ProjectNormal = Color3.fromRGB(200, 200, 200),
@@ -2802,7 +2799,6 @@ Library.WaveSystem.Themes = {
         TimeWave = Color3.fromRGB(180, 180, 180),
     },
     
-    -- Радужная тема
     Rainbow = {
         Lightning = Color3.fromRGB(255, 100, 255),
         ProjectNormal = Color3.fromRGB(255, 150, 150),
@@ -2815,21 +2811,53 @@ Library.WaveSystem.Themes = {
         TimeWave = Color3.fromRGB(255, 255, 100),
     },
 }
-}
 
--- ЗАМЕНА СЕКЦИИ "-- < Create other UI elements >"
--- < Create other UI elements >
-do
-    -- Создаем область уведомлений
-    Library.NotificationArea = Library:Create('Frame', {
-        BackgroundTransparency = 1;
-        Position = UDim2.new(0, 0, 0, 40);
-        Size = UDim2.new(0, 300, 0, 200);
-        ZIndex = 100;
-        Parent = ScreenGui;
-    });
-
-    Library:Create('UIListLayout', {
+-- ФУНКЦИЯ ИНИЦИАЛИЗАЦИИ (ВЫЗЫВАЕТСЯ ПОСЛЕ СОЗДАНИЯ LIBRARY)
+local function InitializeWaveSystem()
+    -- Присваиваем WaveSystem к Library
+    Library.WaveSystem = WaveSystem
+    Library.WaveSystem.Themes = WaveThemes
+    
+    -- Инициализируем функции управления темами
+    function Library.WaveSystem:SetTheme(themeName)
+        local theme = self.Themes[themeName]
+        if not theme then
+            print("❌ Тема '" .. themeName .. "' не найдена!")
+            return
+        end
+        
+        for colorName, color in pairs(theme) do
+            if type(color) == "string" then
+                -- Заменяем строки на цвета Library
+                if color == "AccentColor" then
+                    self.Colors[colorName] = Library.AccentColor
+                elseif color == "FontColor" then
+                    self.Colors[colorName] = Library.FontColor
+                elseif color == "MainColor" then
+                    self.Colors[colorName] = Library.MainColor
+                end
+            else
+                self.Colors[colorName] = color
+            end
+        end
+        
+        print("✅ Применена тема: " .. themeName)
+    end
+    
+    function Library.WaveSystem:GetColor(colorName)
+        local color = self.Colors[colorName]
+        if not color then
+            if colorName:find("Wave") or colorName:find("Lightning") then
+                return Library.AccentColor
+            elseif colorName:find("Normal") then
+                return Library.FontColor
+            else
+                return Color3.fromRGB(255, 255, 255)
+            end
+        end
+        return color
+    end
+end   Library:Create('UIListLayout', {
         Padding = UDim.new(0, 4);
         FillDirection = Enum.FillDirection.Vertical;
         SortOrder = Enum.SortOrder.LayoutOrder;
@@ -2857,14 +2885,14 @@ do
     local WatermarkCorner = Library:Create('UICorner', {
         CornerRadius = UDim.new(0, 8);
         Parent = WatermarkInner;
-    });
-
-    -- Градиентный фон
-    local WatermarkGradient = Library:Create('UIGradient', {
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
-            ColorSequenceKeypoint.new(0.5, Library.MainColor),
-            ColorSequenceKeypoint.new(1, Library:GetDarkerColor(Library.MainColor)),
+    -- Контейнер для всех элементов
+    WaveSystem.Container = Library:Create('Frame', {
+        BackgroundTransparency = 1;
+        Position = UDim2.new(0, 10, 0, 5);
+        Size = UDim2.new(1, -20, 1, -10);
+        ZIndex = 202;
+        Parent = WatermarkInner;
+    });     ColorSequenceKeypoint.new(1, Library:GetDarkerColor(Library.MainColor)),
         });
         Rotation = 90;
         Parent = WatermarkInner;
@@ -2946,53 +2974,17 @@ do
                 ColorSequenceKeypoint.new(1, Library:GetDarkerColor(Library.MainColor)),
             });
         end
-    });
-
-    -- Контейнер для заголовка с волной
-    local KeybindHeaderContainer = Library:Create('Frame', {
-        BackgroundTransparency = 1;
-        Position = UDim2.new(0, 10, 0, 5);
-        Size = UDim2.new(1, -20, 0, 20);
-        ZIndex = 102;
-        Parent = KeybindInner;
-    });
-
-    -- Контейнер для кейбиндов
-    local KeybindContainer = Library:Create('Frame', {
-        BackgroundTransparency = 1;
-        Position = UDim2.new(0, 10, 0, 30);
-        Size = UDim2.new(1, -20, 1, -35);
-        ZIndex = 102;
-        Parent = KeybindInner;
-    });
-
-    Library:Create('UIListLayout', {
-        FillDirection = Enum.FillDirection.Vertical;
-        SortOrder = Enum.SortOrder.LayoutOrder;
-        Padding = UDim.new(0, 3);
-        Parent = KeybindContainer;
-    });
-
-    -- Сохраняем ссылки
     Library.KeybindFrame = KeybindOuter;
     Library.KeybindContainer = KeybindContainer;
     Library.KeybindHeaderContainer = KeybindHeaderContainer;
     Library:MakeDraggable(KeybindOuter);
-end;
-
--- ФУНКЦИИ УПРАВЛЕНИЯ ТЕМАМИ
-function Library.WaveSystem:SetTheme(themeName)
-    local theme = self.Themes[themeName]
-    if not theme then
-        print("❌ Тема '" .. themeName .. "' не найдена!")
-        return
-    end
     
-    -- Применяем цвета темы
-    for colorName, color in pairs(theme) do
-        if color then
-            self.Colors[colorName] = color
-        else
+    -- ИНИЦИАЛИЗИРУЕМ ВОЛНОВУЮ СИСТЕМУ ПОСЛЕ СОЗДАНИЯ LIBRARY
+-- ФУНКЦИИ УПРАВЛЕНИЯ ТЕМАМИ
+-- (Будут добавлены в InitializeWaveSystem)
+
+-- ФУНКЦИИ ВОЛНОВОЙ СИСТЕМЫ
+function WaveSystem:CreateElements()
             -- Если цвет nil, используем цвета Library
             if colorName:find("Lightning") or colorName:find("Wave") then
                 self.Colors[colorName] = Library.AccentColor
