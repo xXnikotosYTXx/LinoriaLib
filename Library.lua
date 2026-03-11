@@ -3911,8 +3911,49 @@ function Library:UpdateKeybindState(name, state)
     for _, item in ipairs(Library.WaveSystem.KeybindItems) do
         if item.Name == name then
             item.State = state
-            item.StateLabel.Text = state and "ON" or "OFF"
-            item.StateLabel.TextColor3 = state and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
+            
+            -- Пересоздаем буквы ON/OFF с новым состоянием
+            for _, letter in pairs(item.StateLetters) do
+                letter.Frame:Destroy()
+            end
+            
+            local stateText = state and "ON" or "OFF"
+            local stateLetters = {}
+            local containerWidth = 180
+            local availableWidth = containerWidth - (item.Icon and 16 or 0)
+            local stateStartX = (item.Icon and 16 or 0) + availableWidth * 0.78
+            
+            for i = 1, #stateText do
+                local char = stateText:sub(i, i)
+                local letterFrame = Library:Create('Frame', {
+                    BackgroundTransparency = 1;
+                    Position = UDim2.new(0, stateStartX + (i-1) * 8, 0, 0);
+                    Size = UDim2.new(0, 8, 1, 0);
+                    ZIndex = 104;
+                    Parent = item.Frame;
+                });
+                
+                local letterLabel = Library:CreateLabel({
+                    Size = UDim2.new(1, 0, 1, 0);
+                    Text = char;
+                    TextSize = 10;
+                    TextColor3 = state and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100);
+                    TextXAlignment = Enum.TextXAlignment.Center;
+                    Font = Enum.Font.GothamBold;
+                    ZIndex = 105;
+                    Parent = letterFrame;
+                });
+                
+                stateLetters[i] = {
+                    Frame = letterFrame,
+                    Label = letterLabel,
+                    OriginalPos = stateStartX + (i-1) * 8,
+                    OriginalSize = 8,
+                    Character = char,
+                }
+            end
+            
+            item.StateLetters = stateLetters
             break
         end
     end
@@ -4005,6 +4046,7 @@ function Library:Notify(Text, Time)
         NotifyOuter:Destroy();
     end);
 end;
+
 
 
 
