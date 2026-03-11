@@ -2831,8 +2831,10 @@ local WatermarkOuter = Library:Create('Frame', {
 end;
 
 function Library:SetWatermarkVisibility(Bool)
-    Library.Watermark.Visible = Bool;
-end;
+    if Library.Watermark then -- Проверяем на nil
+        Library.Watermark.Visible = Bool;
+    end
+end
 
 function Library:SetWatermark(Text)
     local X, Y = Library:GetTextBounds(Text, Library.Font, 14);
