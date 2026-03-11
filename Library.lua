@@ -3722,7 +3722,7 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
     -- Название кейбинда (слева)
     local nameLabel = Library:CreateLabel({
         Position = UDim2.new(0, nameStartX, 0, 0);
-        Size = UDim2.new(0, availableWidth * 0.45, 1, 0); -- Меньше ширина для названия
+        Size = UDim2.new(0, availableWidth * 0.4, 1, 0); -- Еще меньше ширина для названия
         Text = name;
         TextSize = 10;
         TextColor3 = Color3.fromRGB(180, 180, 180);
@@ -3732,10 +3732,10 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
         Parent = keybindFrame;
     });
     
-    -- КЛАВИША (ближе к центру)
+    -- КЛАВИША (ДАЛЬШЕ ОТ НАЗВАНИЯ, БЛИЖЕ К ЦЕНТРУ)
     local keyLabel = Library:CreateLabel({
-        Position = UDim2.new(0, nameStartX + availableWidth * 0.48, 0, 0); -- Ближе к центру
-        Size = UDim2.new(0, availableWidth * 0.22, 1, 0);
+        Position = UDim2.new(0, nameStartX + availableWidth * 0.55, 0, 0); -- Дальше от названия
+        Size = UDim2.new(0, availableWidth * 0.2, 1, 0);
         Text = key;
         TextSize = 9;
         TextColor3 = Color3.fromRGB(120, 120, 130);
