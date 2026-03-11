@@ -3113,6 +3113,7 @@ function Library.WaveSystem:CreateFPSText(text)
     self.FPSLetters = {}
     
     local currentX = self.FPSStartX
+    local customFont = Enum.Font.GothamBold -- ДОБАВЛЕН ШРИФТ
     
     for i = 1, #text do
         local char = text:sub(i, i)
@@ -3132,6 +3133,7 @@ function Library.WaveSystem:CreateFPSText(text)
             TextSize = 14;
             TextColor3 = isDigit and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(140, 140, 140);
             TextXAlignment = Enum.TextXAlignment.Center;
+            Font = customFont; -- ДОБАВЛЕН ШРИФТ
             ZIndex = 204;
             Parent = letterFrame;
         });
@@ -3206,6 +3208,7 @@ function Library.WaveSystem:CreateTimeText(text)
     self.TimeLetters = {}
     
     local currentX = self.TimeStartX
+    local customFont = Enum.Font.GothamBold -- ДОБАВЛЕН ШРИФТ
     
     for i = 1, #text do
         local char = text:sub(i, i)
@@ -3224,6 +3227,7 @@ function Library.WaveSystem:CreateTimeText(text)
             TextSize = 14;
             TextColor3 = Color3.fromRGB(120, 120, 120);
             TextXAlignment = Enum.TextXAlignment.Center;
+            Font = customFont; -- ДОБАВЛЕН ШРИФТ
             ZIndex = 204;
             Parent = letterFrame;
         });
@@ -3246,6 +3250,7 @@ function Library.WaveSystem:CreateKeybindHeader()
     end
     
     local currentX = 8
+    local customFont = Enum.Font.GothamBold
     
     -- 1. ИКОНКА PALETTE (ImageLabel для настоящих иконок)
     local paletteIconData = Library:GetIcon("palette")
@@ -3272,6 +3277,7 @@ function Library.WaveSystem:CreateKeybindHeader()
             TextSize = 14;
             TextColor3 = Color3.fromRGB(150, 150, 255);
             TextXAlignment = Enum.TextXAlignment.Center;
+            Font = customFont;
             ZIndex = 103;
             Parent = Library.KeybindHeaderContainer;
         });
@@ -3287,6 +3293,7 @@ function Library.WaveSystem:CreateKeybindHeader()
         TextSize = 14;
         TextColor3 = Color3.fromRGB(100, 100, 100);
         TextXAlignment = Enum.TextXAlignment.Center;
+        Font = customFont;
         ZIndex = 103;
         Parent = Library.KeybindHeaderContainer;
     });
@@ -3317,6 +3324,7 @@ function Library.WaveSystem:CreateKeybindHeader()
             TextSize = 14;
             TextColor3 = Color3.fromRGB(200, 200, 200);
             TextXAlignment = Enum.TextXAlignment.Center;
+            Font = customFont; -- ДОБАВЛЕН ШРИФТ
             ZIndex = 104;
             Parent = letterFrame;
         });
@@ -3487,6 +3495,16 @@ function Library.WaveSystem:UpdateWaves()
     self:ApplyWave(self.KeybindHeaderLetters, self.KeybindHeaderWave, 
         Color3.fromRGB(255, 255, 255), Color3.fromRGB(200, 200, 200))
     
+    -- ВОЛНЫ НА ON/OFF В КЕЙБИНДАХ
+    for _, item in pairs(self.KeybindItems) do
+        if item.StateLetters then
+            local stateWave = {pos = self.KeybindHeaderWave.pos, speed = 0.065, width = 2, intensity = 0.15}
+            local waveColor = item.State and Color3.fromRGB(150, 255, 150) or Color3.fromRGB(255, 150, 150)
+            local normalColor = item.State and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
+            self:ApplyWave(item.StateLetters, stateWave, waveColor, normalColor)
+        end
+    end
+    
     -- Анимация иконки palette
     if self.PaletteIcon then
         local pulse = math.sin(tick() * 2) * 0.1 + 1
@@ -3551,7 +3569,7 @@ function Library.WaveSystem:UpdateStats()
     end
 end
 
--- СОЗДАНИЕ КЕЙБИНДА
+-- СОЗДАНИЕ КЕЙБИНДА С ВОЛНОВЫМ ON/OFF
 function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
     local keybindFrame = Library:Create('Frame', {
         BackgroundTransparency = 1;
@@ -3560,6 +3578,7 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
         Parent = Library.KeybindContainer;
     });
     
+    local customFont = Enum.Font.GothamBold
     local iconLabel = nil
     local nameStartX = 0
     
@@ -3567,7 +3586,6 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
         local iconData = Library:GetIcon(iconName)
         
         if type(iconData) == "table" and iconData.Url then
-            -- Настоящая иконка Lucide
             iconLabel = Library:Create('ImageLabel', {
                 Position = UDim2.new(0, 0, 0, 2);
                 Size = UDim2.new(0, 16, 0, 16);
@@ -3580,7 +3598,6 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
                 Parent = keybindFrame;
             });
         else
-            -- Fallback на эмодзи
             iconLabel = Library:CreateLabel({
                 Position = UDim2.new(0, 0, 0, 0);
                 Size = UDim2.new(0, 16, 1, 0);
@@ -3588,6 +3605,7 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
                 TextSize = 12;
                 TextColor3 = Color3.fromRGB(120, 120, 120);
                 TextXAlignment = Enum.TextXAlignment.Center;
+                Font = customFont;
                 ZIndex = 104;
                 Parent = keybindFrame;
             });
@@ -3599,45 +3617,88 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
     local containerWidth = 180
     local availableWidth = containerWidth - nameStartX
     
+    -- Название кейбинда
     local nameLabel = Library:CreateLabel({
         Position = UDim2.new(0, nameStartX, 0, 0);
-        Size = UDim2.new(0, availableWidth * 0.5, 1, 0);
+        Size = UDim2.new(0, availableWidth * 0.45, 1, 0);
         Text = name;
         TextSize = 12;
         TextColor3 = Color3.fromRGB(180, 180, 180);
         TextXAlignment = Enum.TextXAlignment.Left;
+        Font = customFont;
         ZIndex = 104;
         Parent = keybindFrame;
+    });
+    
+    -- СТИЛЬНАЯ КЛАВИША [F1] с рамкой
+    local keyFrame = Library:Create('Frame', {
+        Position = UDim2.new(0, nameStartX + availableWidth * 0.45, 0, 2);
+        Size = UDim2.new(0, availableWidth * 0.3, 0, 16);
+        BackgroundColor3 = Color3.fromRGB(20, 20, 25);
+        BorderSizePixel = 1;
+        BorderColor3 = Color3.fromRGB(60, 60, 70);
+        ZIndex = 104;
+        Parent = keybindFrame;
+    });
+    
+    local keyCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 4);
+        Parent = keyFrame;
     });
     
     local keyLabel = Library:CreateLabel({
-        Position = UDim2.new(0, nameStartX + availableWidth * 0.5, 0, 0);
-        Size = UDim2.new(0, availableWidth * 0.25, 1, 0);
-        Text = "[" .. key .. "]";
-        TextSize = 12;
-        TextColor3 = Color3.fromRGB(120, 120, 120);
+        Size = UDim2.new(1, 0, 1, 0);
+        Text = key;
+        TextSize = 11;
+        TextColor3 = Color3.fromRGB(150, 150, 160);
         TextXAlignment = Enum.TextXAlignment.Center;
-        ZIndex = 104;
-        Parent = keybindFrame;
+        Font = customFont;
+        ZIndex = 105;
+        Parent = keyFrame;
     });
     
-    local stateLabel = Library:CreateLabel({
-        Position = UDim2.new(0, nameStartX + availableWidth * 0.75, 0, 0);
-        Size = UDim2.new(0, availableWidth * 0.25, 1, 0);
-        Text = state and "ON" or "OFF";
-        TextSize = 12;
-        TextColor3 = state and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100);
-        TextXAlignment = Enum.TextXAlignment.Right;
-        ZIndex = 104;
-        Parent = keybindFrame;
-    });
+    -- ON/OFF С ВОЛНОВЫМ ЭФФЕКТОМ
+    local stateText = state and "ON" or "OFF"
+    local stateLetters = {}
+    local stateStartX = nameStartX + availableWidth * 0.78
+    
+    for i = 1, #stateText do
+        local char = stateText:sub(i, i)
+        local letterFrame = Library:Create('Frame', {
+            BackgroundTransparency = 1;
+            Position = UDim2.new(0, stateStartX + (i-1) * 10, 0, 0);
+            Size = UDim2.new(0, 10, 1, 0);
+            ZIndex = 104;
+            Parent = keybindFrame;
+        });
+        
+        local letterLabel = Library:CreateLabel({
+            Size = UDim2.new(1, 0, 1, 0);
+            Text = char;
+            TextSize = 12;
+            TextColor3 = state and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100);
+            TextXAlignment = Enum.TextXAlignment.Center;
+            Font = customFont;
+            ZIndex = 105;
+            Parent = letterFrame;
+        });
+        
+        stateLetters[i] = {
+            Frame = letterFrame,
+            Label = letterLabel,
+            OriginalPos = stateStartX + (i-1) * 10,
+            OriginalSize = 10,
+            Character = char,
+        }
+    end
     
     table.insert(self.KeybindItems, {
         Frame = keybindFrame,
         IconLabel = iconLabel,
         NameLabel = nameLabel,
+        KeyFrame = keyFrame,
         KeyLabel = keyLabel,
-        StateLabel = stateLabel,
+        StateLetters = stateLetters,
         Name = name,
         Key = key,
         State = state,
@@ -3831,6 +3892,7 @@ function Library:Notify(Text, Time)
         NotifyOuter:Destroy();
     end);
 end;
+
 
 
 
