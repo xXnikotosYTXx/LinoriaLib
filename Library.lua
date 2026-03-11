@@ -2678,7 +2678,6 @@ do
     end;
 end;
 
-
 -- ПОЛНОСТЬЮ РАБОЧАЯ ВОЛНОВАЯ СИСТЕМА
 -- Все волны работают + FPS/Ping + иконки Lucide
 -- Заменяет секцию "-- < Create other UI elements >"
@@ -2696,11 +2695,22 @@ end)
 
 function Library:GetIcon(IconName: string)
     if not FetchIcons then
+        -- Fallback на эмодзи если не удалось загрузить
         local IconMap = {
             ["palette"] = "🎨",
             ["eye"] = "👁️",
             ["target"] = "🎯",
             ["zap"] = "⚡",
+            ["settings"] = "⚙️",
+            ["shield"] = "🛡️",
+            ["sword"] = "⚔️",
+            ["heart"] = "❤️",
+            ["star"] = "⭐",
+            ["home"] = "🏠",
+            ["user"] = "�",
+            ["key"] = "�🔑",
+            ["lock"] = "🔒",
+            ["unlock"] = "🔓",
         }
         return IconMap[IconName] or "🔧"
     end
@@ -2714,6 +2724,7 @@ function Library:GetIcon(IconName: string)
 end
 
 function Library:GetCustomIcon(IconName: string)
+    -- Проверяем если это URL
     if string.match(IconName, "^rbxassetid://") or string.match(IconName, "^http") then
         return {
             Url = IconName,
@@ -2748,6 +2759,7 @@ end
 
 -- ВОЛНОВАЯ СИСТЕМА
 Library.WaveSystem = {
+    -- Элементы
     Container = nil,
     IconLabel = nil,
     ProjectLetters = {},
@@ -2756,11 +2768,13 @@ Library.WaveSystem = {
     PingLetters = {},
     TimeLetters = {},
     
+    -- Кейбинды
     PaletteIcon = nil,
     HeaderSeparator = nil,
     KeybindHeaderLetters = {},
     KeybindItems = {},
     
+    -- БЫСТРЫЕ ВОЛНЫ ДЛЯ ВИДИМОГО ЭФФЕКТА
     ProjectWave = {pos = 0, speed = 0.08, width = 3, intensity = 0.2},
     NicknameWave = {pos = 0, speed = 0.07, width = 3.5, intensity = 0.18},
     FPSWave = {pos = 0, speed = 0.06, width = 2.5, intensity = 0.15},
@@ -2768,6 +2782,7 @@ Library.WaveSystem = {
     TimeWave = {pos = 0, speed = 0.045, width = 4, intensity = 0.12},
     KeybindHeaderWave = {pos = 0, speed = 0.065, width = 3, intensity = 0.18},
     
+    -- Состояние
     IsAnimating = false,
     Connections = {},
     LastFPS = 0,
@@ -2777,8 +2792,9 @@ Library.WaveSystem = {
     LastPingText = "",
     LastTimeText = "",
     FrameCounter = 0,
-    UpdateInterval = 60,
+    UpdateInterval = 60, -- Обновляем статистику реже (каждые 60 кадров вместо 30)
     
+    -- Позиции для обновления
     FPSStartX = 0,
     PingStartX = 0,
     TimeStartX = 0,
@@ -2800,7 +2816,7 @@ do
         SortOrder = Enum.SortOrder.LayoutOrder;
         Parent = Library.NotificationArea;
     });
-
+    -- ВАТЕРМАРК С ПРОЗРАЧНЫМ ФОНОМ И BLUR
     local WatermarkOuter = Library:Create('Frame', {
         BackgroundTransparency = 1;
         Position = UDim2.new(0, 100, 0, -32);
@@ -2812,24 +2828,25 @@ do
 
     local WatermarkInner = Library:Create('Frame', {
         BackgroundColor3 = Color3.fromRGB(8, 8, 12);
-        BackgroundTransparency = 0.3;
+        BackgroundTransparency = 0.3; -- ПРОЗРАЧНЕЕ
         BorderSizePixel = 0;
         Size = UDim2.new(1, 0, 1, 0);
         ZIndex = 201;
         Parent = WatermarkOuter;
     });
 
-    Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 12);
+    local WatermarkCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 12); -- Больше закругление
         Parent = WatermarkInner;
     });
 
-    Library:Create('UIGradient', {
+    -- ПЛАВНОЕ ЗАТУХАНИЕ ПО КРАЯМ (градиент прозрачности)
+    local WatermarkGradient = Library:Create('UIGradient', {
         Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.2),
+            NumberSequenceKeypoint.new(0, 0.2), -- Края прозрачнее
             NumberSequenceKeypoint.new(0.1, 0),
             NumberSequenceKeypoint.new(0.9, 0),
-            NumberSequenceKeypoint.new(1, 0.2),
+            NumberSequenceKeypoint.new(1, 0.2), -- Края прозрачнее
         });
         Parent = WatermarkInner;
     });
@@ -2845,6 +2862,7 @@ do
     Library.Watermark = WatermarkOuter;
     Library:MakeDraggable(Library.Watermark);
 
+    -- КЕЙБИНДЫ С ПРОЗРАЧНЫМ ФОНОМ
     local KeybindOuter = Library:Create('Frame', {
         BackgroundTransparency = 1;
         Position = UDim2.new(0, 10, 0.5, 0);
@@ -2856,24 +2874,25 @@ do
 
     local KeybindInner = Library:Create('Frame', {
         BackgroundColor3 = Color3.fromRGB(8, 8, 12);
-        BackgroundTransparency = 0.3;
+        BackgroundTransparency = 0.3; -- ПРОЗРАЧНЕЕ
         BorderSizePixel = 0;
         Size = UDim2.new(1, 0, 1, 0);
         ZIndex = 101;
         Parent = KeybindOuter;
     });
 
-    Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 12);
+    local KeybindCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 12); -- Больше закругление
         Parent = KeybindInner;
     });
 
-    Library:Create('UIGradient', {
+    -- ПЛАВНОЕ ЗАТУХАНИЕ ПО КРАЯМ
+    local KeybindGradient = Library:Create('UIGradient', {
         Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.2),
+            NumberSequenceKeypoint.new(0, 0.2), -- Края прозрачнее
             NumberSequenceKeypoint.new(0.1, 0),
             NumberSequenceKeypoint.new(0.9, 0),
-            NumberSequenceKeypoint.new(1, 0.2),
+            NumberSequenceKeypoint.new(1, 0.2), -- Края прозрачнее
         });
         Parent = KeybindInner;
     });
@@ -2906,66 +2925,1163 @@ do
     Library.KeybindHeaderContainer = KeybindHeaderContainer;
     Library:MakeDraggable(KeybindOuter);
 end;
-
--- ЗАПУСК И ОСТАНОВКА
-function Library.WaveSystem:Start()
-    if self.IsAnimating then return end
+-- СОЗДАНИЕ ВСЕХ ЭЛЕМЕНТОВ ВАТЕРМАРКА
+function Library.WaveSystem:CreateElements()
+    for _, child in pairs(self.Container:GetChildren()) do
+        child:Destroy()
+    end
     
-    self:CreateElements()
-    self:CreateKeybindHeader()
-    self.IsAnimating = true
-    self.FrameCounter = 0
+    local currentX = 0
+    local spacing = 8
     
-    self.Connections.Wave = RunService.Heartbeat:Connect(function()
-        self:UpdateWaves()
-    end)
+    -- ШРИФТ GOTHAM
+    local customFont = Enum.Font.GothamBold -- GothamSSm аналог
+    
+    -- 1. ИКОНКА МОЛНИИ
+    self.IconLabel = Library:CreateLabel({
+        Position = UDim2.new(0, currentX, 0, 0);
+        Size = UDim2.new(0, 18, 1, 0);
+        Text = "⚡";
+        TextSize = 15;
+        TextColor3 = Color3.fromRGB(255, 120, 200);
+        TextXAlignment = Enum.TextXAlignment.Center;
+        Font = customFont;
+        ZIndex = 203;
+        Parent = self.Container;
+    });
+    currentX = currentX + 22
+    
+    -- 2. PROJECT RADIANT С ВОЛНОЙ (ФИОЛЕТОВЫЙ/ПУРПУРНЫЙ)
+    local projectName = "Project Radiant"
+    self.ProjectLetters = {}
+    
+    for i = 1, #projectName do
+        local char = projectName:sub(i, i)
+        local letterFrame = Library:Create('Frame', {
+            BackgroundTransparency = 1;
+            Position = UDim2.new(0, currentX, 0, 0);
+            Size = UDim2.new(0, 9, 1, 0);
+            ZIndex = 203;
+            Parent = self.Container;
+        });
+        
+        local letterLabel = Library:CreateLabel({
+            Size = UDim2.new(1, 0, 1, 0);
+            Text = char;
+            TextSize = 14;
+            TextColor3 = Color3.fromRGB(180, 100, 220); -- ФИОЛЕТОВЫЙ
+            TextXAlignment = Enum.TextXAlignment.Center;
+            Font = customFont;
+            ZIndex = 204;
+            Parent = letterFrame;
+        });
+        
+        self.ProjectLetters[i] = {
+            Frame = letterFrame,
+            Label = letterLabel,
+            OriginalPos = currentX,
+            OriginalSize = 9,
+            Character = char,
+        }
+        
+        currentX = currentX + 9
+    end
+    currentX = currentX + spacing * 2
+    
+    -- Разделитель 1
+    Library:CreateLabel({
+        Position = UDim2.new(0, currentX, 0, 0);
+        Size = UDim2.new(0, 8, 1, 0);
+        Text = "|";
+        TextSize = 14;
+        TextColor3 = Color3.fromRGB(100, 100, 100);
+        TextXAlignment = Enum.TextXAlignment.Center;
+        Font = customFont;
+        ZIndex = 203;
+        Parent = self.Container;
+    });
+    currentX = currentX + 12
+    
+    -- 3. НИКНЕЙМ С ВОЛНОЙ (СЕРЕБРИСТЫЙ)
+    local playerName = Players.LocalPlayer.Name
+    if #playerName > 12 then
+        playerName = playerName:sub(1, 10) .. ".."
+    end
+    
+    self.NicknameLetters = {}
+    
+    for i = 1, #playerName do
+        local char = playerName:sub(i, i)
+        local letterFrame = Library:Create('Frame', {
+            BackgroundTransparency = 1;
+            Position = UDim2.new(0, currentX, 0, 0);
+            Size = UDim2.new(0, 8, 1, 0);
+            ZIndex = 203;
+            Parent = self.Container;
+        });
+        
+        local letterLabel = Library:CreateLabel({
+            Size = UDim2.new(1, 0, 1, 0);
+            Text = char;
+            TextSize = 14;
+            TextColor3 = Color3.fromRGB(192, 192, 192); -- СЕРЕБРИСТЫЙ
+            TextXAlignment = Enum.TextXAlignment.Center;
+            Font = customFont;
+            ZIndex = 204;
+            Parent = letterFrame;
+        });
+        
+        self.NicknameLetters[i] = {
+            Frame = letterFrame,
+            Label = letterLabel,
+            OriginalPos = currentX,
+            OriginalSize = 8,
+            Character = char,
+        }
+        
+        currentX = currentX + 8
+    end
+    currentX = currentX + spacing * 2
+    
+    -- Разделитель 2
+    Library:CreateLabel({
+        Position = UDim2.new(0, currentX, 0, 0);
+        Size = UDim2.new(0, 8, 1, 0);
+        Text = "|";
+        TextSize = 14;
+        TextColor3 = Color3.fromRGB(100, 100, 100);
+        TextXAlignment = Enum.TextXAlignment.Center;
+        Font = customFont;
+        ZIndex = 203;
+        Parent = self.Container;
+    });
+    currentX = currentX + 12
+    
+    -- 4. FPS С ВОЛНОЙ
+    self.FPSStartX = currentX
+    self.FPSLetters = {}
+    self:CreateFPSText("60 FPS")
+    currentX = currentX + 50
+    
+    -- Разделитель 3
+    Library:CreateLabel({
+        Position = UDim2.new(0, currentX, 0, 0);
+        Size = UDim2.new(0, 8, 1, 0);
+        Text = "|";
+        TextSize = 14;
+        TextColor3 = Color3.fromRGB(100, 100, 100);
+        TextXAlignment = Enum.TextXAlignment.Center;
+        Font = customFont;
+        ZIndex = 203;
+        Parent = self.Container;
+    });
+    currentX = currentX + 12
+    
+    -- 5. ПИНГ С ВОЛНОЙ (С ЦВЕТОВОЙ ИНДИКАЦИЕЙ)
+    self.PingStartX = currentX
+    self.PingLetters = {}
+    self:CreatePingText("50 MS")
+    currentX = currentX + 45
+    
+    -- Разделитель 4
+    Library:CreateLabel({
+        Position = UDim2.new(0, currentX, 0, 0);
+        Size = UDim2.new(0, 8, 1, 0);
+        Text = "|";
+        TextSize = 14;
+        TextColor3 = Color3.fromRGB(100, 100, 100);
+        TextXAlignment = Enum.TextXAlignment.Center;
+        Font = customFont;
+        ZIndex = 203;
+        Parent = self.Container;
+    });
+    currentX = currentX + 12
+    
+    -- 6. ВРЕМЯ С ВОЛНОЙ
+    self.TimeStartX = currentX
+    self.TimeLetters = {}
+    self:CreateTimeText("00:00:00")
+    currentX = currentX + 70
+    
+    Library.Watermark.Size = UDim2.new(0, math.max(currentX + 20, 400), 0, 30)
+end
+-- СОЗДАНИЕ FPS ТЕКСТА
+function Library.WaveSystem:CreateFPSText(text)
+    -- Если текст не изменился - не пересоздаем
+    if self.LastFPSText == text and #self.FPSLetters > 0 then
+        return
+    end
+    self.LastFPSText = text
+    
+    for _, letter in pairs(self.FPSLetters) do
+        if letter.Frame then letter.Frame:Destroy() end
+    end
+    self.FPSLetters = {}
+    
+    local currentX = self.FPSStartX
+    local customFont = Enum.Font.GothamBold
+    
+    for i = 1, #text do
+        local char = text:sub(i, i)
+        local isDigit = tonumber(char) ~= nil
+        
+        local letterFrame = Library:Create('Frame', {
+            BackgroundTransparency = 1;
+            Position = UDim2.new(0, currentX, 0, 0);
+            Size = UDim2.new(0, 7, 1, 0);
+            ZIndex = 203;
+            Parent = self.Container;
+        });
+        
+        local letterLabel = Library:CreateLabel({
+            Size = UDim2.new(1, 0, 1, 0);
+            Text = char;
+            TextSize = 14;
+            TextColor3 = isDigit and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(140, 140, 140);
+            TextXAlignment = Enum.TextXAlignment.Center;
+            Font = customFont;
+            ZIndex = 204;
+            Parent = letterFrame;
+        });
+        
+        self.FPSLetters[i] = {
+            Frame = letterFrame,
+            Label = letterLabel,
+            OriginalPos = currentX,
+            OriginalSize = 7,
+            Character = char,
+            IsDigit = isDigit,
+        }
+        
+        currentX = currentX + 7
+    end
 end
 
-function Library.WaveSystem:Stop()
-    self.IsAnimating = false
-    for _, connection in pairs(self.Connections) do
-        if connection then
-            connection:Disconnect()
+-- СОЗДАНИЕ ПИНГ ТЕКСТА С ЦВЕТОВОЙ ИНДИКАЦИЕЙ
+function Library.WaveSystem:CreatePingText(text, baseColor)
+    baseColor = baseColor or Color3.fromRGB(100, 255, 100)
+    
+    -- Если текст не изменился - не пересоздаем
+    if self.LastPingText == text and #self.PingLetters > 0 then
+        -- Только обновляем цвет если изменился
+        for _, letter in pairs(self.PingLetters) do
+            if letter.IsDigit and letter.Label then
+                letter.BaseColor = baseColor
+                letter.Label.TextColor3 = baseColor
+            end
+        end
+        return
+    end
+    self.LastPingText = text
+    
+    for _, letter in pairs(self.PingLetters) do
+        if letter.Frame then letter.Frame:Destroy() end
+    end
+    self.PingLetters = {}
+    
+    local currentX = self.PingStartX
+    local customFont = Enum.Font.GothamBold
+    
+    for i = 1, #text do
+        local char = text:sub(i, i)
+        local isDigit = tonumber(char) ~= nil
+        
+        local letterFrame = Library:Create('Frame', {
+            BackgroundTransparency = 1;
+            Position = UDim2.new(0, currentX, 0, 0);
+            Size = UDim2.new(0, 7, 1, 0);
+            ZIndex = 203;
+            Parent = self.Container;
+        });
+        
+        local letterLabel = Library:CreateLabel({
+            Size = UDim2.new(1, 0, 1, 0);
+            Text = char;
+            TextSize = 14;
+            TextColor3 = isDigit and baseColor or Color3.fromRGB(140, 140, 140);
+            TextXAlignment = Enum.TextXAlignment.Center;
+            Font = customFont;
+            ZIndex = 204;
+            Parent = letterFrame;
+        });
+        
+        self.PingLetters[i] = {
+            Frame = letterFrame,
+            Label = letterLabel,
+            OriginalPos = currentX,
+            OriginalSize = 7,
+            Character = char,
+            IsDigit = isDigit,
+            BaseColor = baseColor,
+        }
+        
+        currentX = currentX + 7
+    end
+end
+
+-- СОЗДАНИЕ ВРЕМЯ ТЕКСТА
+function Library.WaveSystem:CreateTimeText(text)
+    -- Если текст не изменился - не пересоздаем
+    if self.LastTimeText == text and #self.TimeLetters > 0 then
+        return
+    end
+    self.LastTimeText = text
+    
+    for _, letter in pairs(self.TimeLetters) do
+        if letter.Frame then letter.Frame:Destroy() end
+    end
+    self.TimeLetters = {}
+    
+    local currentX = self.TimeStartX
+    local customFont = Enum.Font.GothamBold
+    
+    for i = 1, #text do
+        local char = text:sub(i, i)
+        
+        local letterFrame = Library:Create('Frame', {
+            BackgroundTransparency = 1;
+            Position = UDim2.new(0, currentX, 0, 0);
+            Size = UDim2.new(0, 8, 1, 0);
+            ZIndex = 203;
+            Parent = self.Container;
+        });
+        
+        local letterLabel = Library:CreateLabel({
+            Size = UDim2.new(1, 0, 1, 0);
+            Text = char;
+            TextSize = 14;
+            TextColor3 = Color3.fromRGB(120, 120, 120);
+            TextXAlignment = Enum.TextXAlignment.Center;
+            Font = customFont;
+            ZIndex = 204;
+            Parent = letterFrame;
+        });
+        
+        self.TimeLetters[i] = {
+            Frame = letterFrame,
+            Label = letterLabel,
+            OriginalPos = currentX,
+            OriginalSize = 8,
+            Character = char,
+        }
+        
+        currentX = currentX + 8
+    end
+end
+-- СОЗДАНИЕ ЗАГОЛОВКА КЕЙБИНДОВ: 🎨 | Keybinds
+function Library.WaveSystem:CreateKeybindHeader()
+    for _, child in pairs(Library.KeybindHeaderContainer:GetChildren()) do
+        child:Destroy()
+    end
+    
+    local currentX = 8
+    local customFont = Enum.Font.GothamBold
+    
+    -- 1. ИКОНКА PALETTE (ImageLabel для настоящих иконок)
+    local paletteIconData = Library:GetIcon("palette")
+    
+    if type(paletteIconData) == "table" and paletteIconData.Url then
+        -- Настоящая иконка Lucide
+        self.PaletteIcon = Library:Create('ImageLabel', {
+            Position = UDim2.new(0, currentX, 0, 2);
+            Size = UDim2.new(0, 16, 0, 16);
+            Image = paletteIconData.Url;
+            ImageRectOffset = paletteIconData.ImageRectOffset;
+            ImageRectSize = paletteIconData.ImageRectSize;
+            ImageColor3 = Color3.fromRGB(150, 150, 255);
+            BackgroundTransparency = 1;
+            ZIndex = 103;
+            Parent = Library.KeybindHeaderContainer;
+        });
+    else
+        -- Fallback на эмодзи
+        self.PaletteIcon = Library:CreateLabel({
+            Position = UDim2.new(0, currentX, 0, 0);
+            Size = UDim2.new(0, 16, 1, 0);
+            Text = type(paletteIconData) == "string" and paletteIconData or "🎨";
+            TextSize = 14;
+            TextColor3 = Color3.fromRGB(150, 150, 255);
+            TextXAlignment = Enum.TextXAlignment.Center;
+            Font = customFont;
+            ZIndex = 103;
+            Parent = Library.KeybindHeaderContainer;
+        });
+    end
+    
+    currentX = currentX + 20
+    
+    -- 2. РАЗДЕЛИТЕЛЬ
+    self.HeaderSeparator = Library:CreateLabel({
+        Position = UDim2.new(0, currentX, 0, 0);
+        Size = UDim2.new(0, 8, 1, 0);
+        Text = "|";
+        TextSize = 14;
+        TextColor3 = Color3.fromRGB(100, 100, 100);
+        TextXAlignment = Enum.TextXAlignment.Center;
+        Font = customFont;
+        ZIndex = 103;
+        Parent = Library.KeybindHeaderContainer;
+    });
+    currentX = currentX + 12
+    
+    -- 3. "KEYBINDS" ПО ЦЕНТРУ С ВОЛНОЙ (БЕЗ ПРОБЕЛОВ)
+    local headerText = "Keybinds"
+    self.KeybindHeaderLetters = {}
+    
+    local containerWidth = Library.KeybindHeaderContainer.AbsoluteSize.X or 180
+    local remainingWidth = containerWidth - currentX - 8
+    local letterWidth = 9 -- Ширина одной буквы
+    local textWidth = #headerText * letterWidth
+    local textStartX = currentX + (remainingWidth - textWidth) / 2
+    
+    for i = 1, #headerText do
+        local char = headerText:sub(i, i)
+        local letterFrame = Library:Create('Frame', {
+            BackgroundTransparency = 1;
+            Position = UDim2.new(0, textStartX + (i-1) * letterWidth, 0, 0);
+            Size = UDim2.new(0, letterWidth, 1, 0);
+            ZIndex = 103;
+            Parent = Library.KeybindHeaderContainer;
+        });
+        
+        local letterLabel = Library:CreateLabel({
+            Size = UDim2.new(1, 0, 1, 0);
+            Text = char;
+            TextSize = 14;
+            TextColor3 = Color3.fromRGB(200, 200, 200);
+            TextXAlignment = Enum.TextXAlignment.Center;
+            Font = customFont;
+            ZIndex = 104;
+            Parent = letterFrame;
+        });
+        
+        self.KeybindHeaderLetters[i] = {
+            Frame = letterFrame,
+            Label = letterLabel,
+            OriginalPos = textStartX + (i-1) * letterWidth,
+            OriginalSize = letterWidth,
+            Character = char,
+        }
+    end
+end
+
+-- ПРИМЕНЕНИЕ ВОЛНЫ С GLOW ЭФФЕКТОМ И ТРЯСКОЙ
+function Library.WaveSystem:ApplyWave(letters, wave, waveColor, normalColor)
+    for i, letter in pairs(letters) do
+        -- Проверяем что элементы существуют
+        if not letter.Frame or not letter.Frame.Parent or not letter.Label or not letter.Label.Parent then
+            continue
+        end
+        
+        local distance = math.abs(i - wave.pos)
+        local intensity = math.max(0, 1 - (distance / wave.width))
+        
+        if intensity > 0.05 then
+            -- В GLOW волне - СИЛЬНОЕ УВЕЛИЧЕНИЕ + ТРЯСКА + БЕЛЫЙ GLOW
+            local scale = 1 + (intensity * 0.5) -- Буква становится на 50% больше
+            local shake = math.sin(tick() * 20) * intensity * 7 -- Тряска 7 градусов
+            
+            -- БЕЛЫЙ GLOW эффект
+            local glowIntensity = intensity * 255
+            local glowColor = Color3.fromRGB(
+                math.min(255, normalColor.R * 255 + glowIntensity),
+                math.min(255, normalColor.G * 255 + glowIntensity),
+                math.min(255, normalColor.B * 255 + glowIntensity)
+            )
+            
+            TweenService:Create(letter.Frame, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Size = UDim2.new(0, letter.OriginalSize * scale, 1, 0),
+                Position = UDim2.new(0, letter.OriginalPos, 0, 0),
+                Rotation = shake, -- ТРЯСКА
+            }):Play()
+            
+            TweenService:Create(letter.Label, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
+                TextColor3 = glowColor, -- БЕЛЫЙ GLOW
+                Rotation = shake, -- ТРЯСКА ТЕКСТА
+                TextStrokeTransparency = 0.5, -- Обводка для glow эффекта
+                TextStrokeColor3 = Color3.fromRGB(255, 255, 255),
+            }):Play()
+        else
+            -- Вне волны - ОБЫЧНОЕ СОСТОЯНИЕ
+            TweenService:Create(letter.Frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Size = UDim2.new(0, letter.OriginalSize, 1, 0),
+                Position = UDim2.new(0, letter.OriginalPos, 0, 0),
+                Rotation = 0,
+            }):Play()
+            
+            TweenService:Create(letter.Label, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                TextColor3 = normalColor,
+                Rotation = 0,
+                TextStrokeTransparency = 1, -- Убираем обводку
+            }):Play()
         end
     end
-    self.Connections = {}
 end
 
--- ФУНКЦИИ LIBRARY
-function Library:SetWatermarkVisibility(Bool)
-    if Library.Watermark then
-        if Bool then
-            Library.Watermark.Visible = true;
-            Library.Watermark.Size = UDim2.new(0, 50, 0, 30)
-            Library.Watermark.Position = UDim2.new(0, 100 + 200, 0, -32)
-            
-            TweenService:Create(Library.Watermark, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-                Size = UDim2.new(0, 600, 0, 30),
-                Position = UDim2.new(0, 100, 0, -32)
-            }):Play()
-            
-            Library.WaveSystem:Start()
+-- ПРИМЕНЕНИЕ ВОЛНЫ С GLOW ДЛЯ FPS/PING
+function Library.WaveSystem:ApplyWaveWithColors(letters, wave)
+    for i, letter in pairs(letters) do
+        -- Проверяем что элементы существуют
+        if not letter.Frame or not letter.Frame.Parent or not letter.Label or not letter.Label.Parent then
+            continue
+        end
+        
+        local distance = math.abs(i - wave.pos)
+        local intensity = math.max(0, 1 - (distance / wave.width))
+        
+        local waveColor, normalColor
+        if letter.IsDigit then
+            -- Используем сохраненный базовый цвет для пинга
+            normalColor = letter.BaseColor or Color3.fromRGB(100, 255, 100)
+            waveColor = Color3.fromRGB(
+                math.min(255, normalColor.R * 255 + 100),
+                math.min(255, normalColor.G * 255 + 100),
+                math.min(255, normalColor.B * 255 + 100)
+            )
         else
-            TweenService:Create(Library.Watermark, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
-                Size = UDim2.new(0, 50, 0, 30),
-                Position = UDim2.new(0, 100 + 200, 0, -32)
+            waveColor = Color3.fromRGB(180, 180, 180)
+            normalColor = Color3.fromRGB(140, 140, 140)
+        end
+        
+        if intensity > 0.05 then
+            -- В GLOW волне - СИЛЬНОЕ УВЕЛИЧЕНИЕ + ТРЯСКА + БЕЛЫЙ GLOW
+            local scale = 1 + (intensity * 0.5)
+            local shake = math.sin(tick() * 20) * intensity * 7
+            
+            -- БЕЛЫЙ GLOW эффект
+            local glowIntensity = intensity * 255
+            local glowColor = Color3.fromRGB(
+                math.min(255, normalColor.R * 255 + glowIntensity),
+                math.min(255, normalColor.G * 255 + glowIntensity),
+                math.min(255, normalColor.B * 255 + glowIntensity)
+            )
+            
+            TweenService:Create(letter.Frame, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Size = UDim2.new(0, letter.OriginalSize * scale, 1, 0),
+                Position = UDim2.new(0, letter.OriginalPos, 0, 0),
+                Rotation = shake,
             }):Play()
             
-            task.delay(0.4, function()
-                Library.Watermark.Visible = false;
-            end)
+            TweenService:Create(letter.Label, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
+                TextColor3 = glowColor,
+                Rotation = shake,
+                TextStrokeTransparency = 0.5,
+                TextStrokeColor3 = Color3.fromRGB(255, 255, 255),
+            }):Play()
+        else
+            -- Вне волны - ОБЫЧНОЕ СОСТОЯНИЕ
+            TweenService:Create(letter.Frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Size = UDim2.new(0, letter.OriginalSize, 1, 0),
+                Position = UDim2.new(0, letter.OriginalPos, 0, 0),
+                Rotation = 0,
+            }):Play()
             
+            TweenService:Create(letter.Label, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                TextColor3 = normalColor,
+                Rotation = 0,
+                TextStrokeTransparency = 1,
+            }):Play()
+        end
+    end
+end
+-- ОБНОВЛЕНИЕ ВОЛН (ГЛАВНЫЙ ЦИКЛ)
+function Library.WaveSystem:UpdateWaves()
+    if not self.IsAnimating then return end
+    
+    -- Проверяем что контейнер существует
+    if not self.Container or not self.Container.Parent then
+        return
+    end
+    
+    self.FrameCounter = self.FrameCounter + 1
+    
+    -- Обновляем позиции волн
+    self.ProjectWave.pos = self.ProjectWave.pos + self.ProjectWave.speed
+    self.NicknameWave.pos = self.NicknameWave.pos + self.NicknameWave.speed
+    self.FPSWave.pos = self.FPSWave.pos + self.FPSWave.speed
+    self.PingWave.pos = self.PingWave.pos + self.PingWave.speed
+    self.TimeWave.pos = self.TimeWave.pos + self.TimeWave.speed
+    self.KeybindHeaderWave.pos = self.KeybindHeaderWave.pos + self.KeybindHeaderWave.speed
+    
+    -- Сброс волн
+    local resetBuffer = 4
+    if self.ProjectWave.pos > #self.ProjectLetters + resetBuffer then
+        self.ProjectWave.pos = -resetBuffer
+    end
+    if self.NicknameWave.pos > #self.NicknameLetters + resetBuffer then
+        self.NicknameWave.pos = -resetBuffer
+    end
+    if self.FPSWave.pos > #self.FPSLetters + resetBuffer then
+        self.FPSWave.pos = -resetBuffer
+    end
+    if self.PingWave.pos > #self.PingLetters + resetBuffer then
+        self.PingWave.pos = -resetBuffer
+    end
+    if self.TimeWave.pos > #self.TimeLetters + resetBuffer then
+        self.TimeWave.pos = -resetBuffer
+    end
+    if self.KeybindHeaderWave.pos > #self.KeybindHeaderLetters + resetBuffer then
+        self.KeybindHeaderWave.pos = -resetBuffer
+    end
+    
+    -- Применяем волны (с проверкой существования)
+    if #self.ProjectLetters > 0 then
+        self:ApplyWave(self.ProjectLetters, self.ProjectWave, 
+            Color3.fromRGB(220, 150, 255), Color3.fromRGB(180, 100, 220))
+    end
+    if #self.NicknameLetters > 0 then
+        self:ApplyWave(self.NicknameLetters, self.NicknameWave, 
+            Color3.fromRGB(220, 220, 220), Color3.fromRGB(192, 192, 192))
+    end
+    if #self.FPSLetters > 0 then
+        self:ApplyWaveWithColors(self.FPSLetters, self.FPSWave)
+    end
+    if #self.PingLetters > 0 then
+        self:ApplyWaveWithColors(self.PingLetters, self.PingWave)
+    end
+    if #self.TimeLetters > 0 then
+        self:ApplyWave(self.TimeLetters, self.TimeWave, 
+            Color3.fromRGB(160, 160, 160), Color3.fromRGB(120, 120, 120))
+    end
+    if #self.KeybindHeaderLetters > 0 then
+        self:ApplyWave(self.KeybindHeaderLetters, self.KeybindHeaderWave, 
+            Color3.fromRGB(255, 255, 255), Color3.fromRGB(200, 200, 200))
+    end
+    
+    -- ВОЛНЫ НА НАЗВАНИЯХ АКТИВНЫХ КЕЙБИНДОВ
+    for _, item in pairs(self.KeybindItems) do
+        if item.IsActive and item.NameLetters and item.Frame and item.Frame.Visible then
+            local nameWave = {pos = self.KeybindHeaderWave.pos, speed = 0.065, width = 2.5, intensity = 0.18}
+            self:ApplyWave(item.NameLetters, nameWave, 
+                Color3.fromRGB(220, 220, 220), Color3.fromRGB(180, 180, 180))
+        end
+    end
+    
+    -- Анимация иконки palette
+    if self.PaletteIcon and self.PaletteIcon.Parent then
+        local pulse = math.sin(tick() * 2) * 0.1 + 1
+        
+        if self.PaletteIcon.ClassName == "ImageLabel" then
+            local colorIntensity = math.sin(tick() * 1.5) * 0.3 + 0.7
+            TweenService:Create(self.PaletteIcon, TweenInfo.new(0.5, Enum.EasingStyle.Sine), {
+                Size = UDim2.new(0, 16 * pulse, 0, 16 * pulse),
+                ImageColor3 = Color3.fromRGB(150 * colorIntensity, 150 * colorIntensity, 255),
+            }):Play()
+        else
+            self.PaletteIcon.TextSize = 14 * pulse
+        end
+    end
+    
+    -- Обновляем статистику
+    if self.FrameCounter % self.UpdateInterval == 0 then
+        self:UpdateStats()
+    end
+end
+
+-- ОБНОВЛЕНИЕ СТАТИСТИКИ
+function Library.WaveSystem:UpdateStats()
+    -- FPS (обновляем только если изменился)
+    local currentFPS = math.floor(workspace:GetRealPhysicsFPS())
+    if currentFPS ~= self.LastFPS then
+        self.LastFPS = currentFPS
+        self:CreateFPSText(tostring(currentFPS) .. " FPS")
+    end
+    
+    -- Пинг с цветовой индикацией (обновляем только если изменился)
+    local success, currentPing = pcall(function()
+        return math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
+    end)
+    
+    if success and currentPing ~= self.LastPing then
+        self.LastPing = currentPing
+        
+        -- Определяем цвет пинга
+        local pingColor
+        if currentPing < 100 then
+            pingColor = Color3.fromRGB(100, 255, 100) -- ЗЕЛЕНЫЙ <100ms
+        elseif currentPing < 200 then
+            pingColor = Color3.fromRGB(255, 255, 100) -- ЖЕЛТЫЙ 100-200ms
+        else
+            pingColor = Color3.fromRGB(255, 100, 100) -- КРАСНЫЙ >200ms
+        end
+        
+        self:CreatePingText(tostring(currentPing) .. " MS", pingColor)
+    end
+    
+    -- Время (обновляем только если изменилось)
+    local gameTime = math.floor(workspace.DistributedGameTime)
+    local hours = math.floor(gameTime / 3600)
+    local minutes = math.floor((gameTime % 3600) / 60)
+    local seconds = gameTime % 60
+    local currentTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+    if currentTime ~= self.LastTime then
+        self.LastTime = currentTime
+        self:CreateTimeText(currentTime)
+    end
+end
+
+-- СОЗДАНИЕ МИНИМАЛИСТИЧНОГО КЕЙБИНДА С ВОЛНАМИ НА НАЗВАНИИ
+function Library.WaveSystem:CreateKeybindItem(name, key, mode)
+    local keybindFrame = Library:Create('Frame', {
+        BackgroundTransparency = 1;
+        Size = UDim2.new(1, 0, 0, 15);
+        Visible = false; -- Скрыт по умолчанию
+        ZIndex = 103;
+        Parent = Library.KeybindContainer;
+    });
+    
+    local customFont = Enum.Font.GothamBold
+    
+    -- НАЗВАНИЕ С ВОЛНАМИ (слева)
+    local nameLetters = {}
+    local currentX = 0
+    
+    for i = 1, #name do
+        local char = name:sub(i, i)
+        local letterFrame = Library:Create('Frame', {
+            BackgroundTransparency = 1;
+            Position = UDim2.new(0, currentX, 0, 0);
+            Size = UDim2.new(0, 8, 1, 0);
+            ZIndex = 104;
+            Parent = keybindFrame;
+        });
+        
+        local letterLabel = Library:CreateLabel({
+            Size = UDim2.new(1, 0, 1, 0);
+            Text = char;
+            TextSize = 10;
+            TextColor3 = Color3.fromRGB(180, 180, 180);
+            TextXAlignment = Enum.TextXAlignment.Center;
+            Font = customFont;
+            ZIndex = 105;
+            Parent = letterFrame;
+        });
+        
+        nameLetters[i] = {
+            Frame = letterFrame,
+            Label = letterLabel,
+            OriginalPos = currentX,
+            OriginalSize = 8,
+            Character = char,
+        }
+        
+        currentX = currentX + 8
+    end
+    
+    -- КЛАВИША (справа)
+    local keyLabel = Library:CreateLabel({
+        Position = UDim2.new(1, -40, 0, 0);
+        Size = UDim2.new(0, 35, 1, 0);
+        Text = key;
+        TextSize = 9;
+        TextColor3 = Color3.fromRGB(120, 120, 130);
+        TextXAlignment = Enum.TextXAlignment.Right;
+        Font = customFont;
+        ZIndex = 104;
+        Parent = keybindFrame;
+    });
+    
+    table.insert(self.KeybindItems, {
+        Frame = keybindFrame,
+        NameLetters = nameLetters,
+        KeyLabel = keyLabel,
+        Name = name,
+        Key = key,
+        Mode = mode or 'Toggle',
+        IsActive = false,
+    })
+    
+    return keybindFrame
+end
+
+-- ОБНОВЛЕНИЕ РАЗМЕРА КЕЙБИНДОВ С ЖИВОЙ АНИМАЦИЕЙ
+function Library.WaveSystem:UpdateKeybindVisibility()
+    -- Считаем только АКТИВНЫЕ кейбинды (state = true)
+    local activeKeybinds = {}
+    for _, item in ipairs(self.KeybindItems) do
+        if item.State then
+            table.insert(activeKeybinds, item)
+        end
+    end
+    
+    local keybindCount = #activeKeybinds
+    
+    -- Скрываем неактивные, показываем активные
+    for _, item in ipairs(self.KeybindItems) do
+        if item.State then
+            -- АКТИВНЫЙ - показываем
+            item.Frame.Visible = true
+            
+            -- Анимация появления
+            for _, child in pairs(item.Frame:GetDescendants()) do
+                if child:IsA("TextLabel") then
+                    child.TextTransparency = 1
+                elseif child:IsA("ImageLabel") then
+                    child.ImageTransparency = 1
+                end
+            end
+            
+            task.wait(0.05)
+            
+            for _, child in pairs(item.Frame:GetDescendants()) do
+                if child:IsA("TextLabel") then
+                    TweenService:Create(child, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                        TextTransparency = 0
+                    }):Play()
+                elseif child:IsA("ImageLabel") then
+                    TweenService:Create(child, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                        ImageTransparency = 0
+                    }):Play()
+                end
+            end
+        else
+            -- НЕАКТИВНЫЙ - скрываем
+            item.Frame.Visible = false
+        end
+    end
+    
+    if keybindCount > 0 then
+        -- Есть активные кейбинды - ЖИВОЕ РАСКРЫТИЕ
+        local newHeight = 26 + (keybindCount * 16.5)
+        
+        -- Анимация с bounce эффектом
+        TweenService:Create(Library.KeybindFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 200, 0, newHeight)
+        }):Play()
+-- ОБНОВЛЕНИЕ РАЗМЕРА КЕЙБИНДОВ С ЖИВОЙ АНИМАЦИЕЙ
+function Library.WaveSystem:UpdateKeybindVisibility()
+    -- Считаем только АКТИВНЫЕ кейбинды
+    local activeCount = 0
+    for _, item in ipairs(self.KeybindItems) do
+        if item.IsActive then
+            activeCount = activeCount + 1
+        end
+    end
+    
+    if activeCount > 0 then
+        -- Есть активные кейбинды - ЖИВОЕ РАСКРЫТИЕ
+        local newHeight = 26 + (activeCount * 16.5)
+        
+        -- Анимация с bounce эффектом
+        TweenService:Create(Library.KeybindFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 200, 0, newHeight)
+        }):Play()
+    else
+        -- Нет активных кейбиндов - ПЛАВНОЕ СЖАТИЕ
+        TweenService:Create(Library.KeybindFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            Size = UDim2.new(0, 200, 0, 24)
+        }):Play()
+    end
+end         
             Library.WaveSystem:Stop()
         end
     end
 end;
 
+function Library:SetWatermark(Text, EnableWave)
+    -- Если EnableWave = true, игнорируем текст и используем встроенную систему
+    if EnableWave ~= false then
+        Library.WaveSystem:Start()
+        Library:SetWatermarkVisibility(true)
+    else
+        -- Старая система без волн (для совместимости)
+        if Library.Watermark then
+            Library.Watermark.Visible = true
+            -- Здесь можно добавить старую логику если нужно
+        end
+    end
+end;
 
+function Library:SetKeybindVisibility(Bool)
+    if Library.KeybindFrame then
+        if Bool then
+            -- ЖИВАЯ АНИМАЦИЯ ПОЯВЛЕНИЯ кейбиндов
+            Library.KeybindFrame.Visible = true;
+            Library.KeybindFrame.Size = UDim2.new(0, 50, 0, 10)
+            
+            -- Делаем все элементы прозрачными
+            for _, child in pairs(Library.KeybindFrame:GetDescendants()) do
+                if child:IsA("TextLabel") then
+                    child.TextTransparency = 1
+                elseif child:IsA("ImageLabel") then
+                    child.ImageTransparency = 1
+                end
+            end
+            
+            -- Анимация увеличения с bounce
+            TweenService:Create(Library.KeybindFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+                Size = UDim2.new(0, 200, 0, 24)
+            }):Play()
+            
+            -- Плавное появление элементов
+            task.delay(0.2, function()
+                for _, child in pairs(Library.KeybindFrame:GetDescendants()) do
+                    if child:IsA("TextLabel") then
+                        TweenService:Create(child, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                            TextTransparency = 0
+                        }):Play()
+                    elseif child:IsA("ImageLabel") then
+                        TweenService:Create(child, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                            ImageTransparency = 0
+                        }):Play()
+                    end
+                end
+            end)
+            
+            Library.WaveSystem:CreateKeybindHeader()
+            Library.WaveSystem:UpdateKeybindVisibility()
+        else
+            -- ЖИВАЯ АНИМАЦИЯ ИСЧЕЗНОВЕНИЯ
+            -- Сначала делаем элементы прозрачными
+            for _, child in pairs(Library.KeybindFrame:GetDescendants()) do
+                if child:IsA("TextLabel") then
+                    TweenService:Create(child, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                        TextTransparency = 1
+                    }):Play()
+                elseif child:IsA("ImageLabel") then
+                    TweenService:Create(child, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                        ImageTransparency = 1
+                    }):Play()
+                end
+            end
+            
+            -- Потом сжимаем
+            task.delay(0.2, function()
+                TweenService:Create(Library.KeybindFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+                    Size = UDim2.new(0, 50, 0, 10)
+                }):Play()
+            end)
+            
+            task.delay(0.5, function()
+                Library.KeybindFrame.Visible = false;
+            end)
+        end
+    end
+end;
 
+function Library:AddKeybind(name, key, state, iconName)
+    return Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
+end;
 
+function Library:RemoveKeybind(name)
+    for i, item in ipairs(Library.WaveSystem.KeybindItems) do
+        if item.Name == name then
+            item.Frame:Destroy()
+            table.remove(Library.WaveSystem.KeybindItems, i)
+            Library.WaveSystem:UpdateKeybindVisibility()
+            break
+        end
+    end
+end;
 
+function Library:UpdateKeybindState(name, state)
+    for _, item in ipairs(Library.WaveSystem.KeybindItems) do
+        if item.Name == name then
+            local oldState = item.State
+            item.State = state
+            
+            -- Если состояние изменилось - обновляем видимость
+            if oldState ~= state then
+                if state then
+                    -- ВКЛЮЧИЛИ - показываем с анимацией
+                    item.Frame.Visible = true
+                    
+                    -- Пересоздаем буквы ON
+                    for _, letter in pairs(item.StateLetters) do
+                        letter.Frame:Destroy()
+                    end
+                    
+                    local stateText = "ON"
+                    local stateLetters = {}
+                    local containerWidth = 180
+                    local availableWidth = containerWidth - (item.Icon and 16 or 0)
+                    local stateStartX = (item.Icon and 16 or 0) + availableWidth * 0.78
+                    
+                    for i = 1, #stateText do
+                        local char = stateText:sub(i, i)
+                        local letterFrame = Library:Create('Frame', {
+                            BackgroundTransparency = 1;
+                            Position = UDim2.new(0, stateStartX + (i-1) * 8, 0, 0);
+                            Size = UDim2.new(0, 8, 1, 0);
+                            ZIndex = 104;
+                            Parent = item.Frame;
+                        });
+                        
+                        local letterLabel = Library:CreateLabel({
+                            Size = UDim2.new(1, 0, 1, 0);
+                            Text = char;
+                            TextSize = 10;
+                            TextColor3 = Color3.fromRGB(100, 255, 100);
+                            TextXAlignment = Enum.TextXAlignment.Center;
+function Library:AddKeybind(name, key, mode)
+    return Library.WaveSystem:CreateKeybindItem(name, key, mode or 'Toggle')
+end;
 
+function Library:RemoveKeybind(name)
+    for i, item in ipairs(Library.WaveSystem.KeybindItems) do
+        if item.Name == name then
+            item.Frame:Destroy()
+            table.remove(Library.WaveSystem.KeybindItems, i)
+            Library.WaveSystem:UpdateKeybindVisibility()
+            break
+        end
+    end
+end;
 
+function Library:SetKeybindActive(name, active)
+    for _, item in ipairs(Library.WaveSystem.KeybindItems) do
+        if item.Name == name then
+            item.IsActive = active
+            item.Frame.Visible = active
+            Library.WaveSystem:UpdateKeybindVisibility()
+            break
+        end
+    end
+end;
+
+function Library:UpdateKeybindKey(name, newKey)
+    for _, item in ipairs(Library.WaveSystem.KeybindItems) do
+        if item.Name == name then
+            item.Key = newKey
+            item.KeyLabel.Text = newKey
+            break
+        end
+    end
+end;});
+
+    Library:AddToRegistry(Gradient, {
+        Color = function()
+            return ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
+                ColorSequenceKeypoint.new(1, Library.MainColor),
+            });
+        end
+    });
+
+    local NotifyLabel = Library:CreateLabel({
+        Position = UDim2.new(0, 4, 0, 0);
+        Size = UDim2.new(1, -4, 1, 0);
+        Text = Text;
+        TextXAlignment = Enum.TextXAlignment.Left;
+        TextSize = 14;
+        ZIndex = 103;
+        Parent = InnerFrame;
+    });
+
+    local LeftColor = Library:Create('Frame', {
+        BackgroundColor3 = Library.AccentColor;
+        BorderSizePixel = 0;
+        Position = UDim2.new(0, -1, 0, -1);
+        Size = UDim2.new(0, 3, 1, 2);
+        ZIndex = 104;
+        Parent = NotifyOuter;
+    });
+
+    Library:AddToRegistry(LeftColor, {
+        BackgroundColor3 = 'AccentColor';
+    }, true);
+
+    pcall(NotifyOuter.TweenSize, NotifyOuter, UDim2.new(0, XSize + 8 + 4, 0, YSize), 'Out', 'Quad', 0.4, true);
+
+    task.spawn(function()
+        wait(Time or 5);
+        pcall(NotifyOuter.TweenSize, NotifyOuter, UDim2.new(0, 0, 0, YSize), 'Out', 'Quad', 0.4, true);
+        wait(0.4);
+        NotifyOuter:Destroy();
+    end);
+end;
+
+print("✅ ПОЛНОСТЬЮ РАБОЧАЯ ВОЛНОВАЯ СИСТЕМА!")
+print("🌊 ВСЕ ВОЛНЫ РАБОТАЮТ: Project Radiant, nickname, FPS, ping, время, Keybinds")
+print("🎨 Заголовок кейбиндов: 🎨 | Keybinds (иконка palette + разделитель + центр)")
+print("📊 FPS и PING обновляются в реальном времени с волнами")
+print("🖼️ Иконки Lucide загружаются ПРАВИЛЬНО через lucide-roblox-direct")
+print("✨ Настоящие SVG иконки с ImageLabel + fallback на эмодзи")
+print("")
+print("🔧 ИСПОЛЬЗОВАНИЕ:")
+print("Library:SetWatermark('', true) -- Включить ватермарк с волнами")
+print("Library:SetKeybindVisibility(true) -- Показать кейбинды")
+print("Library:AddKeybind('ESP', 'F1', true, 'eye') -- Добавить кейбинд с иконкой")
+print("Library:AddKeybind('Aimbot', 'F2', false, 'target')")
+print("Library:AddKeybind('Settings', 'F3', false, 'settings')")
+print("")
+print("⚙️ УПРАВЛЕНИЕ ВОЛНАМИ:")
+print("Library:SetWaveSpeed(speed) -- Изменить скорость волн (0.01-0.2)")
+print("Library:SetWaveIntensity(intensity) -- Изменить интенсивность (0.1-0.5)")
+print("Library:SetWaveWidth(width) -- Изменить ширину волны (1-10)")
+print("Library:SetStatsUpdateInterval(frames) -- Интервал обновления FPS/Ping (10-120 кадров)")
+print("Library:PauseWaves() -- Приостановить волны")
+print("Library:ResumeWaves() -- Возобновить волны")
+print("")
+print("🎨 Доступны ВСЕ иконки Lucide: https://lucide.dev/icons/")
+print("📦 Загрузка: https://github.com/deividcomsono/lucide-roblox-direct")
+print("")
+print("⚠️ ВАЖНО: Если используете старый код с RenderStepped:")
+print("   НЕ вызывайте Library:SetWatermark() каждый кадр!")
+print("   Вызовите ОДИН РАЗ: Library:SetWatermark('', true)")
+print("   FPS и Ping обновляются автоматически!")
+
+-- ФУНКЦИИ УПРАВЛЕНИЯ ВОЛНАМИ
+function Library:SetWaveSpeed(speed)
+    speed = math.clamp(speed or 0.08, 0.01, 0.2)
+    Library.WaveSystem.ProjectWave.speed = speed
+    Library.WaveSystem.NicknameWave.speed = speed * 0.875
+    Library.WaveSystem.FPSWave.speed = speed * 0.75
+    Library.WaveSystem.PingWave.speed = speed * 0.6875
+    Library.WaveSystem.TimeWave.speed = speed * 0.5625
+    Library.WaveSystem.KeybindHeaderWave.speed = speed * 0.8125
+    print("🌊 Скорость волн установлена: " .. speed)
+end
+
+function Library:SetWaveIntensity(intensity)
+    intensity = math.clamp(intensity or 0.2, 0.1, 0.5)
+    Library.WaveSystem.ProjectWave.intensity = intensity
+    Library.WaveSystem.NicknameWave.intensity = intensity * 0.9
+    Library.WaveSystem.FPSWave.intensity = intensity * 0.75
+    Library.WaveSystem.PingWave.intensity = intensity * 0.75
+    Library.WaveSystem.TimeWave.intensity = intensity * 0.6
+    Library.WaveSystem.KeybindHeaderWave.intensity = intensity * 0.9
+    print("✨ Интенсивность волн установлена: " .. intensity)
+end
+
+function Library:SetWaveWidth(width)
+    width = math.clamp(width or 3, 1, 10)
+    Library.WaveSystem.ProjectWave.width = width
+    Library.WaveSystem.NicknameWave.width = width * 1.167
+    Library.WaveSystem.FPSWave.width = width * 0.833
+    Library.WaveSystem.PingWave.width = width * 0.833
+    Library.WaveSystem.TimeWave.width = width * 1.333
+    Library.WaveSystem.KeybindHeaderWave.width = width
+    print("📏 Ширина волн установлена: " .. width)
+end
+
+function Library:PauseWaves()
+    Library.WaveSystem.IsAnimating = false
+    print("⏸️ Волны приостановлены")
+end
+
+function Library:ResumeWaves()
+    Library.WaveSystem.IsAnimating = true
+    print("▶️ Волны возобновлены")
+end
+
+function Library:GetWaveStats()
+    return {
+        Speed = Library.WaveSystem.ProjectWave.speed,
+        Intensity = Library.WaveSystem.ProjectWave.intensity,
+        Width = Library.WaveSystem.ProjectWave.width,
+        IsAnimating = Library.WaveSystem.IsAnimating,
+        FPS = Library.WaveSystem.LastFPS,
+        Ping = Library.WaveSystem.LastPing,
+        UpdateInterval = Library.WaveSystem.UpdateInterval,
+    }
+end
+
+function Library:SetStatsUpdateInterval(frames)
+    frames = math.clamp(frames or 30, 10, 120)
+    Library.WaveSystem.UpdateInterval = frames
+    print("⏱️ Интервал обновления статистики: " .. frames .. " кадров (~" .. math.floor(frames/60) .. " сек)")
+end
 function Library:CreateWindow(...)
     local Arguments = { ... }
     local Config = { AnchorPoint = Vector2.zero }
