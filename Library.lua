@@ -2791,6 +2791,9 @@ Library.WaveSystem = {
     LastFPS = 0,
     LastPing = 0,
     LastTime = "",
+    LastFPSText = "",
+    LastPingText = "",
+    LastTimeText = "",
     FrameCounter = 0,
     UpdateInterval = 60, -- Обновляем статистику реже (каждые 60 кадров вместо 30)
     
@@ -3107,13 +3110,19 @@ function Library.WaveSystem:CreateElements()
 end
 -- СОЗДАНИЕ FPS ТЕКСТА
 function Library.WaveSystem:CreateFPSText(text)
+    -- Если текст не изменился - не пересоздаем
+    if self.LastFPSText == text and #self.FPSLetters > 0 then
+        return
+    end
+    self.LastFPSText = text
+    
     for _, letter in pairs(self.FPSLetters) do
         if letter.Frame then letter.Frame:Destroy() end
     end
     self.FPSLetters = {}
     
     local currentX = self.FPSStartX
-    local customFont = Enum.Font.GothamBold -- ДОБАВЛЕН ШРИФТ
+    local customFont = Enum.Font.GothamBold
     
     for i = 1, #text do
         local char = text:sub(i, i)
@@ -3133,7 +3142,7 @@ function Library.WaveSystem:CreateFPSText(text)
             TextSize = 14;
             TextColor3 = isDigit and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(140, 140, 140);
             TextXAlignment = Enum.TextXAlignment.Center;
-            Font = customFont; -- ДОБАВЛЕН ШРИФТ
+            Font = customFont;
             ZIndex = 204;
             Parent = letterFrame;
         });
@@ -3153,7 +3162,20 @@ end
 
 -- СОЗДАНИЕ ПИНГ ТЕКСТА С ЦВЕТОВОЙ ИНДИКАЦИЕЙ
 function Library.WaveSystem:CreatePingText(text, baseColor)
-    baseColor = baseColor or Color3.fromRGB(100, 255, 100) -- По умолчанию зеленый
+    baseColor = baseColor or Color3.fromRGB(100, 255, 100)
+    
+    -- Если текст не изменился - не пересоздаем
+    if self.LastPingText == text and #self.PingLetters > 0 then
+        -- Только обновляем цвет если изменился
+        for _, letter in pairs(self.PingLetters) do
+            if letter.IsDigit and letter.Label then
+                letter.BaseColor = baseColor
+                letter.Label.TextColor3 = baseColor
+            end
+        end
+        return
+    end
+    self.LastPingText = text
     
     for _, letter in pairs(self.PingLetters) do
         if letter.Frame then letter.Frame:Destroy() end
@@ -3193,7 +3215,7 @@ function Library.WaveSystem:CreatePingText(text, baseColor)
             OriginalSize = 7,
             Character = char,
             IsDigit = isDigit,
-            BaseColor = baseColor, -- Сохраняем базовый цвет
+            BaseColor = baseColor,
         }
         
         currentX = currentX + 7
@@ -3202,13 +3224,19 @@ end
 
 -- СОЗДАНИЕ ВРЕМЯ ТЕКСТА
 function Library.WaveSystem:CreateTimeText(text)
+    -- Если текст не изменился - не пересоздаем
+    if self.LastTimeText == text and #self.TimeLetters > 0 then
+        return
+    end
+    self.LastTimeText = text
+    
     for _, letter in pairs(self.TimeLetters) do
         if letter.Frame then letter.Frame:Destroy() end
     end
     self.TimeLetters = {}
     
     local currentX = self.TimeStartX
-    local customFont = Enum.Font.GothamBold -- ДОБАВЛЕН ШРИФТ
+    local customFont = Enum.Font.GothamBold
     
     for i = 1, #text do
         local char = text:sub(i, i)
@@ -3227,7 +3255,7 @@ function Library.WaveSystem:CreateTimeText(text)
             TextSize = 14;
             TextColor3 = Color3.fromRGB(120, 120, 120);
             TextXAlignment = Enum.TextXAlignment.Center;
-            Font = customFont; -- ДОБАВЛЕН ШРИФТ
+            Font = customFont;
             ZIndex = 204;
             Parent = letterFrame;
         });
@@ -3847,9 +3875,16 @@ function Library:SetWatermarkVisibility(Bool)
 end;
 
 function Library:SetWatermark(Text, EnableWave)
+    -- Если EnableWave = true, игнорируем текст и используем встроенную систему
     if EnableWave ~= false then
         Library.WaveSystem:Start()
         Library:SetWatermarkVisibility(true)
+    else
+        -- Старая система без волн (для совместимости)
+        if Library.Watermark then
+            Library.Watermark.Visible = true
+            -- Здесь можно добавить старую логику если нужно
+        end
     end
 end;
 
@@ -4075,6 +4110,89 @@ function Library:Notify(Text, Time)
     end);
 end;
 
+print("✅ ПОЛНОСТЬЮ РАБОЧАЯ ВОЛНОВАЯ СИСТЕМА!")
+print("🌊 ВСЕ ВОЛНЫ РАБОТАЮТ: Project Radiant, nickname, FPS, ping, время, Keybinds")
+print("🎨 Заголовок кейбиндов: 🎨 | Keybinds (иконка palette + разделитель + центр)")
+print("📊 FPS и PING обновляются в реальном времени с волнами")
+print("🖼️ Иконки Lucide загружаются ПРАВИЛЬНО через lucide-roblox-direct")
+print("✨ Настоящие SVG иконки с ImageLabel + fallback на эмодзи")
+print("")
+print("🔧 ИСПОЛЬЗОВАНИЕ:")
+print("Library:SetWatermark('', true) -- Включить ватермарк с волнами")
+print("Library:SetKeybindVisibility(true) -- Показать кейбинды")
+print("Library:AddKeybind('ESP', 'F1', true, 'eye') -- Добавить кейбинд с иконкой")
+print("Library:AddKeybind('Aimbot', 'F2', false, 'target')")
+print("Library:AddKeybind('Settings', 'F3', false, 'settings')")
+print("")
+print("⚙️ УПРАВЛЕНИЕ ВОЛНАМИ:")
+print("Library:SetWaveSpeed(speed) -- Изменить скорость волн (0.01-0.2)")
+print("Library:SetWaveIntensity(intensity) -- Изменить интенсивность (0.1-0.5)")
+print("Library:SetWaveWidth(width) -- Изменить ширину волны (1-10)")
+print("Library:PauseWaves() -- Приостановить волны")
+print("Library:ResumeWaves() -- Возобновить волны")
+print("")
+print("🎨 Доступны ВСЕ иконки Lucide: https://lucide.dev/icons/")
+print("📦 Загрузка: https://github.com/deividcomsono/lucide-roblox-direct")
+print("")
+print("⚠️ ВАЖНО: Если используете старый код с RenderStepped:")
+print("   НЕ вызывайте Library:SetWatermark() каждый кадр!")
+print("   Вызовите ОДИН РАЗ: Library:SetWatermark('', true)")
+print("   FPS и Ping обновляются автоматически!")
+
+-- ФУНКЦИИ УПРАВЛЕНИЯ ВОЛНАМИ
+function Library:SetWaveSpeed(speed)
+    speed = math.clamp(speed or 0.08, 0.01, 0.2)
+    Library.WaveSystem.ProjectWave.speed = speed
+    Library.WaveSystem.NicknameWave.speed = speed * 0.875
+    Library.WaveSystem.FPSWave.speed = speed * 0.75
+    Library.WaveSystem.PingWave.speed = speed * 0.6875
+    Library.WaveSystem.TimeWave.speed = speed * 0.5625
+    Library.WaveSystem.KeybindHeaderWave.speed = speed * 0.8125
+    print("🌊 Скорость волн установлена: " .. speed)
+end
+
+function Library:SetWaveIntensity(intensity)
+    intensity = math.clamp(intensity or 0.2, 0.1, 0.5)
+    Library.WaveSystem.ProjectWave.intensity = intensity
+    Library.WaveSystem.NicknameWave.intensity = intensity * 0.9
+    Library.WaveSystem.FPSWave.intensity = intensity * 0.75
+    Library.WaveSystem.PingWave.intensity = intensity * 0.75
+    Library.WaveSystem.TimeWave.intensity = intensity * 0.6
+    Library.WaveSystem.KeybindHeaderWave.intensity = intensity * 0.9
+    print("✨ Интенсивность волн установлена: " .. intensity)
+end
+
+function Library:SetWaveWidth(width)
+    width = math.clamp(width or 3, 1, 10)
+    Library.WaveSystem.ProjectWave.width = width
+    Library.WaveSystem.NicknameWave.width = width * 1.167
+    Library.WaveSystem.FPSWave.width = width * 0.833
+    Library.WaveSystem.PingWave.width = width * 0.833
+    Library.WaveSystem.TimeWave.width = width * 1.333
+    Library.WaveSystem.KeybindHeaderWave.width = width
+    print("📏 Ширина волн установлена: " .. width)
+end
+
+function Library:PauseWaves()
+    Library.WaveSystem.IsAnimating = false
+    print("⏸️ Волны приостановлены")
+end
+
+function Library:ResumeWaves()
+    Library.WaveSystem.IsAnimating = true
+    print("▶️ Волны возобновлены")
+end
+
+function Library:GetWaveStats()
+    return {
+        Speed = Library.WaveSystem.ProjectWave.speed,
+        Intensity = Library.WaveSystem.ProjectWave.intensity,
+        Width = Library.WaveSystem.ProjectWave.width,
+        IsAnimating = Library.WaveSystem.IsAnimating,
+        FPS = Library.WaveSystem.LastFPS,
+        Ping = Library.WaveSystem.LastPing,
+    }
+end
 
 
 
