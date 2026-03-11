@@ -2678,6 +2678,30 @@ do
     end;
 end;
 
+-- ИНТЕГРИРОВАННАЯ ВОЛНОВАЯ АНИМАЦИЯ В LIBRARY
+-- Заменяет секцию "-- < Create other UI elements >"
+
+local TweenService = game:GetService('TweenService')
+local RunService = game:GetService('RunService')
+local Players = game:GetService('Players')
+local Stats = game:GetService('Stats')
+
+-- СИСТЕМА ВОЛНОВОЙ АНИМАЦИИ
+local WaveSystem = {
+    Letters = {},
+    WavePosition = 0,
+    WaveSpeed = 0.06,
+    WaveWidth = 4,
+    IsAnimating = false,
+    Connection = nil,
+    UpdateConnection = nil,
+    
+    -- Статистика
+    FPS = 0,
+    Ping = 0,
+    CurrentTime = "",
+}
+
 -- < Create other UI elements >
 do
     Library.NotificationArea = Library:Create('Frame', {
@@ -2689,48 +2713,66 @@ do
     });
 
     Library:Create('UIListLayout', {
-        Padding = UDim.new(0, 6); -- Больше отступ между уведомлениями
+        Padding = UDim.new(0, 6);
         FillDirection = Enum.FillDirection.Vertical;
         SortOrder = Enum.SortOrder.LayoutOrder;
         Parent = Library.NotificationArea;
     });
 
-    -- МИНИМАЛИСТИЧНЫЙ ВАТЕРМАРК
+    -- ВОЛНОВОЙ ВАТЕРМАРК
     local WatermarkOuter = Library:Create('Frame', {
-        BackgroundTransparency = 1; -- Прозрачный фон
-        Position = UDim2.new(0, 100, 0, -30);
-        Size = UDim2.new(0, 250, 0, 26);
+        BackgroundTransparency = 1;
+        Position = UDim2.new(0, 100, 0, -35);
+        Size = UDim2.new(0, 450, 0, 32);
         ZIndex = 200;
         Visible = false;
         Parent = ScreenGui;
     });
 
     local WatermarkInner = Library:Create('Frame', {
-        BackgroundColor3 = Color3.fromRGB(12, 12, 16); -- Очень темный
-        BorderSizePixel = 0; -- Без границ для минимализма
+        BackgroundColor3 = Color3.fromRGB(8, 8, 12);
+        BorderSizePixel = 0;
         Size = UDim2.new(1, 0, 1, 0);
         ZIndex = 201;
         Parent = WatermarkOuter;
     });
 
-    -- Закругленные углы для современного вида
     local WatermarkCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 8);
+        CornerRadius = UDim.new(0, 10);
         Parent = WatermarkInner;
     });
 
-    -- Тонкая акцентная полоса сверху
+    -- Градиентный фон
+    local WatermarkGradient = Library:Create('UIGradient', {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(12, 12, 18)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(8, 8, 12)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(12, 12, 18)),
+        });
+        Rotation = 45;
+        Parent = WatermarkInner;
+    });
+
+    -- Акцентная полоса с градиентом
     local AccentLine = Library:Create('Frame', {
         BackgroundColor3 = Library.AccentColor;
         BorderSizePixel = 0;
-        Position = UDim2.new(0, 0, 0, 0);
-        Size = UDim2.new(1, 0, 0, 2);
+        Size = UDim2.new(1, 0, 0, 3);
         ZIndex = 202;
         Parent = WatermarkInner;
     });
 
     local AccentCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 8);
+        CornerRadius = UDim.new(0, 10);
+        Parent = AccentLine;
+    });
+
+    local AccentGradient = Library:Create('UIGradient', {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 150, 255)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(100, 200, 255)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 220, 255)),
+        });
         Parent = AccentLine;
     });
 
@@ -2738,23 +2780,22 @@ do
         BackgroundColor3 = 'AccentColor';
     });
 
-    -- Минималистичный текст
-    local WatermarkLabel = Library:CreateLabel({
-        Position = UDim2.new(0, 12, 0, 2);
-        Size = UDim2.new(1, -12, 1, -4);
-        TextSize = 13;
-        Text = '';
-        TextColor3 = Color3.fromRGB(200, 200, 200);
-        TextXAlignment = Enum.TextXAlignment.Left;
+    -- Контейнер для анимированного текста
+    local TextContainer = Library:Create('Frame', {
+        BackgroundTransparency = 1;
+        Position = UDim2.new(0, 15, 0, 6);
+        Size = UDim2.new(1, -30, 1, -12);
         ZIndex = 203;
         Parent = WatermarkInner;
     });
 
+    -- Сохраняем ссылки
     Library.Watermark = WatermarkOuter;
-    Library.WatermarkText = WatermarkLabel;
+    Library.WatermarkContainer = TextContainer;
+    Library.WaveSystem = WaveSystem;
     Library:MakeDraggable(Library.Watermark);
 
-    -- МИНИМАЛИСТИЧНЫЕ КЕЙБИНДЫ
+    -- МИНИМАЛИСТИЧНЫЕ КЕЙБИНДЫ (без изменений)
     local KeybindOuter = Library:Create('Frame', {
         AnchorPoint = Vector2.new(0, 0.5);
         BackgroundTransparency = 1;
@@ -2778,7 +2819,6 @@ do
         Parent = KeybindInner;
     });
 
-    -- Тонкая акцентная полоса
     local KeybindAccent = Library:Create('Frame', {
         BackgroundColor3 = Library.AccentColor;
         BorderSizePixel = 0;
@@ -2831,28 +2871,223 @@ do
     Library:MakeDraggable(KeybindOuter);
 end;
 
--- УЛУЧШЕННЫЕ ФУНКЦИИ
+-- ФУНКЦИИ ВОЛНОВОЙ СИСТЕМЫ
+function WaveSystem:UpdateStats()
+    -- FPS
+    self.FPS = math.floor(1 / RunService.Heartbeat:Wait())
+    
+    -- Ping
+    local ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+    self.Ping = math.floor(ping)
+    
+    -- Время
+    self.CurrentTime = os.date("%H:%M:%S")
+end
+
+function WaveSystem:CreateLetters(baseText)
+    -- Очищаем старые буквы
+    for _, letter in pairs(self.Letters) do
+        if letter.Frame then
+            letter.Frame:Destroy()
+        end
+    end
+    self.Letters = {}
+    
+    -- Обновляем статистику
+    self:UpdateStats()
+    
+    -- Формируем полный текст с иконкой и статистикой
+    local playerName = Players.LocalPlayer.Name
+    local fpsColor = self.FPS >= 60 and "🟢" or (self.FPS >= 30 and "🟡" or "🔴")
+    local fullText = string.format("⚡ %s | %s %d FPS | %d MS | %s", 
+        playerName, fpsColor, self.FPS, self.Ping, self.CurrentTime)
+    
+    local totalWidth = 0
+    local letterSpacing = 2
+    
+    for i = 1, #fullText do
+        local char = fullText:sub(i, i)
+        local letterWidth = char == ' ' and 8 or 12
+        
+        local letterFrame = Library:Create('Frame', {
+            BackgroundTransparency = 1;
+            Position = UDim2.new(0, totalWidth, 0, 0);
+            Size = UDim2.new(0, letterWidth, 1, 0);
+            ZIndex = 204;
+            Parent = Library.WatermarkContainer;
+        });
+        
+        local letterLabel = Library:CreateLabel({
+            Size = UDim2.new(1, 0, 1, 0);
+            Text = char;
+            TextSize = 14;
+            TextColor3 = self:GetCharColor(char, i);
+            TextXAlignment = Enum.TextXAlignment.Center;
+            ZIndex = 205;
+            Parent = letterFrame;
+        });
+        
+        self.Letters[i] = {
+            Frame = letterFrame,
+            Label = letterLabel,
+            OriginalSize = UDim2.new(0, letterWidth, 1, 0),
+            OriginalPosition = UDim2.new(0, totalWidth, 0, 0),
+            Position = totalWidth,
+            Character = char,
+            Index = i,
+        }
+        
+        totalWidth = totalWidth + letterWidth + letterSpacing
+    end
+    
+    -- Обновляем размер ватермарка
+    Library.Watermark.Size = UDim2.new(0, totalWidth + 30, 0, 32)
+end
+
+function WaveSystem:GetCharColor(char, index)
+    -- Иконка молнии - синяя
+    if char == '⚡' then
+        return Color3.fromRGB(100, 200, 255)
+    end
+    
+    -- FPS цифры - зеленые
+    if char:match('%d') and index > 10 then -- Примерно где FPS
+        return Color3.fromRGB(100, 255, 100)
+    end
+    
+    -- Пинг цифры - желтые
+    if char:match('%d') and index > 20 then -- Примерно где пинг
+        return Color3.fromRGB(255, 200, 100)
+    end
+    
+    -- Обычный текст
+    return Color3.fromRGB(200, 200, 200)
+end
+
+function WaveSystem:UpdateWave()
+    if not self.IsAnimating then return end
+    
+    self.WavePosition = self.WavePosition + self.WaveSpeed
+    
+    if self.WavePosition > #self.Letters + self.WaveWidth then
+        self.WavePosition = -self.WaveWidth
+    end
+    
+    for i, letter in pairs(self.Letters) do
+        local distance = math.abs(i - self.WavePosition)
+        local waveIntensity = math.max(0, 1 - (distance / self.WaveWidth))
+        
+        if waveIntensity > 0 then
+            -- ВОЛНОВЫЕ ЭФФЕКТЫ
+            local scale = 1 + (waveIntensity * 0.3)
+            local bounce = math.sin(waveIntensity * math.pi) * 8 -- Подпрыгивание
+            local rotation = math.sin(waveIntensity * math.pi) * 15 -- ПОВОРОТ КАК ВОЛНА!
+            
+            -- Новые размеры и позиция
+            local newSize = UDim2.new(0, letter.OriginalSize.X.Offset * scale, 1, 0)
+            local newPos = UDim2.new(0, letter.Position, 0, -bounce)
+            
+            -- Применяем анимации
+            TweenService:Create(letter.Frame, TweenInfo.new(0.1, Enum.EasingStyle.Back), {
+                Size = newSize,
+                Position = newPos,
+                Rotation = rotation -- ПОВОРОТ БУКВЫ!
+            }):Play()
+            
+            -- Цветовая волна
+            local waveColor
+            if waveIntensity > 0.8 then
+                waveColor = Color3.fromRGB(100, 200, 255) -- Яркий синий
+            elseif waveIntensity > 0.6 then
+                waveColor = Color3.fromRGB(150, 100, 255) -- Фиолетовый
+            elseif waveIntensity > 0.4 then
+                waveColor = Color3.fromRGB(255, 100, 150) -- Розовый
+            else
+                waveColor = Color3.fromRGB(255, 200, 100) -- Желтый
+            end
+            
+            TweenService:Create(letter.Label, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
+                TextColor3 = waveColor
+            }):Play()
+        else
+            -- Возврат к нормальному состоянию
+            TweenService:Create(letter.Frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                Size = letter.OriginalSize,
+                Position = letter.OriginalPosition,
+                Rotation = 0 -- Убираем поворот
+            }):Play()
+            
+            TweenService:Create(letter.Label, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                TextColor3 = self:GetCharColor(letter.Character, letter.Index)
+            }):Play()
+        end
+    end
+end
+
+function WaveSystem:StartAnimation()
+    if self.IsAnimating then return end
+    
+    self.IsAnimating = true
+    self.WavePosition = -self.WaveWidth
+    
+    -- Анимация волны
+    self.Connection = RunService.Heartbeat:Connect(function()
+        self:UpdateWave()
+    end)
+    
+    -- Обновление статистики каждую секунду
+    self.UpdateConnection = RunService.Heartbeat:Connect(function()
+        if tick() % 1 < 0.016 then -- Примерно раз в секунду
+            self:CreateLetters("") -- Обновляем текст со статистикой
+        end
+    end)
+end
+
+function WaveSystem:StopAnimation()
+    self.IsAnimating = false
+    if self.Connection then
+        self.Connection:Disconnect()
+        self.Connection = nil
+    end
+    if self.UpdateConnection then
+        self.UpdateConnection:Disconnect()
+        self.UpdateConnection = nil
+    end
+end
+
+-- УЛУЧШЕННЫЕ ФУНКЦИИ LIBRARY
 function Library:SetWatermarkVisibility(Bool)
     if Library.Watermark then
         Library.Watermark.Visible = Bool;
     end
 end
 
-function Library:SetWatermark(Text)
-    if not Library.Watermark or not Library.WatermarkText then
-        return
+function Library:SetWatermark(Text, EnableWave)
+    if not Library.Watermark then return end
+    
+    if EnableWave ~= false then
+        Library.WaveSystem:CreateLetters(Text or "")
+        Library.WaveSystem:StartAnimation()
+    else
+        -- Обычный текст без волны (fallback)
+        Library.WaveSystem:StopAnimation()
     end
     
-    local X, Y = Library:GetTextBounds(Text, Library.Font, 13);
-    Library.Watermark.Size = UDim2.new(0, X + 24, 0, 26);
     Library:SetWatermarkVisibility(true)
-    Library.WatermarkText.Text = Text;
-end;
+end
 
--- МИНИМАЛИСТИЧНЫЕ УВЕДОМЛЕНИЯ
+function Library:SetWatermarkWave(Enable)
+    if Enable then
+        Library.WaveSystem:StartAnimation()
+    else
+        Library.WaveSystem:StopAnimation()
+    end
+end
+
+-- МИНИМАЛИСТИЧНЫЕ УВЕДОМЛЕНИЯ (без изменений)
 function Library:Notify(Text, Time)
     local XSize, YSize = Library:GetTextBounds(Text, Library.Font, 13);
-    YSize = YSize + 12 -- Больше padding
+    YSize = YSize + 12
 
     local NotifyOuter = Library:Create('Frame', {
         BackgroundTransparency = 1;
@@ -2864,24 +3099,21 @@ function Library:Notify(Text, Time)
     });
 
     local NotifyInner = Library:Create('Frame', {
-        BackgroundColor3 = Color3.fromRGB(12, 12, 16); -- Темный минималистичный
+        BackgroundColor3 = Color3.fromRGB(12, 12, 16);
         BorderSizePixel = 0;
         Size = UDim2.new(1, 0, 1, 0);
         ZIndex = 101;
         Parent = NotifyOuter;
     });
 
-    -- Закругленные углы
     local NotifyCorner = Library:Create('UICorner', {
         CornerRadius = UDim.new(0, 8);
         Parent = NotifyInner;
     });
 
-    -- Тонкая акцентная полоса слева
     local LeftAccent = Library:Create('Frame', {
         BackgroundColor3 = Library.AccentColor;
         BorderSizePixel = 0;
-        Position = UDim2.new(0, 0, 0, 0);
         Size = UDim2.new(0, 3, 1, 0);
         ZIndex = 102;
         Parent = NotifyInner;
@@ -2896,7 +3128,6 @@ function Library:Notify(Text, Time)
         BackgroundColor3 = 'AccentColor';
     }, true);
 
-    -- Минималистичный текст
     local NotifyLabel = Library:CreateLabel({
         Position = UDim2.new(0, 12, 0, 0);
         Size = UDim2.new(1, -12, 1, 0);
@@ -2908,40 +3139,26 @@ function Library:Notify(Text, Time)
         Parent = NotifyInner;
     });
 
-    -- Плавная анимация появления
     pcall(NotifyOuter.TweenSize, NotifyOuter, UDim2.new(0, XSize + 24, 0, YSize), 'Out', 'Quart', 0.5, true);
 
-    -- Плавное исчезновение
     task.spawn(function()
         wait(Time or 4);
         
-        -- Fade out анимация
-        local TweenService = game:GetService('TweenService')
         local FadeInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        
-        local FadeTween = TweenService:Create(NotifyInner, FadeInfo, {
-            BackgroundTransparency = 1
-        })
-        local TextFadeTween = TweenService:Create(NotifyLabel, FadeInfo, {
-            TextTransparency = 1
-        })
-        local AccentFadeTween = TweenService:Create(LeftAccent, FadeInfo, {
-            BackgroundTransparency = 1
-        })
+        local FadeTween = TweenService:Create(NotifyInner, FadeInfo, {BackgroundTransparency = 1})
+        local TextFadeTween = TweenService:Create(NotifyLabel, FadeInfo, {TextTransparency = 1})
+        local AccentFadeTween = TweenService:Create(LeftAccent, FadeInfo, {BackgroundTransparency = 1})
         
         FadeTween:Play()
         TextFadeTween:Play()
         AccentFadeTween:Play()
         
         wait(0.3)
-        
-        -- Slide out
         pcall(NotifyOuter.TweenSize, NotifyOuter, UDim2.new(0, 0, 0, YSize), 'Out', 'Quart', 0.4, true);
         wait(0.4);
         NotifyOuter:Destroy();
     end);
 end;
-
 function Library:CreateWindow(...)
     local Arguments = { ... }
     local Config = { AnchorPoint = Vector2.zero }
