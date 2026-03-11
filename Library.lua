@@ -4128,6 +4128,7 @@ print("⚙️ УПРАВЛЕНИЕ ВОЛНАМИ:")
 print("Library:SetWaveSpeed(speed) -- Изменить скорость волн (0.01-0.2)")
 print("Library:SetWaveIntensity(intensity) -- Изменить интенсивность (0.1-0.5)")
 print("Library:SetWaveWidth(width) -- Изменить ширину волны (1-10)")
+print("Library:SetStatsUpdateInterval(frames) -- Интервал обновления FPS/Ping (10-120 кадров)")
 print("Library:PauseWaves() -- Приостановить волны")
 print("Library:ResumeWaves() -- Возобновить волны")
 print("")
@@ -4191,10 +4192,15 @@ function Library:GetWaveStats()
         IsAnimating = Library.WaveSystem.IsAnimating,
         FPS = Library.WaveSystem.LastFPS,
         Ping = Library.WaveSystem.LastPing,
+        UpdateInterval = Library.WaveSystem.UpdateInterval,
     }
 end
 
-
+function Library:SetStatsUpdateInterval(frames)
+    frames = math.clamp(frames or 30, 10, 120, 144, 180)
+    Library.WaveSystem.UpdateInterval = frames
+    print("⏱️ Интервал обновления статистики: " .. frames .. " кадров (~" .. math.floor(frames/60) .. " сек)")
+end
 
 
 
