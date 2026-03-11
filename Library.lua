@@ -2862,7 +2862,7 @@ do
     Library.Watermark = WatermarkOuter;
     Library:MakeDraggable(Library.Watermark);
 
-    -- КЕЙБИНДЫ
+    -- КЕЙБИНДЫ С ПРОЗРАЧНЫМ ФОНОМ
     local KeybindOuter = Library:Create('Frame', {
         BackgroundTransparency = 1;
         Position = UDim2.new(0, 10, 0.5, 0);
@@ -2874,6 +2874,7 @@ do
 
     local KeybindInner = Library:Create('Frame', {
         BackgroundColor3 = Color3.fromRGB(8, 8, 12);
+        BackgroundTransparency = 0.3; -- ПРОЗРАЧНЕЕ
         BorderSizePixel = 0;
         Size = UDim2.new(1, 0, 1, 0);
         ZIndex = 101;
@@ -2881,17 +2882,18 @@ do
     });
 
     local KeybindCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 8);
+        CornerRadius = UDim.new(0, 12); -- Больше закругление
         Parent = KeybindInner;
     });
 
+    -- ПЛАВНОЕ ЗАТУХАНИЕ ПО КРАЯМ
     local KeybindGradient = Library:Create('UIGradient', {
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(12, 12, 18)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(8, 8, 12)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(12, 12, 18)),
+        Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 0.2), -- Края прозрачнее
+            NumberSequenceKeypoint.new(0.1, 0),
+            NumberSequenceKeypoint.new(0.9, 0),
+            NumberSequenceKeypoint.new(1, 0.2), -- Края прозрачнее
         });
-        Rotation = 90;
         Parent = KeybindInner;
     });
 
@@ -2932,6 +2934,9 @@ function Library.WaveSystem:CreateElements()
     local currentX = 0
     local spacing = 8
     
+    -- ШРИФТ GOTHAM
+    local customFont = Enum.Font.GothamBold -- GothamSSm аналог
+    
     -- 1. ИКОНКА МОЛНИИ
     self.IconLabel = Library:CreateLabel({
         Position = UDim2.new(0, currentX, 0, 0);
@@ -2940,12 +2945,13 @@ function Library.WaveSystem:CreateElements()
         TextSize = 15;
         TextColor3 = Color3.fromRGB(255, 120, 200);
         TextXAlignment = Enum.TextXAlignment.Center;
+        Font = customFont;
         ZIndex = 203;
         Parent = self.Container;
     });
     currentX = currentX + 22
     
-    -- 2. PROJECT RADIANT С ВОЛНОЙ
+    -- 2. PROJECT RADIANT С ВОЛНОЙ (ФИОЛЕТОВЫЙ/ПУРПУРНЫЙ)
     local projectName = "Project Radiant"
     self.ProjectLetters = {}
     
@@ -2963,8 +2969,9 @@ function Library.WaveSystem:CreateElements()
             Size = UDim2.new(1, 0, 1, 0);
             Text = char;
             TextSize = 14;
-            TextColor3 = Color3.fromRGB(220, 220, 220);
+            TextColor3 = Color3.fromRGB(180, 100, 220); -- ФИОЛЕТОВЫЙ
             TextXAlignment = Enum.TextXAlignment.Center;
+            Font = customFont;
             ZIndex = 204;
             Parent = letterFrame;
         });
@@ -2989,12 +2996,13 @@ function Library.WaveSystem:CreateElements()
         TextSize = 14;
         TextColor3 = Color3.fromRGB(100, 100, 100);
         TextXAlignment = Enum.TextXAlignment.Center;
+        Font = customFont;
         ZIndex = 203;
         Parent = self.Container;
     });
     currentX = currentX + 12
     
-    -- 3. НИКНЕЙМ С ВОЛНОЙ
+    -- 3. НИКНЕЙМ С ВОЛНОЙ (СЕРЕБРИСТЫЙ)
     local playerName = Players.LocalPlayer.Name
     if #playerName > 12 then
         playerName = playerName:sub(1, 10) .. ".."
@@ -3016,8 +3024,9 @@ function Library.WaveSystem:CreateElements()
             Size = UDim2.new(1, 0, 1, 0);
             Text = char;
             TextSize = 14;
-            TextColor3 = Color3.fromRGB(160, 160, 160);
+            TextColor3 = Color3.fromRGB(192, 192, 192); -- СЕРЕБРИСТЫЙ
             TextXAlignment = Enum.TextXAlignment.Center;
+            Font = customFont;
             ZIndex = 204;
             Parent = letterFrame;
         });
@@ -3042,6 +3051,7 @@ function Library.WaveSystem:CreateElements()
         TextSize = 14;
         TextColor3 = Color3.fromRGB(100, 100, 100);
         TextXAlignment = Enum.TextXAlignment.Center;
+        Font = customFont;
         ZIndex = 203;
         Parent = self.Container;
     });
@@ -3061,12 +3071,13 @@ function Library.WaveSystem:CreateElements()
         TextSize = 14;
         TextColor3 = Color3.fromRGB(100, 100, 100);
         TextXAlignment = Enum.TextXAlignment.Center;
+        Font = customFont;
         ZIndex = 203;
         Parent = self.Container;
     });
     currentX = currentX + 12
     
-    -- 5. ПИНГ С ВОЛНОЙ
+    -- 5. ПИНГ С ВОЛНОЙ (С ЦВЕТОВОЙ ИНДИКАЦИЕЙ)
     self.PingStartX = currentX
     self.PingLetters = {}
     self:CreatePingText("50 MS")
@@ -3080,6 +3091,7 @@ function Library.WaveSystem:CreateElements()
         TextSize = 14;
         TextColor3 = Color3.fromRGB(100, 100, 100);
         TextXAlignment = Enum.TextXAlignment.Center;
+        Font = customFont;
         ZIndex = 203;
         Parent = self.Container;
     });
@@ -3137,14 +3149,17 @@ function Library.WaveSystem:CreateFPSText(text)
     end
 end
 
--- СОЗДАНИЕ ПИНГ ТЕКСТА
-function Library.WaveSystem:CreatePingText(text)
+-- СОЗДАНИЕ ПИНГ ТЕКСТА С ЦВЕТОВОЙ ИНДИКАЦИЕЙ
+function Library.WaveSystem:CreatePingText(text, baseColor)
+    baseColor = baseColor or Color3.fromRGB(100, 255, 100) -- По умолчанию зеленый
+    
     for _, letter in pairs(self.PingLetters) do
         if letter.Frame then letter.Frame:Destroy() end
     end
     self.PingLetters = {}
     
     local currentX = self.PingStartX
+    local customFont = Enum.Font.GothamBold
     
     for i = 1, #text do
         local char = text:sub(i, i)
@@ -3162,8 +3177,9 @@ function Library.WaveSystem:CreatePingText(text)
             Size = UDim2.new(1, 0, 1, 0);
             Text = char;
             TextSize = 14;
-            TextColor3 = isDigit and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(140, 140, 140);
+            TextColor3 = isDigit and baseColor or Color3.fromRGB(140, 140, 140);
             TextXAlignment = Enum.TextXAlignment.Center;
+            Font = customFont;
             ZIndex = 204;
             Parent = letterFrame;
         });
@@ -3175,6 +3191,7 @@ function Library.WaveSystem:CreatePingText(text)
             OriginalSize = 7,
             Character = char,
             IsDigit = isDigit,
+            BaseColor = baseColor, -- Сохраняем базовый цвет
         }
         
         currentX = currentX + 7
@@ -3370,8 +3387,13 @@ function Library.WaveSystem:ApplyWaveWithColors(letters, wave)
         
         local waveColor, normalColor
         if letter.IsDigit then
-            waveColor = Color3.fromRGB(150, 255, 150)
-            normalColor = Color3.fromRGB(100, 255, 100)
+            -- Используем сохраненный базовый цвет для пинга
+            normalColor = letter.BaseColor or Color3.fromRGB(100, 255, 100)
+            waveColor = Color3.fromRGB(
+                math.min(255, normalColor.R * 255 + 100),
+                math.min(255, normalColor.G * 255 + 100),
+                math.min(255, normalColor.B * 255 + 100)
+            )
         else
             waveColor = Color3.fromRGB(180, 180, 180)
             normalColor = Color3.fromRGB(140, 140, 140)
@@ -3379,8 +3401,8 @@ function Library.WaveSystem:ApplyWaveWithColors(letters, wave)
         
         if intensity > 0.05 then
             -- В GLOW волне - СИЛЬНОЕ УВЕЛИЧЕНИЕ + ТРЯСКА + БЕЛЫЙ GLOW
-            local scale = 1 + (intensity * 0.5) -- Буква становится на 50% больше
-            local shake = math.sin(tick() * 20) * intensity * 7 -- Тряска 7 градусов
+            local scale = 1 + (intensity * 0.5)
+            local shake = math.sin(tick() * 20) * intensity * 7
             
             -- БЕЛЫЙ GLOW эффект
             local glowIntensity = intensity * 255
@@ -3393,13 +3415,13 @@ function Library.WaveSystem:ApplyWaveWithColors(letters, wave)
             TweenService:Create(letter.Frame, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
                 Size = UDim2.new(0, letter.OriginalSize * scale, 1, 0),
                 Position = UDim2.new(0, letter.OriginalPos, 0, 0),
-                Rotation = shake, -- ТРЯСКА
+                Rotation = shake,
             }):Play()
             
             TweenService:Create(letter.Label, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
-                TextColor3 = glowColor, -- БЕЛЫЙ GLOW
-                Rotation = shake, -- ТРЯСКА ТЕКСТА
-                TextStrokeTransparency = 0.5, -- Обводка для glow эффекта
+                TextColor3 = glowColor,
+                Rotation = shake,
+                TextStrokeTransparency = 0.5,
                 TextStrokeColor3 = Color3.fromRGB(255, 255, 255),
             }):Play()
         else
@@ -3413,7 +3435,7 @@ function Library.WaveSystem:ApplyWaveWithColors(letters, wave)
             TweenService:Create(letter.Label, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
                 TextColor3 = normalColor,
                 Rotation = 0,
-                TextStrokeTransparency = 1, -- Убираем обводку
+                TextStrokeTransparency = 1,
             }):Play()
         end
     end
@@ -3455,9 +3477,9 @@ function Library.WaveSystem:UpdateWaves()
     
     -- Применяем волны
     self:ApplyWave(self.ProjectLetters, self.ProjectWave, 
-        Color3.fromRGB(255, 255, 255), Color3.fromRGB(220, 220, 220))
+        Color3.fromRGB(220, 150, 255), Color3.fromRGB(180, 100, 220)) -- ФИОЛЕТОВЫЙ
     self:ApplyWave(self.NicknameLetters, self.NicknameWave, 
-        Color3.fromRGB(200, 200, 200), Color3.fromRGB(160, 160, 160))
+        Color3.fromRGB(220, 220, 220), Color3.fromRGB(192, 192, 192)) -- СЕРЕБРИСТЫЙ
     self:ApplyWaveWithColors(self.FPSLetters, self.FPSWave)
     self:ApplyWaveWithColors(self.PingLetters, self.PingWave)
     self:ApplyWave(self.TimeLetters, self.TimeWave, 
@@ -3497,12 +3519,23 @@ function Library.WaveSystem:UpdateStats()
         self:CreateFPSText(tostring(currentFPS) .. " FPS")
     end
     
-    -- Пинг
+    -- Пинг с цветовой индикацией
     pcall(function()
         local currentPing = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
         if currentPing ~= self.LastPing then
             self.LastPing = currentPing
-            self:CreatePingText(tostring(currentPing) .. " MS")
+            
+            -- Определяем цвет пинга
+            local pingColor
+            if currentPing < 100 then
+                pingColor = Color3.fromRGB(100, 255, 100) -- ЗЕЛЕНЫЙ <100ms
+            elseif currentPing < 200 then
+                pingColor = Color3.fromRGB(255, 255, 100) -- ЖЕЛТЫЙ 100-200ms
+            else
+                pingColor = Color3.fromRGB(255, 100, 100) -- КРАСНЫЙ >200ms
+            end
+            
+            self:CreatePingText(tostring(currentPing) .. " MS", pingColor)
         end
     end)
     
@@ -3798,6 +3831,8 @@ function Library:Notify(Text, Time)
         NotifyOuter:Destroy();
     end);
 end;
+
+
 
 
 
