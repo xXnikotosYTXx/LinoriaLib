@@ -3690,7 +3690,7 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
         if type(iconData) == "table" and iconData.Url then
             iconLabel = Library:Create('ImageLabel', {
                 Position = UDim2.new(0, 0, 0, 1);
-                Size = UDim2.new(0, 12, 0, 12); -- Меньше иконка
+                Size = UDim2.new(0, 12, 0, 12);
                 Image = iconData.Url;
                 ImageRectOffset = iconData.ImageRectOffset;
                 ImageRectSize = iconData.ImageRectSize;
@@ -3713,7 +3713,7 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
             });
         end
         
-        nameStartX = 16 -- Меньше отступ
+        nameStartX = 16
     end
     
     local containerWidth = 180
@@ -3722,9 +3722,9 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
     -- Название кейбинда (слева)
     local nameLabel = Library:CreateLabel({
         Position = UDim2.new(0, nameStartX, 0, 0);
-        Size = UDim2.new(0, availableWidth * 0.5, 1, 0);
+        Size = UDim2.new(0, availableWidth * 0.45, 1, 0); -- Меньше ширина для названия
         Text = name;
-        TextSize = 10; -- Меньше шрифт
+        TextSize = 10;
         TextColor3 = Color3.fromRGB(180, 180, 180);
         TextXAlignment = Enum.TextXAlignment.Left;
         Font = customFont;
@@ -3732,12 +3732,12 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
         Parent = keybindFrame;
     });
     
-    -- МИНИМАЛИСТИЧНАЯ КЛАВИША
+    -- КЛАВИША (ближе к центру)
     local keyLabel = Library:CreateLabel({
-        Position = UDim2.new(0, nameStartX + availableWidth * 0.5, 0, 0);
-        Size = UDim2.new(0, availableWidth * 0.25, 1, 0);
+        Position = UDim2.new(0, nameStartX + availableWidth * 0.48, 0, 0); -- Ближе к центру
+        Size = UDim2.new(0, availableWidth * 0.22, 1, 0);
         Text = key;
-        TextSize = 9; -- Меньше шрифт
+        TextSize = 9;
         TextColor3 = Color3.fromRGB(120, 120, 130);
         TextXAlignment = Enum.TextXAlignment.Center;
         Font = customFont;
@@ -3745,16 +3745,16 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
         Parent = keybindFrame;
     });
     
-    -- ON/OFF С ВОЛНОВЫМ ЭФФЕКТОМ
+    -- ON/OFF (СПРАВА У КРАЯ)
     local stateText = state and "ON" or "OFF"
     local stateLetters = {}
-    local stateStartX = nameStartX + availableWidth * 0.78
+    local stateStartX = nameStartX + availableWidth * 0.85 -- Ближе к правому краю
     
     for i = 1, #stateText do
         local char = stateText:sub(i, i)
         local letterFrame = Library:Create('Frame', {
             BackgroundTransparency = 1;
-            Position = UDim2.new(0, stateStartX + (i-1) * 8, 0, 0); -- Меньше spacing
+            Position = UDim2.new(0, stateStartX + (i-1) * 8, 0, 0);
             Size = UDim2.new(0, 8, 1, 0);
             ZIndex = 104;
             Parent = keybindFrame;
@@ -3763,7 +3763,7 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
         local letterLabel = Library:CreateLabel({
             Size = UDim2.new(1, 0, 1, 0);
             Text = char;
-            TextSize = 10; -- Меньше шрифт
+            TextSize = 10;
             TextColor3 = state and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100);
             TextXAlignment = Enum.TextXAlignment.Center;
             Font = customFont;
@@ -4031,7 +4031,7 @@ function Library:UpdateKeybindState(name, state)
             local stateLetters = {}
             local containerWidth = 180
             local availableWidth = containerWidth - (item.Icon and 16 or 0)
-            local stateStartX = (item.Icon and 16 or 0) + availableWidth * 0.78
+            local stateStartX = (item.Icon and 16 or 0) + availableWidth * 0.85 -- Ближе к правому краю
             
             for i = 1, #stateText do
                 local char = stateText:sub(i, i)
@@ -4074,13 +4074,13 @@ function Library:UpdateKeybindState(name, state)
                 -- Анимация названия
                 TweenService:Create(item.NameLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
                     TextColor3 = highlightColor,
-                    TextSize = 11, -- Увеличиваем размер
+                    TextSize = 11,
                 }):Play()
                 
                 -- Анимация клавиши
                 TweenService:Create(item.KeyLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
                     TextColor3 = highlightColor,
-                    TextSize = 10, -- Увеличиваем размер
+                    TextSize = 10,
                 }):Play()
                 
                 -- Возвращаем обратно через 0.5 секунды
@@ -4321,6 +4321,73 @@ function Library:SetStatsUpdateInterval(frames)
     frames = math.clamp(frames or 30, 10, 120)
     Library.WaveSystem.UpdateInterval = frames
     print("⏱️ Интервал обновления статистики: " .. frames .. " кадров (~" .. math.floor(frames/60) .. " сек)")
+end
+
+-- ============================================
+-- АВТОМАТИЧЕСКАЯ ИНТЕГРАЦИЯ С KEYPICKER
+-- ============================================
+
+-- Сохраняем оригинальную функцию AddKeyPicker
+Library.OriginalAddKeyPicker = Library.AddKeyPicker
+
+-- Перехватываем AddKeyPicker для автоматического добавления в волновой дисплей
+function Library:AddKeyPicker(Idx, Info)
+    -- Вызываем оригинальную функцию
+    local KeyPicker = Library.OriginalAddKeyPicker(self, Idx, Info)
+    
+    -- Если NoUI = false, автоматически добавляем в волновой дисплей
+    if not Info.NoUI and Info.Text then
+        -- Определяем иконку автоматически по названию
+        local icon = "key"
+        local lowerText = string.lower(Info.Text)
+        
+        if string.find(lowerText, "esp") or string.find(lowerText, "box") or string.find(lowerText, "tracer") then
+            icon = "eye"
+        elseif string.find(lowerText, "aim") then
+            icon = "target"
+        elseif string.find(lowerText, "health") or string.find(lowerText, "hp") then
+            icon = "heart"
+        elseif string.find(lowerText, "fly") or string.find(lowerText, "speed") then
+            icon = "zap"
+        elseif string.find(lowerText, "menu") or string.find(lowerText, "setting") then
+            icon = "settings"
+        elseif string.find(lowerText, "lock") or string.find(lowerText, "safe") then
+            icon = "lock"
+        elseif string.find(lowerText, "weapon") or string.find(lowerText, "gun") then
+            icon = "sword"
+        end
+        
+        -- Получаем текст клавиши
+        local keyText = Info.Default or "None"
+        if type(keyText) == "string" then
+            -- Сокращаем длинные названия клавиш
+            if keyText == "LeftShift" then keyText = "LShift"
+            elseif keyText == "RightShift" then keyText = "RShift"
+            elseif keyText == "LeftControl" then keyText = "LCtrl"
+            elseif keyText == "RightControl" then keyText = "RCtrl"
+            elseif keyText == "LeftAlt" then keyText = "LAlt"
+            elseif keyText == "RightAlt" then keyText = "RAlt"
+            end
+        end
+        
+        -- Добавляем в волновой дисплей
+        Library:AddKeybind(Info.Text, keyText, false, icon)
+        
+        -- Автоматическое обновление состояния с анимацией
+        task.spawn(function()
+            while task.wait(0.1) do
+                if Library.Unloaded then break end
+                
+                -- Получаем текущее состояние кейбинда
+                local state = KeyPicker:GetState()
+                
+                -- Обновляем дисплей (с анимацией подсветки)
+                Library:UpdateKeybindState(Info.Text, state)
+            end
+        end)
+    end
+    
+    return KeyPicker
 end
 
 function Library:CreateWindow(...)
