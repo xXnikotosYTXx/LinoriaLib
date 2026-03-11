@@ -2689,102 +2689,97 @@ do
     });
 
     Library:Create('UIListLayout', {
-        Padding = UDim.new(0, 4);
+        Padding = UDim.new(0, 6); -- Больше отступ между уведомлениями
         FillDirection = Enum.FillDirection.Vertical;
         SortOrder = Enum.SortOrder.LayoutOrder;
         Parent = Library.NotificationArea;
     });
 
-local WatermarkOuter = Library:Create('Frame', {
-        BorderColor3 = Color3.new(0, 0, 0);
-        Position = UDim2.new(0, 100, 0, -25);
-        Size = UDim2.new(0, 213, 0, 20);
+    -- МИНИМАЛИСТИЧНЫЙ ВАТЕРМАРК
+    local WatermarkOuter = Library:Create('Frame', {
+        BackgroundTransparency = 1; -- Прозрачный фон
+        Position = UDim2.new(0, 100, 0, -30);
+        Size = UDim2.new(0, 250, 0, 26);
         ZIndex = 200;
         Visible = false;
         Parent = ScreenGui;
     });
 
     local WatermarkInner = Library:Create('Frame', {
-        BackgroundColor3 = Library.MainColor;
-        BorderColor3 = Library.AccentColor;
-        BorderMode = Enum.BorderMode.Inset;
+        BackgroundColor3 = Color3.fromRGB(12, 12, 16); -- Очень темный
+        BorderSizePixel = 0; -- Без границ для минимализма
         Size = UDim2.new(1, 0, 1, 0);
         ZIndex = 201;
         Parent = WatermarkOuter;
     });
 
-    Library:AddToRegistry(WatermarkInner, {
-        BorderColor3 = 'AccentColor';
+    -- Закругленные углы для современного вида
+    local WatermarkCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 8);
+        Parent = WatermarkInner;
     });
 
-    local InnerFrame = Library:Create('Frame', {
-        BackgroundColor3 = Color3.new(1, 1, 1);
+    -- Тонкая акцентная полоса сверху
+    local AccentLine = Library:Create('Frame', {
+        BackgroundColor3 = Library.AccentColor;
         BorderSizePixel = 0;
-        Position = UDim2.new(0, 1, 0, 1);
-        Size = UDim2.new(1, -2, 1, -2);
+        Position = UDim2.new(0, 0, 0, 0);
+        Size = UDim2.new(1, 0, 0, 2);
         ZIndex = 202;
         Parent = WatermarkInner;
     });
 
-    local Gradient = Library:Create('UIGradient', {
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
-            ColorSequenceKeypoint.new(1, Library.MainColor),
-        });
-        Rotation = -90;
-        Parent = InnerFrame;
+    local AccentCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 8);
+        Parent = AccentLine;
     });
 
-    Library:AddToRegistry(Gradient, {
-        Color = function()
-            return ColorSequence.new({
-                ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
-                ColorSequenceKeypoint.new(1, Library.MainColor),
-            });
-        end
+    Library:AddToRegistry(AccentLine, {
+        BackgroundColor3 = 'AccentColor';
     });
 
+    -- Минималистичный текст
     local WatermarkLabel = Library:CreateLabel({
-        Position = UDim2.new(0, 5, 0, 0);
-        Size = UDim2.new(1, -4, 1, 0);
-        TextSize = 14;
+        Position = UDim2.new(0, 12, 0, 2);
+        Size = UDim2.new(1, -12, 1, -4);
+        TextSize = 13;
+        Text = '';
+        TextColor3 = Color3.fromRGB(200, 200, 200);
         TextXAlignment = Enum.TextXAlignment.Left;
         ZIndex = 203;
-        Parent = InnerFrame;
+        Parent = WatermarkInner;
     });
 
     Library.Watermark = WatermarkOuter;
     Library.WatermarkText = WatermarkLabel;
     Library:MakeDraggable(Library.Watermark);
 
-
-
-
+    -- МИНИМАЛИСТИЧНЫЕ КЕЙБИНДЫ
     local KeybindOuter = Library:Create('Frame', {
         AnchorPoint = Vector2.new(0, 0.5);
-        BorderColor3 = Color3.new(0, 0, 0);
+        BackgroundTransparency = 1;
         Position = UDim2.new(0, 10, 0.5, 0);
-        Size = UDim2.new(0, 210, 0, 20);
+        Size = UDim2.new(0, 220, 0, 24);
         Visible = false;
         ZIndex = 100;
         Parent = ScreenGui;
     });
 
     local KeybindInner = Library:Create('Frame', {
-        BackgroundColor3 = Library.MainColor;
-        BorderColor3 = Library.OutlineColor;
-        BorderMode = Enum.BorderMode.Inset;
+        BackgroundColor3 = Color3.fromRGB(12, 12, 16);
+        BorderSizePixel = 0;
         Size = UDim2.new(1, 0, 1, 0);
         ZIndex = 101;
         Parent = KeybindOuter;
     });
 
-    Library:AddToRegistry(KeybindInner, {
-        BackgroundColor3 = 'MainColor';
-        BorderColor3 = 'OutlineColor';
-    }, true);
+    local KeybindCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 8);
+        Parent = KeybindInner;
+    });
 
-    local ColorFrame = Library:Create('Frame', {
+    -- Тонкая акцентная полоса
+    local KeybindAccent = Library:Create('Frame', {
         BackgroundColor3 = Library.AccentColor;
         BorderSizePixel = 0;
         Size = UDim2.new(1, 0, 0, 2);
@@ -2792,24 +2787,30 @@ local WatermarkOuter = Library:Create('Frame', {
         Parent = KeybindInner;
     });
 
-    Library:AddToRegistry(ColorFrame, {
+    local KeybindAccentCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 8);
+        Parent = KeybindAccent;
+    });
+
+    Library:AddToRegistry(KeybindAccent, {
         BackgroundColor3 = 'AccentColor';
     }, true);
 
     local KeybindLabel = Library:CreateLabel({
-        Size = UDim2.new(1, 0, 0, 20);
-        Position = UDim2.fromOffset(5, 2),
+        Size = UDim2.new(1, 0, 0, 22);
+        Position = UDim2.fromOffset(12, 2),
         TextXAlignment = Enum.TextXAlignment.Left,
-
         Text = 'Keybinds';
+        TextSize = 13;
+        TextColor3 = Color3.fromRGB(200, 200, 200);
         ZIndex = 104;
         Parent = KeybindInner;
     });
 
     local KeybindContainer = Library:Create('Frame', {
         BackgroundTransparency = 1;
-        Size = UDim2.new(1, 0, 1, -20);
-        Position = UDim2.new(0, 0, 0, 20);
+        Size = UDim2.new(1, 0, 1, -22);
+        Position = UDim2.new(0, 0, 0, 22);
         ZIndex = 1;
         Parent = KeybindInner;
     });
@@ -2821,7 +2822,7 @@ local WatermarkOuter = Library:Create('Frame', {
     });
 
     Library:Create('UIPadding', {
-        PaddingLeft = UDim.new(0, 5),
+        PaddingLeft = UDim.new(0, 12),
         Parent = KeybindContainer,
     })
 
@@ -2830,27 +2831,31 @@ local WatermarkOuter = Library:Create('Frame', {
     Library:MakeDraggable(KeybindOuter);
 end;
 
+-- УЛУЧШЕННЫЕ ФУНКЦИИ
 function Library:SetWatermarkVisibility(Bool)
-    if Library.Watermark then -- Проверяем на nil
+    if Library.Watermark then
         Library.Watermark.Visible = Bool;
     end
 end
 
 function Library:SetWatermark(Text)
-    local X, Y = Library:GetTextBounds(Text, Library.Font, 14);
-    Library.Watermark.Size = UDim2.new(0, X + 15, 0, (Y * 1.5) + 3);
+    if not Library.Watermark or not Library.WatermarkText then
+        return
+    end
+    
+    local X, Y = Library:GetTextBounds(Text, Library.Font, 13);
+    Library.Watermark.Size = UDim2.new(0, X + 24, 0, 26);
     Library:SetWatermarkVisibility(true)
-
     Library.WatermarkText.Text = Text;
 end;
 
+-- МИНИМАЛИСТИЧНЫЕ УВЕДОМЛЕНИЯ
 function Library:Notify(Text, Time)
-    local XSize, YSize = Library:GetTextBounds(Text, Library.Font, 14);
-
-    YSize = YSize + 7
+    local XSize, YSize = Library:GetTextBounds(Text, Library.Font, 13);
+    YSize = YSize + 12 -- Больше padding
 
     local NotifyOuter = Library:Create('Frame', {
-        BorderColor3 = Color3.new(0, 0, 0);
+        BackgroundTransparency = 1;
         Position = UDim2.new(0, 100, 0, 10);
         Size = UDim2.new(0, 0, 0, YSize);
         ClipsDescendants = true;
@@ -2859,78 +2864,80 @@ function Library:Notify(Text, Time)
     });
 
     local NotifyInner = Library:Create('Frame', {
-        BackgroundColor3 = Library.MainColor;
-        BorderColor3 = Library.OutlineColor;
-        BorderMode = Enum.BorderMode.Inset;
+        BackgroundColor3 = Color3.fromRGB(12, 12, 16); -- Темный минималистичный
+        BorderSizePixel = 0;
         Size = UDim2.new(1, 0, 1, 0);
         ZIndex = 101;
         Parent = NotifyOuter;
     });
 
-    Library:AddToRegistry(NotifyInner, {
-        BackgroundColor3 = 'MainColor';
-        BorderColor3 = 'OutlineColor';
-    }, true);
+    -- Закругленные углы
+    local NotifyCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 8);
+        Parent = NotifyInner;
+    });
 
-    local InnerFrame = Library:Create('Frame', {
-        BackgroundColor3 = Color3.new(1, 1, 1);
+    -- Тонкая акцентная полоса слева
+    local LeftAccent = Library:Create('Frame', {
+        BackgroundColor3 = Library.AccentColor;
         BorderSizePixel = 0;
-        Position = UDim2.new(0, 1, 0, 1);
-        Size = UDim2.new(1, -2, 1, -2);
+        Position = UDim2.new(0, 0, 0, 0);
+        Size = UDim2.new(0, 3, 1, 0);
         ZIndex = 102;
         Parent = NotifyInner;
     });
 
-    local Gradient = Library:Create('UIGradient', {
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
-            ColorSequenceKeypoint.new(1, Library.MainColor),
-        });
-        Rotation = -90;
-        Parent = InnerFrame;
+    local LeftCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 8);
+        Parent = LeftAccent;
     });
 
-    Library:AddToRegistry(Gradient, {
-        Color = function()
-            return ColorSequence.new({
-                ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
-                ColorSequenceKeypoint.new(1, Library.MainColor),
-            });
-        end
-    });
-
-    local NotifyLabel = Library:CreateLabel({
-        Position = UDim2.new(0, 4, 0, 0);
-        Size = UDim2.new(1, -4, 1, 0);
-        Text = Text;
-        TextXAlignment = Enum.TextXAlignment.Left;
-        TextSize = 14;
-        ZIndex = 103;
-        Parent = InnerFrame;
-    });
-
-    local LeftColor = Library:Create('Frame', {
-        BackgroundColor3 = Library.AccentColor;
-        BorderSizePixel = 0;
-        Position = UDim2.new(0, -1, 0, -1);
-        Size = UDim2.new(0, 3, 1, 2);
-        ZIndex = 104;
-        Parent = NotifyOuter;
-    });
-
-    Library:AddToRegistry(LeftColor, {
+    Library:AddToRegistry(LeftAccent, {
         BackgroundColor3 = 'AccentColor';
     }, true);
 
-    pcall(NotifyOuter.TweenSize, NotifyOuter, UDim2.new(0, XSize + 8 + 4, 0, YSize), 'Out', 'Quad', 0.4, true);
+    -- Минималистичный текст
+    local NotifyLabel = Library:CreateLabel({
+        Position = UDim2.new(0, 12, 0, 0);
+        Size = UDim2.new(1, -12, 1, 0);
+        Text = Text;
+        TextXAlignment = Enum.TextXAlignment.Left;
+        TextSize = 13;
+        TextColor3 = Color3.fromRGB(200, 200, 200);
+        ZIndex = 103;
+        Parent = NotifyInner;
+    });
 
+    -- Плавная анимация появления
+    pcall(NotifyOuter.TweenSize, NotifyOuter, UDim2.new(0, XSize + 24, 0, YSize), 'Out', 'Quart', 0.5, true);
+
+    -- Плавное исчезновение
     task.spawn(function()
-        wait(Time or 5);
-
-        pcall(NotifyOuter.TweenSize, NotifyOuter, UDim2.new(0, 0, 0, YSize), 'Out', 'Quad', 0.4, true);
-
+        wait(Time or 4);
+        
+        -- Fade out анимация
+        local TweenService = game:GetService('TweenService')
+        local FadeInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        
+        local FadeTween = TweenService:Create(NotifyInner, FadeInfo, {
+            BackgroundTransparency = 1
+        })
+        local TextFadeTween = TweenService:Create(NotifyLabel, FadeInfo, {
+            TextTransparency = 1
+        })
+        local AccentFadeTween = TweenService:Create(LeftAccent, FadeInfo, {
+            BackgroundTransparency = 1
+        })
+        
+        FadeTween:Play()
+        TextFadeTween:Play()
+        AccentFadeTween:Play()
+        
+        wait(0.3)
+        
+        -- Slide out
+        pcall(NotifyOuter.TweenSize, NotifyOuter, UDim2.new(0, 0, 0, YSize), 'Out', 'Quart', 0.4, true);
         wait(0.4);
-
         NotifyOuter:Destroy();
     end);
 end;
