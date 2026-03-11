@@ -2816,7 +2816,7 @@ do
         SortOrder = Enum.SortOrder.LayoutOrder;
         Parent = Library.NotificationArea;
     });
-    -- ВАТЕРМАРК
+    -- ВАТЕРМАРК С ПРОЗРАЧНЫМ ФОНОМ И BLUR
     local WatermarkOuter = Library:Create('Frame', {
         BackgroundTransparency = 1;
         Position = UDim2.new(0, 100, 0, -32);
@@ -2828,6 +2828,7 @@ do
 
     local WatermarkInner = Library:Create('Frame', {
         BackgroundColor3 = Color3.fromRGB(8, 8, 12);
+        BackgroundTransparency = 0.3; -- ПРОЗРАЧНЕЕ
         BorderSizePixel = 0;
         Size = UDim2.new(1, 0, 1, 0);
         ZIndex = 201;
@@ -2835,17 +2836,18 @@ do
     });
 
     local WatermarkCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 8);
+        CornerRadius = UDim.new(0, 12); -- Больше закругление
         Parent = WatermarkInner;
     });
 
+    -- ПЛАВНОЕ ЗАТУХАНИЕ ПО КРАЯМ (градиент прозрачности)
     local WatermarkGradient = Library:Create('UIGradient', {
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(12, 12, 18)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(8, 8, 12)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(12, 12, 18)),
+        Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 0.2), -- Края прозрачнее
+            NumberSequenceKeypoint.new(0.1, 0),
+            NumberSequenceKeypoint.new(0.9, 0),
+            NumberSequenceKeypoint.new(1, 0.2), -- Края прозрачнее
         });
-        Rotation = 90;
         Parent = WatermarkInner;
     });
 
@@ -3312,30 +3314,39 @@ function Library.WaveSystem:CreateKeybindHeader()
     end
 end
 
--- ПРИМЕНЕНИЕ МЕДЛЕННОЙ ВОЛНЫ С ПОВОРОТОМ И МАСШТАБИРОВАНИЕМ
+-- ПРИМЕНЕНИЕ ВОЛНЫ С GLOW ЭФФЕКТОМ И ТРЯСКОЙ
 function Library.WaveSystem:ApplyWave(letters, wave, waveColor, normalColor)
     for i, letter in pairs(letters) do
         local distance = math.abs(i - wave.pos)
         local intensity = math.max(0, 1 - (distance / wave.width))
         
-        if intensity > 0.01 then
-            -- В волне - СИЛЬНОЕ МАСШТАБИРОВАНИЕ + ПОВОРОТ + ПОДПРЫГИВАНИЕ
-            local scale = 1 + (intensity * wave.intensity * 3) -- Увеличил в 3 раза!
-            local bounce = intensity * 5 -- Больше подпрыгивание
-            local rotation = math.sin(intensity * math.pi) * 12 -- Поворот до 12 градусов
+        if intensity > 0.05 then
+            -- В GLOW волне - СИЛЬНОЕ УВЕЛИЧЕНИЕ + ТРЯСКА + БЕЛЫЙ GLOW
+            local scale = 1 + (intensity * 0.5) -- Буква становится на 50% больше
+            local shake = math.sin(tick() * 20) * intensity * 7 -- Тряска 7 градусов
             
-            TweenService:Create(letter.Frame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            -- БЕЛЫЙ GLOW эффект
+            local glowIntensity = intensity * 255
+            local glowColor = Color3.fromRGB(
+                math.min(255, normalColor.R * 255 + glowIntensity),
+                math.min(255, normalColor.G * 255 + glowIntensity),
+                math.min(255, normalColor.B * 255 + glowIntensity)
+            )
+            
+            TweenService:Create(letter.Frame, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
                 Size = UDim2.new(0, letter.OriginalSize * scale, 1, 0),
-                Position = UDim2.new(0, letter.OriginalPos, 0, -bounce),
-                Rotation = rotation,
+                Position = UDim2.new(0, letter.OriginalPos, 0, 0),
+                Rotation = shake, -- ТРЯСКА
             }):Play()
             
-            TweenService:Create(letter.Label, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
-                TextColor3 = waveColor,
-                Rotation = rotation,
+            TweenService:Create(letter.Label, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
+                TextColor3 = glowColor, -- БЕЛЫЙ GLOW
+                Rotation = shake, -- ТРЯСКА ТЕКСТА
+                TextStrokeTransparency = 0.5, -- Обводка для glow эффекта
+                TextStrokeColor3 = Color3.fromRGB(255, 255, 255),
             }):Play()
         else
-            -- Вне волны - ВОЗВРАТ К НОРМАЛЬНОМУ
+            -- Вне волны - ОБЫЧНОЕ СОСТОЯНИЕ
             TweenService:Create(letter.Frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
                 Size = UDim2.new(0, letter.OriginalSize, 1, 0),
                 Position = UDim2.new(0, letter.OriginalPos, 0, 0),
@@ -3345,12 +3356,13 @@ function Library.WaveSystem:ApplyWave(letters, wave, waveColor, normalColor)
             TweenService:Create(letter.Label, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
                 TextColor3 = normalColor,
                 Rotation = 0,
+                TextStrokeTransparency = 1, -- Убираем обводку
             }):Play()
         end
     end
 end
 
--- ПРИМЕНЕНИЕ ВОЛНЫ С РАЗНЫМИ ЦВЕТАМИ (FPS/PING) + ПОВОРОТ
+-- ПРИМЕНЕНИЕ ВОЛНЫ С GLOW ДЛЯ FPS/PING
 function Library.WaveSystem:ApplyWaveWithColors(letters, wave)
     for i, letter in pairs(letters) do
         local distance = math.abs(i - wave.pos)
@@ -3365,24 +3377,33 @@ function Library.WaveSystem:ApplyWaveWithColors(letters, wave)
             normalColor = Color3.fromRGB(140, 140, 140)
         end
         
-        if intensity > 0.01 then
-            -- В волне - СИЛЬНОЕ МАСШТАБИРОВАНИЕ + ПОВОРОТ + ПОДПРЫГИВАНИЕ
-            local scale = 1 + (intensity * wave.intensity * 3) -- Увеличил в 3 раза!
-            local bounce = intensity * 5
-            local rotation = math.sin(intensity * math.pi) * 12
+        if intensity > 0.05 then
+            -- В GLOW волне - СИЛЬНОЕ УВЕЛИЧЕНИЕ + ТРЯСКА + БЕЛЫЙ GLOW
+            local scale = 1 + (intensity * 0.5) -- Буква становится на 50% больше
+            local shake = math.sin(tick() * 20) * intensity * 7 -- Тряска 7 градусов
             
-            TweenService:Create(letter.Frame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            -- БЕЛЫЙ GLOW эффект
+            local glowIntensity = intensity * 255
+            local glowColor = Color3.fromRGB(
+                math.min(255, normalColor.R * 255 + glowIntensity),
+                math.min(255, normalColor.G * 255 + glowIntensity),
+                math.min(255, normalColor.B * 255 + glowIntensity)
+            )
+            
+            TweenService:Create(letter.Frame, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
                 Size = UDim2.new(0, letter.OriginalSize * scale, 1, 0),
-                Position = UDim2.new(0, letter.OriginalPos, 0, -bounce),
-                Rotation = rotation,
+                Position = UDim2.new(0, letter.OriginalPos, 0, 0),
+                Rotation = shake, -- ТРЯСКА
             }):Play()
             
-            TweenService:Create(letter.Label, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
-                TextColor3 = waveColor,
-                Rotation = rotation,
+            TweenService:Create(letter.Label, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
+                TextColor3 = glowColor, -- БЕЛЫЙ GLOW
+                Rotation = shake, -- ТРЯСКА ТЕКСТА
+                TextStrokeTransparency = 0.5, -- Обводка для glow эффекта
+                TextStrokeColor3 = Color3.fromRGB(255, 255, 255),
             }):Play()
         else
-            -- Вне волны - ВОЗВРАТ К НОРМАЛЬНОМУ
+            -- Вне волны - ОБЫЧНОЕ СОСТОЯНИЕ
             TweenService:Create(letter.Frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
                 Size = UDim2.new(0, letter.OriginalSize, 1, 0),
                 Position = UDim2.new(0, letter.OriginalPos, 0, 0),
@@ -3392,6 +3413,7 @@ function Library.WaveSystem:ApplyWaveWithColors(letters, wave)
             TweenService:Create(letter.Label, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
                 TextColor3 = normalColor,
                 Rotation = 0,
+                TextStrokeTransparency = 1, -- Убираем обводку
             }):Play()
         end
     end
@@ -3776,6 +3798,7 @@ function Library:Notify(Text, Time)
         NotifyOuter:Destroy();
     end);
 end;
+
 
 
 
