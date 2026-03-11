@@ -2884,7 +2884,7 @@ do
     });
 
     local WatermarkCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 12); -- Больше закругление
+        CornerRadius = UDim.new(0, 8); -- Больше закругление
         Parent = WatermarkInner;
     });
 
@@ -2930,7 +2930,7 @@ do
     });
 
     local KeybindCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 12); -- Больше закругление
+        CornerRadius = UDim.new(0, 8); -- Больше закругление
         Parent = KeybindInner;
     });
 
