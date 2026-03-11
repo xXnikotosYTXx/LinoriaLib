@@ -3312,40 +3312,45 @@ function Library.WaveSystem:CreateKeybindHeader()
     end
 end
 
--- ПРИМЕНЕНИЕ МЕДЛЕННОЙ ВОЛНЫ
+-- ПРИМЕНЕНИЕ МЕДЛЕННОЙ ВОЛНЫ С ПОВОРОТОМ И МАСШТАБИРОВАНИЕМ
 function Library.WaveSystem:ApplyWave(letters, wave, waveColor, normalColor)
     for i, letter in pairs(letters) do
         local distance = math.abs(i - wave.pos)
         local intensity = math.max(0, 1 - (distance / wave.width))
         
         if intensity > 0.01 then
-            -- В волне
-            local scale = 1 + (intensity * wave.intensity)
-            local bounce = intensity * 2
+            -- В волне - МАСШТАБИРОВАНИЕ + ПОВОРОТ + ПОДПРЫГИВАНИЕ
+            local scale = 1 + (intensity * wave.intensity * 2) -- Увеличил в 2 раза
+            local bounce = intensity * 3 -- Больше подпрыгивание
+            local rotation = math.sin(intensity * math.pi) * 8 -- Поворот до 8 градусов
             
             TweenService:Create(letter.Frame, TweenInfo.new(0.2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
                 Size = UDim2.new(0, letter.OriginalSize * scale, 1, 0),
                 Position = UDim2.new(0, letter.OriginalPos, 0, -bounce),
+                Rotation = rotation, -- ДОБАВЛЕН ПОВОРОТ
             }):Play()
             
             TweenService:Create(letter.Label, TweenInfo.new(0.2, Enum.EasingStyle.Sine), {
-                TextColor3 = waveColor
+                TextColor3 = waveColor,
+                Rotation = rotation, -- ПОВОРОТ ТЕКСТА
             }):Play()
         else
-            -- Вне волны
+            -- Вне волны - ВОЗВРАТ К НОРМАЛЬНОМУ
             TweenService:Create(letter.Frame, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
                 Size = UDim2.new(0, letter.OriginalSize, 1, 0),
                 Position = UDim2.new(0, letter.OriginalPos, 0, 0),
+                Rotation = 0, -- СБРОС ПОВОРОТА
             }):Play()
             
             TweenService:Create(letter.Label, TweenInfo.new(0.25, Enum.EasingStyle.Sine), {
-                TextColor3 = normalColor
+                TextColor3 = normalColor,
+                Rotation = 0, -- СБРОС ПОВОРОТА ТЕКСТА
             }):Play()
         end
     end
 end
 
--- ПРИМЕНЕНИЕ ВОЛНЫ С РАЗНЫМИ ЦВЕТАМИ (FPS/PING)
+-- ПРИМЕНЕНИЕ ВОЛНЫ С РАЗНЫМИ ЦВЕТАМИ (FPS/PING) + ПОВОРОТ
 function Library.WaveSystem:ApplyWaveWithColors(letters, wave)
     for i, letter in pairs(letters) do
         local distance = math.abs(i - wave.pos)
@@ -3361,25 +3366,32 @@ function Library.WaveSystem:ApplyWaveWithColors(letters, wave)
         end
         
         if intensity > 0.01 then
-            local scale = 1 + (intensity * wave.intensity)
-            local bounce = intensity * 2
+            -- В волне - МАСШТАБИРОВАНИЕ + ПОВОРОТ + ПОДПРЫГИВАНИЕ
+            local scale = 1 + (intensity * wave.intensity * 2)
+            local bounce = intensity * 3
+            local rotation = math.sin(intensity * math.pi) * 8
             
             TweenService:Create(letter.Frame, TweenInfo.new(0.2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
                 Size = UDim2.new(0, letter.OriginalSize * scale, 1, 0),
                 Position = UDim2.new(0, letter.OriginalPos, 0, -bounce),
+                Rotation = rotation, -- ДОБАВЛЕН ПОВОРОТ
             }):Play()
             
             TweenService:Create(letter.Label, TweenInfo.new(0.2, Enum.EasingStyle.Sine), {
-                TextColor3 = waveColor
+                TextColor3 = waveColor,
+                Rotation = rotation, -- ПОВОРОТ ТЕКСТА
             }):Play()
         else
+            -- Вне волны - ВОЗВРАТ К НОРМАЛЬНОМУ
             TweenService:Create(letter.Frame, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
                 Size = UDim2.new(0, letter.OriginalSize, 1, 0),
                 Position = UDim2.new(0, letter.OriginalPos, 0, 0),
+                Rotation = 0, -- СБРОС ПОВОРОТА
             }):Play()
             
             TweenService:Create(letter.Label, TweenInfo.new(0.25, Enum.EasingStyle.Sine), {
-                TextColor3 = normalColor
+                TextColor3 = normalColor,
+                Rotation = 0, -- СБРОС ПОВОРОТА ТЕКСТА
             }):Play()
         end
     end
@@ -3764,7 +3776,6 @@ function Library:Notify(Text, Time)
         NotifyOuter:Destroy();
     end);
 end;
-
 
 
 function Library:CreateWindow(...)
