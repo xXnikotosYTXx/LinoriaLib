@@ -4177,13 +4177,25 @@ print("🎨 Заголовок кейбиндов: 🎨 | Keybinds (иконка
 print("📊 FPS и PING обновляются в реальном времени с волнами")
 print("🖼️ Иконки Lucide загружаются ПРАВИЛЬНО через lucide-roblox-direct")
 print("✨ Настоящие SVG иконки с ImageLabel + fallback на эмодзи")
+print("🔄 АВТОМАТИЧЕСКАЯ ИНТЕГРАЦИЯ с AddKeyPicker!")
 print("")
 print("🔧 ИСПОЛЬЗОВАНИЕ:")
 print("Library:SetWatermark('', true) -- Включить ватермарк с волнами")
 print("Library:SetKeybindVisibility(true) -- Показать кейбинды")
-print("Library:AddKeybind('ESP', 'F1', true, 'eye') -- Добавить кейбинд с иконкой")
-print("Library:AddKeybind('Aimbot', 'F2', false, 'target')")
-print("Library:AddKeybind('Settings', 'F3', false, 'settings')")
+print("")
+print("📝 АВТОМАТИЧЕСКИЕ КЕЙБИНДЫ:")
+print("Просто используй AddKeyPicker как обычно:")
+print("  LeftGroupBox:AddLabel('ESP'):AddKeyPicker('ESPKey', {")
+print("    Default = 'F1',")
+print("    Text = 'ESP Toggle',")
+print("    NoUI = false, -- false = показать в волновом дисплее")
+print("  })")
+print("")
+print("Кейбинд автоматически:")
+print("  ✅ Появится в волновом дисплее")
+print("  ✅ Получит иконку по названию")
+print("  ✅ Будет обновлять состояние (ON/OFF)")
+print("  ✅ Анимация подсветки при активации")
 print("")
 print("⚙️ УПРАВЛЕНИЕ ВОЛНАМИ:")
 print("Library:SetWaveSpeed(speed) -- Изменить скорость волн (0.01-0.2)")
@@ -4196,7 +4208,7 @@ print("")
 print("🎨 Доступны ВСЕ иконки Lucide: https://lucide.dev/icons/")
 print("📦 Загрузка: https://github.com/deividcomsono/lucide-roblox-direct")
 print("")
-print("⚠️ ВАЖНО: Если используете старый код с RenderStepped:")
+print("⚠️ ВАЖНО:")
 print("   НЕ вызывайте Library:SetWatermark() каждый кадр!")
 print("   Вызовите ОДИН РАЗ: Library:SetWatermark('', true)")
 print("   FPS и Ping обновляются автоматически!")
@@ -4261,6 +4273,73 @@ function Library:SetStatsUpdateInterval(frames)
     frames = math.clamp(frames or 30, 10, 120)
     Library.WaveSystem.UpdateInterval = frames
     print("⏱️ Интервал обновления статистики: " .. frames .. " кадров (~" .. math.floor(frames/60) .. " сек)")
+end
+
+-- ============================================
+-- АВТОМАТИЧЕСКАЯ ИНТЕГРАЦИЯ С KEYPICKER
+-- ============================================
+
+-- Сохраняем оригинальную функцию AddKeyPicker
+Library.OriginalAddKeyPicker = Library.AddKeyPicker
+
+-- Перехватываем AddKeyPicker для автоматического добавления в волновой дисплей
+function Library:AddKeyPicker(Idx, Info)
+    -- Вызываем оригинальную функцию
+    local KeyPicker = Library.OriginalAddKeyPicker(self, Idx, Info)
+    
+    -- Если NoUI = false, автоматически добавляем в волновой дисплей
+    if not Info.NoUI and Info.Text then
+        -- Определяем иконку автоматически по названию
+        local icon = "key"
+        local lowerText = string.lower(Info.Text)
+        
+        if string.find(lowerText, "esp") or string.find(lowerText, "box") or string.find(lowerText, "tracer") then
+            icon = "eye"
+        elseif string.find(lowerText, "aim") then
+            icon = "target"
+        elseif string.find(lowerText, "health") or string.find(lowerText, "hp") then
+            icon = "heart"
+        elseif string.find(lowerText, "fly") or string.find(lowerText, "speed") then
+            icon = "zap"
+        elseif string.find(lowerText, "menu") or string.find(lowerText, "setting") then
+            icon = "settings"
+        elseif string.find(lowerText, "lock") or string.find(lowerText, "safe") then
+            icon = "lock"
+        elseif string.find(lowerText, "weapon") or string.find(lowerText, "gun") then
+            icon = "sword"
+        end
+        
+        -- Получаем текст клавиши
+        local keyText = Info.Default or "None"
+        if type(keyText) == "string" then
+            -- Сокращаем длинные названия клавиш
+            if keyText == "LeftShift" then keyText = "LShift"
+            elseif keyText == "RightShift" then keyText = "RShift"
+            elseif keyText == "LeftControl" then keyText = "LCtrl"
+            elseif keyText == "RightControl" then keyText = "RCtrl"
+            elseif keyText == "LeftAlt" then keyText = "LAlt"
+            elseif keyText == "RightAlt" then keyText = "RAlt"
+            end
+        end
+        
+        -- Добавляем в волновой дисплей
+        Library:AddKeybind(Info.Text, keyText, false, icon)
+        
+        -- Автоматическое обновление состояния с анимацией
+        task.spawn(function()
+            while task.wait(0.1) do
+                if Library.Unloaded then break end
+                
+                -- Получаем текущее состояние кейбинда
+                local state = KeyPicker:GetState()
+                
+                -- Обновляем дисплей (с анимацией подсветки)
+                Library:UpdateKeybindState(Info.Text, state)
+            end
+        end)
+    end
+    
+    return KeyPicker
 end
 function Library:CreateWindow(...)
     local Arguments = { ... }
