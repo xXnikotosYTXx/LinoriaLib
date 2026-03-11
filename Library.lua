@@ -2695,14 +2695,17 @@ Library.WaveSystem = {
     FPSLetters = {},
     PingLetters = {},
     TimeLetters = {}, -- Добавляем буквы времени
+    KeybindHeaderLetters = {}, -- Буквы заголовка кейбиндов
+    KeybindItems = {}, -- Элементы кейбиндов
     TimeLabel = nil,
     
-    -- Волны с разными параметрами
-    ProjectWave = {pos = 0, speed = 0.06, width = 2.5, intensity = 0.12},
-    NicknameWave = {pos = 0, speed = 0.05, width = 3, intensity = 0.1},
-    FPSWave = {pos = 0, speed = 0.04, width = 2, intensity = 0.08},
-    PingWave = {pos = 0, speed = 0.035, width = 2, intensity = 0.08},
-    TimeWave = {pos = 0, speed = 0.025, width = 4, intensity = 0.06}, -- Плавная волна для времени
+    -- Волны с разными параметрами (реалистичные)
+    ProjectWave = {pos = 0, speed = 0.08, width = 4, intensity = 0.15},
+    NicknameWave = {pos = 0, speed = 0.07, width = 5, intensity = 0.12},
+    FPSWave = {pos = 0, speed = 0.06, width = 3, intensity = 0.1},
+    PingWave = {pos = 0, speed = 0.055, width = 3, intensity = 0.1},
+    TimeWave = {pos = 0, speed = 0.04, width = 6, intensity = 0.08}, -- Самая плавная волна для времени
+    KeybindHeaderWave = {pos = 0, speed = 0.065, width = 4, intensity = 0.12}, -- Волна для заголовка кейбиндов
     
     -- Состояние
     IsAnimating = false,
@@ -2714,6 +2717,103 @@ Library.WaveSystem = {
     LastTime = "",
     FrameCounter = 0,
     UpdateInterval = 20, -- Обновляем каждые 20 кадров для оптимизации
+    
+    -- ЦВЕТОВЫЕ ТЕМЫ
+    Colors = {
+        -- Иконка молнии
+        Lightning = Color3.fromRGB(255, 120, 200), -- Розовая по умолчанию
+        
+        -- Название проекта
+        ProjectNormal = Color3.fromRGB(220, 220, 220),
+        ProjectWave = Color3.fromRGB(255, 255, 255),
+        
+        -- Никнейм
+        NicknameNormal = Color3.fromRGB(160, 160, 160),
+        NicknameWave = Color3.fromRGB(200, 200, 200),
+        
+        -- FPS (цифры и буквы)
+        FPSDigitsNormal = Color3.fromRGB(100, 255, 100),
+        FPSDigitsWave = Color3.fromRGB(150, 255, 150),
+        FPSLettersNormal = Color3.fromRGB(140, 140, 140),
+        FPSLettersWave = Color3.fromRGB(200, 200, 200),
+        
+        -- Пинг (цифры и буквы)
+        PingDigitsNormal = Color3.fromRGB(100, 255, 100),
+        PingDigitsWave = Color3.fromRGB(150, 255, 150),
+        PingLettersNormal = Color3.fromRGB(140, 140, 140),
+        PingLettersWave = Color3.fromRGB(200, 200, 200),
+        
+        -- Время
+        TimeNormal = Color3.fromRGB(120, 120, 120),
+        TimeWave = Color3.fromRGB(160, 160, 160),
+        
+        -- Кейбинды
+        KeybindHeaderNormal = Color3.fromRGB(200, 200, 200),
+        KeybindHeaderWave = Color3.fromRGB(255, 255, 255),
+        KeybindName = Color3.fromRGB(180, 180, 180),
+        KeybindKey = Color3.fromRGB(120, 120, 120),
+        KeybindStateOn = Color3.fromRGB(100, 255, 100),
+        KeybindStateOff = Color3.fromRGB(255, 100, 100),
+        
+        -- Разделители
+        Separator = Color3.fromRGB(100, 100, 100),
+    },
+}
+
+-- ЦВЕТОВЫЕ ТЕМЫ ДЛЯ ВОЛНОВОЙ СИСТЕМЫ
+Library.WaveSystem.Themes = {
+    -- Стандартная тема
+    Default = {
+        Lightning = Color3.fromRGB(255, 120, 200),
+        ProjectNormal = Color3.fromRGB(220, 220, 220),
+        ProjectWave = Color3.fromRGB(255, 255, 255),
+        NicknameNormal = Color3.fromRGB(160, 160, 160),
+        NicknameWave = Color3.fromRGB(200, 200, 200),
+        FPSDigitsNormal = Color3.fromRGB(100, 255, 100),
+        FPSDigitsWave = Color3.fromRGB(150, 255, 150),
+        TimeNormal = Color3.fromRGB(120, 120, 120),
+        TimeWave = Color3.fromRGB(160, 160, 160),
+    },
+    
+    -- Акцентная тема (использует Library.AccentColor)
+    Accent = {
+        Lightning = nil, -- Будет использовать Library.AccentColor
+        ProjectNormal = nil, -- Будет использовать Library.FontColor
+        ProjectWave = nil, -- Будет использовать Library.AccentColor
+        NicknameNormal = Color3.fromRGB(160, 160, 160),
+        NicknameWave = nil, -- Будет использовать Library.AccentColor
+        FPSDigitsNormal = Color3.fromRGB(100, 255, 100),
+        FPSDigitsWave = nil, -- Будет использовать Library.AccentColor
+        TimeNormal = Color3.fromRGB(120, 120, 120),
+        TimeWave = nil, -- Будет использовать Library.AccentColor
+    },
+    
+    -- Монохромная тема
+    Mono = {
+        Lightning = Color3.fromRGB(255, 255, 255),
+        ProjectNormal = Color3.fromRGB(200, 200, 200),
+        ProjectWave = Color3.fromRGB(255, 255, 255),
+        NicknameNormal = Color3.fromRGB(150, 150, 150),
+        NicknameWave = Color3.fromRGB(200, 200, 200),
+        FPSDigitsNormal = Color3.fromRGB(180, 180, 180),
+        FPSDigitsWave = Color3.fromRGB(255, 255, 255),
+        TimeNormal = Color3.fromRGB(120, 120, 120),
+        TimeWave = Color3.fromRGB(180, 180, 180),
+    },
+    
+    -- Радужная тема
+    Rainbow = {
+        Lightning = Color3.fromRGB(255, 100, 255),
+        ProjectNormal = Color3.fromRGB(255, 150, 150),
+        ProjectWave = Color3.fromRGB(255, 100, 100),
+        NicknameNormal = Color3.fromRGB(150, 255, 150),
+        NicknameWave = Color3.fromRGB(100, 255, 100),
+        FPSDigitsNormal = Color3.fromRGB(150, 150, 255),
+        FPSDigitsWave = Color3.fromRGB(100, 100, 255),
+        TimeNormal = Color3.fromRGB(255, 255, 150),
+        TimeWave = Color3.fromRGB(255, 255, 100),
+    },
+}
 }
 
 -- ЗАМЕНА СЕКЦИИ "-- < Create other UI elements >"
@@ -2761,12 +2861,27 @@ do
     -- Градиентный фон
     local WatermarkGradient = Library:Create('UIGradient', {
         Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(12, 12, 18)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(8, 8, 12)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(12, 12, 18)),
+            ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
+            ColorSequenceKeypoint.new(0.5, Library.MainColor),
+            ColorSequenceKeypoint.new(1, Library:GetDarkerColor(Library.MainColor)),
         });
         Rotation = 90;
         Parent = WatermarkInner;
+    });
+
+    -- Регистрируем для Theme Manager
+    Library:AddToRegistry(WatermarkInner, {
+        BackgroundColor3 = 'MainColor';
+    });
+
+    Library:AddToRegistry(WatermarkGradient, {
+        Color = function()
+            return ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
+                ColorSequenceKeypoint.new(0.5, Library.MainColor),
+                ColorSequenceKeypoint.new(1, Library:GetDarkerColor(Library.MainColor)),
+            });
+        end
     });
 
     -- Контейнер для всех элементов
@@ -2782,74 +2897,129 @@ do
     Library.Watermark = WatermarkOuter;
     Library:MakeDraggable(Library.Watermark);
 
-    -- КЕЙБИНДЫ (оригинальный код без изменений)
+    -- ВОЛНОВЫЕ КЕЙБИНДЫ В СТИЛЕ ВАТЕРМАРКА
     local KeybindOuter = Library:Create('Frame', {
-        AnchorPoint = Vector2.new(0, 0.5);
-        BorderColor3 = Color3.new(0, 0, 0);
+        BackgroundTransparency = 1;
         Position = UDim2.new(0, 10, 0.5, 0);
-        Size = UDim2.new(0, 210, 0, 20);
+        Size = UDim2.new(0, 200, 0, 30);
         Visible = false;
         ZIndex = 100;
         Parent = ScreenGui;
     });
 
     local KeybindInner = Library:Create('Frame', {
-        BackgroundColor3 = Library.MainColor;
-        BorderColor3 = Library.OutlineColor;
-        BorderMode = Enum.BorderMode.Inset;
+        BackgroundColor3 = Color3.fromRGB(8, 8, 12);
+        BorderSizePixel = 0;
         Size = UDim2.new(1, 0, 1, 0);
         ZIndex = 101;
         Parent = KeybindOuter;
     });
 
+    -- Закругленные углы как у ватермарка
+    local KeybindCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 8);
+        Parent = KeybindInner;
+    });
+
+    -- Градиентный фон как у ватермарка
+    local KeybindGradient = Library:Create('UIGradient', {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
+            ColorSequenceKeypoint.new(0.5, Library.MainColor),
+            ColorSequenceKeypoint.new(1, Library:GetDarkerColor(Library.MainColor)),
+        });
+        Rotation = 90;
+        Parent = KeybindInner;
+    });
+
+    -- Регистрируем кейбинды для Theme Manager
     Library:AddToRegistry(KeybindInner, {
         BackgroundColor3 = 'MainColor';
-        BorderColor3 = 'OutlineColor';
-    }, true);
-    local ColorFrame = Library:Create('Frame', {
-        BackgroundColor3 = Library.AccentColor;
-        BorderSizePixel = 0;
-        Size = UDim2.new(1, 0, 0, 2);
+    });
+
+    Library:AddToRegistry(KeybindGradient, {
+        Color = function()
+            return ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
+                ColorSequenceKeypoint.new(0.5, Library.MainColor),
+                ColorSequenceKeypoint.new(1, Library:GetDarkerColor(Library.MainColor)),
+            });
+        end
+    });
+
+    -- Контейнер для заголовка с волной
+    local KeybindHeaderContainer = Library:Create('Frame', {
+        BackgroundTransparency = 1;
+        Position = UDim2.new(0, 10, 0, 5);
+        Size = UDim2.new(1, -20, 0, 20);
         ZIndex = 102;
         Parent = KeybindInner;
     });
 
-    Library:AddToRegistry(ColorFrame, {
-        BackgroundColor3 = 'AccentColor';
-    }, true);
-
-    local KeybindLabel = Library:CreateLabel({
-        Size = UDim2.new(1, 0, 0, 20);
-        Position = UDim2.fromOffset(5, 2),
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Text = 'Keybinds';
-        ZIndex = 104;
-        Parent = KeybindInner;
-    });
-
+    -- Контейнер для кейбиндов
     local KeybindContainer = Library:Create('Frame', {
         BackgroundTransparency = 1;
-        Size = UDim2.new(1, 0, 1, -20);
-        Position = UDim2.new(0, 0, 0, 20);
-        ZIndex = 1;
+        Position = UDim2.new(0, 10, 0, 30);
+        Size = UDim2.new(1, -20, 1, -35);
+        ZIndex = 102;
         Parent = KeybindInner;
     });
 
     Library:Create('UIListLayout', {
         FillDirection = Enum.FillDirection.Vertical;
         SortOrder = Enum.SortOrder.LayoutOrder;
+        Padding = UDim.new(0, 3);
         Parent = KeybindContainer;
     });
 
-    Library:Create('UIPadding', {
-        PaddingLeft = UDim.new(0, 5),
-        Parent = KeybindContainer,
-    })
-
+    -- Сохраняем ссылки
     Library.KeybindFrame = KeybindOuter;
     Library.KeybindContainer = KeybindContainer;
+    Library.KeybindHeaderContainer = KeybindHeaderContainer;
     Library:MakeDraggable(KeybindOuter);
 end;
+
+-- ФУНКЦИИ УПРАВЛЕНИЯ ТЕМАМИ
+function Library.WaveSystem:SetTheme(themeName)
+    local theme = self.Themes[themeName]
+    if not theme then
+        print("❌ Тема '" .. themeName .. "' не найдена!")
+        return
+    end
+    
+    -- Применяем цвета темы
+    for colorName, color in pairs(theme) do
+        if color then
+            self.Colors[colorName] = color
+        else
+            -- Если цвет nil, используем цвета Library
+            if colorName:find("Lightning") or colorName:find("Wave") then
+                self.Colors[colorName] = Library.AccentColor
+            elseif colorName:find("Normal") then
+                self.Colors[colorName] = Library.FontColor
+            end
+        end
+    end
+    
+    print("✅ Применена тема: " .. themeName)
+end
+
+function Library.WaveSystem:GetColor(colorName)
+    local color = self.Colors[colorName]
+    
+    -- Если цвет не задан, используем цвета Library
+    if not color then
+        if colorName:find("Wave") or colorName:find("Lightning") then
+            return Library.AccentColor
+        elseif colorName:find("Normal") then
+            return Library.FontColor
+        else
+            return Color3.fromRGB(255, 255, 255) -- Fallback
+        end
+    end
+    
+    return color
+end
 
 -- ФУНКЦИИ ВОЛНОВОЙ СИСТЕМЫ
 function Library.WaveSystem:CreateElements()
@@ -2861,13 +3031,13 @@ function Library.WaveSystem:CreateElements()
     local currentX = 0
     local spacing = 8
     
-    -- 1. ИКОНКА МОЛНИИ (розовая как на скриншоте)
+    -- 1. ИКОНКА МОЛНИИ (цвет из темы)
     self.IconLabel = Library:CreateLabel({
         Position = UDim2.new(0, currentX, 0, 0);
         Size = UDim2.new(0, 18, 1, 0);
         Text = "⚡";
         TextSize = 15;
-        TextColor3 = Color3.fromRGB(255, 120, 200); -- Розовая
+        TextColor3 = self:GetColor("Lightning");
         TextXAlignment = Enum.TextXAlignment.Center;
         ZIndex = 203;
         Parent = self.Container;
@@ -2891,7 +3061,7 @@ function Library.WaveSystem:CreateElements()
             Size = UDim2.new(1, 0, 1, 0);
             Text = char;
             TextSize = 14;
-            TextColor3 = Color3.fromRGB(220, 220, 220); -- Белый
+            TextColor3 = self:GetColor("ProjectNormal");
             TextXAlignment = Enum.TextXAlignment.Center;
             ZIndex = 204;
             Parent = letterFrame;
@@ -2945,7 +3115,7 @@ function Library.WaveSystem:CreateElements()
             Size = UDim2.new(1, 0, 1, 0);
             Text = char;
             TextSize = 14;
-            TextColor3 = Color3.fromRGB(160, 160, 160); -- Серый
+            TextColor3 = self:GetColor("NicknameNormal");
             TextXAlignment = Enum.TextXAlignment.Center;
             ZIndex = 204;
             Parent = letterFrame;
@@ -3120,6 +3290,53 @@ function Library.WaveSystem:CreateElements()
     
     -- Обновляем размер ватермарка для адаптивности
     Library.Watermark.Size = UDim2.new(0, math.max(currentX + 20, 400), 0, 30)
+    
+    -- Создаем волновой заголовок кейбиндов
+    self:CreateKeybindHeader()
+end
+
+-- СОЗДАНИЕ ВОЛНОВОГО ЗАГОЛОВКА КЕЙБИНДОВ
+function Library.WaveSystem:CreateKeybindHeader()
+    -- Очищаем старый заголовок
+    for _, child in pairs(Library.KeybindHeaderContainer:GetChildren()) do
+        child:Destroy()
+    end
+    
+    local headerText = "Keybinds"
+    self.KeybindHeaderLetters = {}
+    local currentX = 0
+    
+    -- Создаем буквы заголовка с волной
+    for i = 1, #headerText do
+        local char = headerText:sub(i, i)
+        local letterFrame = Library:Create('Frame', {
+            BackgroundTransparency = 1;
+            Position = UDim2.new(0, currentX, 0, 0);
+            Size = UDim2.new(0, 12, 1, 0);
+            ZIndex = 103;
+            Parent = Library.KeybindHeaderContainer;
+        });
+        
+        local letterLabel = Library:CreateLabel({
+            Size = UDim2.new(1, 0, 1, 0);
+            Text = char;
+            TextSize = 14;
+            TextColor3 = Color3.fromRGB(200, 200, 200); -- Светло-серый
+            TextXAlignment = Enum.TextXAlignment.Center;
+            ZIndex = 104;
+            Parent = letterFrame;
+        });
+        
+        self.KeybindHeaderLetters[i] = {
+            Frame = letterFrame,
+            Label = letterLabel,
+            OriginalPos = currentX,
+            OriginalSize = 12,
+            Character = char,
+        }
+        
+        currentX = currentX + 12
+    end
 end
 
 -- ОБНОВЛЕНИЕ ВОЛН (оптимизированное)
@@ -3133,108 +3350,146 @@ function Library.WaveSystem:UpdateWaves()
     self.NicknameWave.pos = self.NicknameWave.pos + self.NicknameWave.speed
     self.FPSWave.pos = self.FPSWave.pos + self.FPSWave.speed
     self.PingWave.pos = self.PingWave.pos + self.PingWave.speed
-    self.TimeWave.pos = self.TimeWave.pos + self.TimeWave.speed -- Добавляем волну времени
+    self.TimeWave.pos = self.TimeWave.pos + self.TimeWave.speed
+    self.KeybindHeaderWave.pos = self.KeybindHeaderWave.pos + self.KeybindHeaderWave.speed
     
-    -- Сброс волн при достижении конца
-    if self.ProjectWave.pos > #self.ProjectLetters + self.ProjectWave.width then
-        self.ProjectWave.pos = -self.ProjectWave.width
+    -- Непрерывный сброс волн (без резких переходов)
+    local resetThreshold = 20 -- Большой буфер для плавности
+    
+    if self.ProjectWave.pos > #self.ProjectLetters + resetThreshold then
+        self.ProjectWave.pos = -resetThreshold
     end
-    if self.NicknameWave.pos > #self.NicknameLetters + self.NicknameWave.width then
-        self.NicknameWave.pos = -self.NicknameWave.width
+    if self.NicknameWave.pos > #self.NicknameLetters + resetThreshold then
+        self.NicknameWave.pos = -resetThreshold
     end
-    if self.FPSWave.pos > #self.FPSLetters + self.FPSWave.width then
-        self.FPSWave.pos = -self.FPSWave.width
+    if self.FPSWave.pos > #self.FPSLetters + resetThreshold then
+        self.FPSWave.pos = -resetThreshold
     end
-    if self.PingWave.pos > #self.PingLetters + self.PingWave.width then
-        self.PingWave.pos = -self.PingWave.width
+    if self.PingWave.pos > #self.PingLetters + resetThreshold then
+        self.PingWave.pos = -resetThreshold
     end
-    if self.TimeWave.pos > #self.TimeLetters + self.TimeWave.width then
-        self.TimeWave.pos = -self.TimeWave.width
+    if self.TimeWave.pos > #self.TimeLetters + resetThreshold then
+        self.TimeWave.pos = -resetThreshold
+    end
+    if self.KeybindHeaderWave.pos > #self.KeybindHeaderLetters + resetThreshold then
+        self.KeybindHeaderWave.pos = -resetThreshold
     end
     
-    -- Применяем слабые волны как на скриншоте
-    self:ApplyWave(self.ProjectLetters, self.ProjectWave, Color3.fromRGB(255, 255, 255), Color3.fromRGB(220, 220, 220))
-    self:ApplyWave(self.NicknameLetters, self.NicknameWave, Color3.fromRGB(200, 200, 200), Color3.fromRGB(160, 160, 160))
+    -- Применяем реалистичные волны с цветами из темы
+    self:ApplyWave(self.ProjectLetters, self.ProjectWave, self:GetColor("ProjectWave"), self:GetColor("ProjectNormal"))
+    self:ApplyWave(self.NicknameLetters, self.NicknameWave, self:GetColor("NicknameWave"), self:GetColor("NicknameNormal"))
     self:ApplyWaveWithColors(self.FPSLetters, self.FPSWave) -- Специальная функция для FPS
     self:ApplyWaveWithColors(self.PingLetters, self.PingWave) -- Специальная функция для пинга
-    self:ApplyWave(self.TimeLetters, self.TimeWave, Color3.fromRGB(160, 160, 160), Color3.fromRGB(120, 120, 120)) -- Плавная волна времени
+    self:ApplyWave(self.TimeLetters, self.TimeWave, self:GetColor("TimeWave"), self:GetColor("TimeNormal")) -- Плавная волна времени
+    self:ApplyWave(self.KeybindHeaderLetters, self.KeybindHeaderWave, self:GetColor("KeybindHeaderWave"), self:GetColor("KeybindHeaderNormal")) -- Волна кейбиндов
     
     -- Обновляем статистику реже для оптимизации
     if self.FrameCounter % self.UpdateInterval == 0 then
         self:UpdateStats()
     end
 end
--- ПРИМЕНЕНИЕ СЛАБОЙ ВОЛНЫ К БУКВАМ (как на скриншоте)
+-- ПРИМЕНЕНИЕ РЕАЛЬНОЙ ВОЛНЫ К БУКВАМ (плавные переходы)
 function Library.WaveSystem:ApplyWave(letters, wave, waveColor, normalColor)
     for i, letter in pairs(letters) do
-        local distance = math.abs(i - wave.pos)
-        local intensity = math.max(0, 1 - (distance / wave.width))
+        -- Используем синусоидальную волну для плавности
+        local wavePos = (i - wave.pos) * (math.pi / wave.width)
+        local intensity = math.max(0, math.cos(wavePos) * 0.5 + 0.5) -- Плавная синусоида от 0 до 1
         
-        if intensity > 0 then
-            -- Слабый волновой эффект как на скриншоте
-            local scale = 1 + (intensity * wave.intensity) -- Очень слабое масштабирование
-            local bounce = intensity * 1.5 -- Слабое подпрыгивание
+        -- Дополнительное затухание на краях для плавности
+        local edgeFade = 1
+        if i <= 2 then
+            edgeFade = i / 2 -- Плавное появление слева
+        elseif i >= #letters - 1 then
+            edgeFade = (#letters - i + 1) / 2 -- Плавное исчезновение справа
+        end
+        
+        intensity = intensity * edgeFade * wave.intensity
+        
+        if intensity > 0.01 then -- Минимальный порог для плавности
+            -- Реалистичный волновой эффект
+            local scale = 1 + intensity
+            local bounce = math.sin(wavePos) * intensity * 3 -- Синусоидальное движение
+            local rotation = math.sin(wavePos) * intensity * 5 -- Легкое покачивание
             
-            -- Плавная анимация без рывков
-            TweenService:Create(letter.Frame, TweenInfo.new(0.08, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+            -- Плавная анимация
+            TweenService:Create(letter.Frame, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
                 Size = UDim2.new(0, letter.OriginalSize * scale, 1, 0),
-                Position = UDim2.new(0, letter.OriginalPos, 0, -bounce),
+                Position = UDim2.new(0, letter.OriginalPos, 0, bounce),
+                Rotation = rotation,
             }):Play()
             
-            TweenService:Create(letter.Label, TweenInfo.new(0.08, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
-                TextColor3 = waveColor
+            -- Плавный переход цвета
+            local lerpedColor = normalColor:lerp(waveColor, intensity)
+            TweenService:Create(letter.Label, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+                TextColor3 = lerpedColor
             }):Play()
         else
             -- Возврат к нормальному состоянию
-            TweenService:Create(letter.Frame, TweenInfo.new(0.12, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+            TweenService:Create(letter.Frame, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
                 Size = UDim2.new(0, letter.OriginalSize, 1, 0),
                 Position = UDim2.new(0, letter.OriginalPos, 0, 0),
+                Rotation = 0,
             }):Play()
             
-            TweenService:Create(letter.Label, TweenInfo.new(0.12, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+            TweenService:Create(letter.Label, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
                 TextColor3 = normalColor
             }):Play()
         end
     end
 end
 
--- СПЕЦИАЛЬНАЯ ФУНКЦИЯ ДЛЯ FPS И ПИНГА (цифры зеленые, буквы серые)
+-- СПЕЦИАЛЬНАЯ ФУНКЦИЯ ДЛЯ FPS И ПИНГА (реальная волна с цветами)
 function Library.WaveSystem:ApplyWaveWithColors(letters, wave)
     for i, letter in pairs(letters) do
-        local distance = math.abs(i - wave.pos)
-        local intensity = math.max(0, 1 - (distance / wave.width))
+        -- Синусоидальная волна
+        local wavePos = (i - wave.pos) * (math.pi / wave.width)
+        local intensity = math.max(0, math.cos(wavePos) * 0.5 + 0.5)
+        
+        -- Плавные края
+        local edgeFade = 1
+        if i <= 2 then
+            edgeFade = i / 2
+        elseif i >= #letters - 1 then
+            edgeFade = (#letters - i + 1) / 2
+        end
+        
+        intensity = intensity * edgeFade * wave.intensity
         
         -- Определяем цвета в зависимости от типа символа
         local waveColor, normalColor
         if letter.IsDigit then
-            waveColor = Color3.fromRGB(150, 255, 150) -- Яркий зеленый для цифр в волне
-            normalColor = Color3.fromRGB(100, 255, 100) -- Обычный зеленый для цифр
+            waveColor = Library.WaveSystem:GetColor("FPSDigitsWave") -- Яркий зеленый для цифр в волне
+            normalColor = Library.WaveSystem:GetColor("FPSDigitsNormal") -- Обычный зеленый для цифр
         else
-            waveColor = Color3.fromRGB(180, 180, 180) -- Светло-серый для букв в волне
-            normalColor = Color3.fromRGB(140, 140, 140) -- Обычный серый для букв
+            waveColor = Library.WaveSystem:GetColor("FPSLettersWave") -- Светло-серый для букв в волне
+            normalColor = Library.WaveSystem:GetColor("FPSLettersNormal") -- Обычный серый для букв
         end
         
-        if intensity > 0 then
-            -- Слабый волновой эффект
-            local scale = 1 + (intensity * wave.intensity)
-            local bounce = intensity * 1.5
+        if intensity > 0.01 then
+            -- Реалистичный волновой эффект
+            local scale = 1 + intensity
+            local bounce = math.sin(wavePos) * intensity * 3
+            local rotation = math.sin(wavePos) * intensity * 5
             
-            TweenService:Create(letter.Frame, TweenInfo.new(0.08, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+            TweenService:Create(letter.Frame, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
                 Size = UDim2.new(0, letter.OriginalSize * scale, 1, 0),
-                Position = UDim2.new(0, letter.OriginalPos, 0, -bounce),
+                Position = UDim2.new(0, letter.OriginalPos, 0, bounce),
+                Rotation = rotation,
             }):Play()
             
-            TweenService:Create(letter.Label, TweenInfo.new(0.08, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
-                TextColor3 = waveColor
+            local lerpedColor = normalColor:lerp(waveColor, intensity)
+            TweenService:Create(letter.Label, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+                TextColor3 = lerpedColor
             }):Play()
         else
             -- Возврат к нормальному состоянию
-            TweenService:Create(letter.Frame, TweenInfo.new(0.12, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+            TweenService:Create(letter.Frame, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
                 Size = UDim2.new(0, letter.OriginalSize, 1, 0),
                 Position = UDim2.new(0, letter.OriginalPos, 0, 0),
+                Rotation = 0,
             }):Play()
             
-            TweenService:Create(letter.Label, TweenInfo.new(0.12, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+            TweenService:Create(letter.Label, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
                 TextColor3 = normalColor
             }):Play()
         end
@@ -3419,6 +3674,88 @@ function Library.WaveSystem:UpdateTimeText(newText)
         currentX = currentX + 8
     end
 end
+
+-- УПРАВЛЕНИЕ КЕЙБИНДАМИ
+function Library.WaveSystem:UpdateKeybindVisibility()
+    local hasKeybinds = #Library.KeybindContainer:GetChildren() > 1 -- Больше чем UIListLayout
+    
+    if hasKeybinds then
+        -- Есть кейбинды - раскрываем
+        local keybindCount = #Library.KeybindContainer:GetChildren() - 1
+        local newHeight = 30 + (keybindCount * 25) + 10 -- Заголовок + кейбинды + отступ
+        
+        TweenService:Create(Library.KeybindFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 200, 0, newHeight)
+        }):Play()
+    else
+        -- Нет кейбиндов - компактный вид
+        TweenService:Create(Library.KeybindFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 120, 0, 30)
+        }):Play()
+    end
+end
+
+-- СОЗДАНИЕ ВОЛНОВОГО КЕЙБИНДА
+function Library.WaveSystem:CreateKeybindItem(name, key, state)
+    local keybindFrame = Library:Create('Frame', {
+        BackgroundTransparency = 1;
+        Size = UDim2.new(1, 0, 0, 20);
+        ZIndex = 103;
+        Parent = Library.KeybindContainer;
+    });
+    
+    -- Название кейбинда
+    local nameLabel = Library:CreateLabel({
+        Position = UDim2.new(0, 0, 0, 0);
+        Size = UDim2.new(0.6, 0, 1, 0);
+        Text = name;
+        TextSize = 12;
+        TextColor3 = Color3.fromRGB(180, 180, 180);
+        TextXAlignment = Enum.TextXAlignment.Left;
+        ZIndex = 104;
+        Parent = keybindFrame;
+    });
+    
+    -- Клавиша
+    local keyLabel = Library:CreateLabel({
+        Position = UDim2.new(0.6, 0, 0, 0);
+        Size = UDim2.new(0.25, 0, 1, 0);
+        Text = key;
+        TextSize = 12;
+        TextColor3 = Color3.fromRGB(120, 120, 120);
+        TextXAlignment = Enum.TextXAlignment.Center;
+        ZIndex = 104;
+        Parent = keybindFrame;
+    });
+    
+    -- Состояние
+    local stateLabel = Library:CreateLabel({
+        Position = UDim2.new(0.85, 0, 0, 0);
+        Size = UDim2.new(0.15, 0, 1, 0);
+        Text = state and "ON" or "OFF";
+        TextSize = 12;
+        TextColor3 = state and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100);
+        TextXAlignment = Enum.TextXAlignment.Right;
+        ZIndex = 104;
+        Parent = keybindFrame;
+    });
+    
+    -- Добавляем в список для отслеживания
+    table.insert(self.KeybindItems, {
+        Frame = keybindFrame,
+        NameLabel = nameLabel,
+        KeyLabel = keyLabel,
+        StateLabel = stateLabel,
+        Name = name,
+        Key = key,
+        State = state,
+    })
+    
+    -- Обновляем размер
+    self:UpdateKeybindVisibility()
+    
+    return keybindFrame
+end
 -- ЗАПУСК И ОСТАНОВКА СИСТЕМЫ
 function Library.WaveSystem:Start()
     if self.IsAnimating then return end
@@ -3431,6 +3768,11 @@ function Library.WaveSystem:Start()
     self.Connections.Wave = RunService.Heartbeat:Connect(function()
         self:UpdateWaves()
     end)
+    
+    -- Запускаем волну кейбиндов если они видимы
+    if Library.KeybindFrame and Library.KeybindFrame.Visible then
+        self:CreateKeybindHeader()
+    end
 end
 
 function Library.WaveSystem:Stop()
@@ -3467,6 +3809,65 @@ function Library:SetWatermark(Text, EnableWave)
         end
         Library:SetWatermarkVisibility(true)
     end
+end;
+
+-- НОВЫЕ ФУНКЦИИ ДЛЯ КЕЙБИНДОВ
+function Library:SetKeybindVisibility(Bool)
+    if Library.KeybindFrame then
+        Library.KeybindFrame.Visible = Bool;
+        if Bool then
+            Library.WaveSystem:CreateKeybindHeader()
+            Library.WaveSystem:UpdateKeybindVisibility()
+        end
+    end
+end;
+
+function Library:AddKeybind(name, key, state)
+    return Library.WaveSystem:CreateKeybindItem(name, key, state)
+end;
+
+function Library:RemoveKeybind(name)
+    for i, item in ipairs(Library.WaveSystem.KeybindItems) do
+        if item.Name == name then
+            item.Frame:Destroy()
+            table.remove(Library.WaveSystem.KeybindItems, i)
+            Library.WaveSystem:UpdateKeybindVisibility()
+            break
+        end
+    end
+end;
+
+function Library:UpdateKeybindState(name, state)
+    for _, item in ipairs(Library.WaveSystem.KeybindItems) do
+        if item.Name == name then
+            item.State = state
+            item.StateLabel.Text = state and "ON" or "OFF"
+            item.StateLabel.TextColor3 = state and Library.WaveSystem:GetColor("KeybindStateOn") or Library.WaveSystem:GetColor("KeybindStateOff")
+            break
+        end
+    end
+end;
+
+-- ФУНКЦИИ УПРАВЛЕНИЯ ТЕМАМИ ВОЛН
+function Library:SetWaveTheme(themeName)
+    Library.WaveSystem:SetTheme(themeName)
+end;
+
+function Library:GetAvailableWaveThemes()
+    local themes = {}
+    for themeName, _ in pairs(Library.WaveSystem.Themes) do
+        table.insert(themes, themeName)
+    end
+    return themes
+end;
+
+function Library:SetWaveColor(colorName, color)
+    Library.WaveSystem.Colors[colorName] = color
+    print("✅ Цвет " .. colorName .. " изменен")
+end;
+
+function Library:GetWaveColor(colorName)
+    return Library.WaveSystem:GetColor(colorName)
 end;
 
 -- УВЕДОМЛЕНИЯ (оригинальный код без изменений)
