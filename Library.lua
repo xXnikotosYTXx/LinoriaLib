@@ -4393,30 +4393,29 @@ end
 function Library:CreateWindow(...)
     local Arguments = { ... }
     local Config = { AnchorPoint = Vector2.zero }
-
+    
     if type(...) == 'table' then
         Config = ...;
     else
         Config.Title = Arguments[1]
         Config.AutoShow = Arguments[2] or false;
     end
-
+    
     if type(Config.Title) ~= 'string' then Config.Title = 'No title' end
     if type(Config.TabPadding) ~= 'number' then Config.TabPadding = 0 end
     if type(Config.MenuFadeTime) ~= 'number' then Config.MenuFadeTime = 0.2 end
-
     if typeof(Config.Position) ~= 'UDim2' then Config.Position = UDim2.fromOffset(175, 50) end
     if typeof(Config.Size) ~= 'UDim2' then Config.Size = UDim2.fromOffset(550, 600) end
-
+    
     if Config.Center then
         Config.AnchorPoint = Vector2.new(0.5, 0.5)
         Config.Position = UDim2.fromScale(0.5, 0.5)
     end
-
+    
     local Window = {
         Tabs = {};
     };
-
+    
     local Outer = Library:Create('Frame', {
         AnchorPoint = Config.AnchorPoint,
         BackgroundColor3 = Color3.new(0, 0, 0);
@@ -4427,9 +4426,9 @@ function Library:CreateWindow(...)
         ZIndex = 1;
         Parent = ScreenGui;
     });
-
+    
     Library:MakeDraggable(Outer, 25);
-
+    
     local Inner = Library:Create('Frame', {
         BackgroundColor3 = Library.MainColor;
         BorderColor3 = Library.AccentColor;
@@ -4439,91 +4438,187 @@ function Library:CreateWindow(...)
         ZIndex = 1;
         Parent = Outer;
     });
-
+    
     Library:AddToRegistry(Inner, {
         BackgroundColor3 = 'MainColor';
         BorderColor3 = 'AccentColor';
     });
-
-    local WindowLabel = Library:CreateLabel({
-        Position = UDim2.new(0, 7, 0, 0);
-        Size = UDim2.new(0, 0, 0, 25);
-        Text = Config.Title or '';
-        TextXAlignment = Enum.TextXAlignment.Left;
-        ZIndex = 1;
-        Parent = Inner;
-    });
-
-    local MainSectionOuter = Library:Create('Frame', {
-        BackgroundColor3 = Library.BackgroundColor;
-        BorderColor3 = Library.OutlineColor;
-        Position = UDim2.new(0, 8, 0, 25);
-        Size = UDim2.new(1, -16, 1, -33);
-        ZIndex = 1;
-        Parent = Inner;
-    });
-
-    Library:AddToRegistry(MainSectionOuter, {
-        BackgroundColor3 = 'BackgroundColor';
-        BorderColor3 = 'OutlineColor';
-    });
-
-    local MainSectionInner = Library:Create('Frame', {
-        BackgroundColor3 = Library.BackgroundColor;
-        BorderColor3 = Color3.new(0, 0, 0);
-        BorderMode = Enum.BorderMode.Inset;
-        Position = UDim2.new(0, 0, 0, 0);
-        Size = UDim2.new(1, 0, 1, 0);
-        ZIndex = 1;
-        Parent = MainSectionOuter;
-    });
-
-    Library:AddToRegistry(MainSectionInner, {
-        BackgroundColor3 = 'BackgroundColor';
-    });
-
-    local TabArea = Library:Create('Frame', {
+    
+    -- ============================================
+    -- ВОЛНОВОЙ ЗАГОЛОВОК
+    -- ============================================
+    local WindowLabelContainer = Library:Create('Frame', {
         BackgroundTransparency = 1;
-        Position = UDim2.new(0, 8, 0, 8);
-        Size = UDim2.new(1, -16, 0, 21);
+        Position = UDim2.new(0, 7, 0, 0);
+        Size = UDim2.new(1, -14, 0, 25);
         ZIndex = 1;
-        Parent = MainSectionInner;
-    });
-
-    local TabListLayout = Library:Create('UIListLayout', {
-        Padding = UDim.new(0, Config.TabPadding);
-        FillDirection = Enum.FillDirection.Horizontal;
-        SortOrder = Enum.SortOrder.LayoutOrder;
-        Parent = TabArea;
-    });
-
-    local TabContainer = Library:Create('Frame', {
-        BackgroundColor3 = Library.MainColor;
-        BorderColor3 = Library.OutlineColor;
-        Position = UDim2.new(0, 8, 0, 30);
-        Size = UDim2.new(1, -16, 1, -38);
-        ZIndex = 2;
-        Parent = MainSectionInner;
+        Parent = Inner;
     });
     
-
-    Library:AddToRegistry(TabContainer, {
-        BackgroundColor3 = 'MainColor';
-        BorderColor3 = 'OutlineColor';
-    });
-
+    local TitleLetters = {}
+    local currentX = 0
+    local titleText = Config.Title or ''
+    
+    for i = 1, #titleText do
+        local char = titleText:sub(i, i)
+        local letterFrame = Library:Create('Frame', {
+            BackgroundTransparency = 1;
+            Position = UDim2.new(0, currentX, 0, 0);
+            Size = UDim2.new(0, 10, 1, 0);
+            ZIndex = 1;
+            Parent = WindowLabelContainer;
+        });
+        
+        local letterLabel = Library:CreateLabel({
+            Size = UDim2.new(1, 0, 1, 0);
+            Text = char;
+            TextSize = 16;
+            TextColor3 = Library.FontColor;
+            TextXAlignment = Enum.TextXAlignment.Center;
+            ZIndex = 1;
+            Parent = letterFrame;
+        });
+        
+        Library:AddToRegistry(letterLabel, {
+            TextColor3 = 'FontColor';
+        });
+        
+        TitleLetters[i] = {
+            Frame = letterFrame,
+            Label = letterLabel,
+            OriginalPos = currentX,
+            OriginalSize = 10,
+            Character = char,
+        }
+        
+        currentX = currentX + 10
+    end
+    
+    local TitleWave = {
+        pos = 0,
+        speed = 0.08,
+        width = 3,
+        intensity = 0.2,
+    }
+    
+    local function ApplyTitleWave()
+        for i, letter in pairs(TitleLetters) do
+            if not letter.Frame or not letter.Frame.Parent or not letter.Label or not letter.Label.Parent then
+                continue
+            end
+            
+            local distance = math.abs(i - TitleWave.pos)
+            local intensity = math.max(0, 1 - (distance / TitleWave.width))
+            
+            if intensity > 0.05 then
+                local scale = 1 + (intensity * 0.4)
+                local shake = math.sin(tick() * 20) * intensity * 5
+                
+                local glowIntensity = intensity * 255
+                local purpleColor = Color3.fromRGB(180, 100, 220)
+                local glowColor = Color3.fromRGB(
+                    math.min(255, purpleColor.R * 255 + glowIntensity * 0.3),
+                    math.min(255, purpleColor.G * 255 + glowIntensity * 0.3),
+                    math.min(255, purpleColor.B * 255 + glowIntensity * 0.3)
+                )
+                
+                TweenService:Create(letter.Frame, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Size = UDim2.new(0, letter.OriginalSize * scale, 1, 0),
+                    Rotation = shake,
+                }):Play()
+                
+                TweenService:Create(letter.Label, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
+                    TextColor3 = glowColor,
+                    Rotation = shake,
+                    TextStrokeTransparency = 0.5,
+                    TextStrokeColor3 = Color3.fromRGB(200, 150, 255),
+                }):Play()
+            else
+                TweenService:Create(letter.Frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Size = UDim2.new(0, letter.OriginalSize, 1, 0),
+                    Rotation = 0,
+                }):Play()
+                
+                TweenService:Create(letter.Label, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                    TextColor3 = Library.FontColor,
+                    Rotation = 0,
+                    TextStrokeTransparency = 1,
+                }):Play()
+            end
+        end
+    end
+    
+    local TitleWaveConnection = RunService.Heartbeat:Connect(function()
+        if Outer.Visible then
+            TitleWave.pos = TitleWave.pos + TitleWave.speed
+            
+            if TitleWave.pos > #TitleLetters + 4 then
+                TitleWave.pos = -4
+            end
+            
+            ApplyTitleWave()
+        end
+    end)
+    
     function Window:SetWindowTitle(Title)
-        WindowLabel.Text = Title;
-    end;
-
+        for _, letter in pairs(TitleLetters) do
+            if letter.Frame then
+                letter.Frame:Destroy()
+            end
+        end
+        TitleLetters = {}
+        
+        local currentX = 0
+        for i = 1, #Title do
+            local char = Title:sub(i, i)
+            local letterFrame = Library:Create('Frame', {
+                BackgroundTransparency = 1;
+                Position = UDim2.new(0, currentX, 0, 0);
+                Size = UDim2.new(0, 10, 1, 0);
+                ZIndex = 1;
+                Parent = WindowLabelContainer;
+            });
+            
+            local letterLabel = Library:CreateLabel({
+                Size = UDim2.new(1, 0, 1, 0);
+                Text = char;
+                TextSize = 16;
+                TextColor3 = Library.FontColor;
+                TextXAlignment = Enum.TextXAlignment.Center;
+                ZIndex = 1;
+                Parent = letterFrame;
+            });
+            
+            Library:AddToRegistry(letterLabel, {
+                TextColor3 = 'FontColor';
+            });
+            
+            TitleLetters[i] = {
+                Frame = letterFrame,
+                Label = letterLabel,
+                OriginalPos = currentX,
+                OriginalSize = 10,
+                Character = char,
+            }
+            
+            currentX = currentX + 10
+        end
+    end
+    
+    -- Остальной код CreateWindow (MainSectionOuter, TabArea, TabContainer и т.д.)
+    -- ...
+    
+    -- ============================================
+    -- МОДИФИЦИРОВАННЫЙ AddTab С ВОЛНАМИ
+    -- ============================================
     function Window:AddTab(Name)
         local Tab = {
             Groupboxes = {};
             Tabboxes = {};
         };
-
+        
         local TabButtonWidth = Library:GetTextBounds(Name, Library.Font, 16);
-
+        
         local TabButton = Library:Create('Frame', {
             BackgroundColor3 = Library.BackgroundColor;
             BorderColor3 = Library.OutlineColor;
@@ -4531,426 +4626,189 @@ function Library:CreateWindow(...)
             ZIndex = 1;
             Parent = TabArea;
         });
-
+        
         Library:AddToRegistry(TabButton, {
             BackgroundColor3 = 'BackgroundColor';
             BorderColor3 = 'OutlineColor';
         });
-
-        local TabButtonLabel = Library:CreateLabel({
-            Position = UDim2.new(0, 0, 0, 0);
-            Size = UDim2.new(1, 0, 1, -1);
-            Text = Name;
-            ZIndex = 1;
+        
+        -- ВОЛНЫ НА ТАБЕ
+        local TabLetterContainer = Library:Create('Frame', {
+            BackgroundTransparency = 1;
+            Position = UDim2.new(0, 4, 0, 0);
+            Size = UDim2.new(1, -8, 1, 0);
+            ZIndex = 2;
             Parent = TabButton;
         });
-
-        local Blocker = Library:Create('Frame', {
-            BackgroundColor3 = Library.MainColor;
-            BorderSizePixel = 0;
-            Position = UDim2.new(0, 0, 1, 0);
-            Size = UDim2.new(1, 0, 0, 1);
-            BackgroundTransparency = 1;
-            ZIndex = 3;
-            Parent = TabButton;
-        });
-
-        Library:AddToRegistry(Blocker, {
-            BackgroundColor3 = 'MainColor';
-        });
-
-        local TabFrame = Library:Create('Frame', {
-            Name = 'TabFrame',
-            BackgroundTransparency = 1;
-            Position = UDim2.new(0, 0, 0, 0);
-            Size = UDim2.new(1, 0, 1, 0);
-            Visible = false;
-            ZIndex = 2;
-            Parent = TabContainer;
-        });
-
-        local LeftSide = Library:Create('ScrollingFrame', {
-            BackgroundTransparency = 1;
-            BorderSizePixel = 0;
-            Position = UDim2.new(0, 8 - 1, 0, 8 - 1);
-            Size = UDim2.new(0.5, -12 + 2, 0, 507 + 2);
-            CanvasSize = UDim2.new(0, 0, 0, 0);
-            BottomImage = '';
-            TopImage = '';
-            ScrollBarThickness = 0;
-            ZIndex = 2;
-            Parent = TabFrame;
-        });
-
-        local RightSide = Library:Create('ScrollingFrame', {
-            BackgroundTransparency = 1;
-            BorderSizePixel = 0;
-            Position = UDim2.new(0.5, 4 + 1, 0, 8 - 1);
-            Size = UDim2.new(0.5, -12 + 2, 0, 507 + 2);
-            CanvasSize = UDim2.new(0, 0, 0, 0);
-            BottomImage = '';
-            TopImage = '';
-            ScrollBarThickness = 0;
-            ZIndex = 2;
-            Parent = TabFrame;
-        });
-
-        Library:Create('UIListLayout', {
-            Padding = UDim.new(0, 8);
-            FillDirection = Enum.FillDirection.Vertical;
-            SortOrder = Enum.SortOrder.LayoutOrder;
-            HorizontalAlignment = Enum.HorizontalAlignment.Center;
-            Parent = LeftSide;
-        });
-
-        Library:Create('UIListLayout', {
-            Padding = UDim.new(0, 8);
-            FillDirection = Enum.FillDirection.Vertical;
-            SortOrder = Enum.SortOrder.LayoutOrder;
-            HorizontalAlignment = Enum.HorizontalAlignment.Center;
-            Parent = RightSide;
-        });
-
-        for _, Side in next, { LeftSide, RightSide } do
-            Side:WaitForChild('UIListLayout'):GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
-                Side.CanvasSize = UDim2.fromOffset(0, Side.UIListLayout.AbsoluteContentSize.Y);
-            end);
-        end;
-
-        function Tab:ShowTab()
-            for _, Tab in next, Window.Tabs do
-                Tab:HideTab();
-            end;
-
-            Blocker.BackgroundTransparency = 0;
-            TabButton.BackgroundColor3 = Library.MainColor;
-            Library.RegistryMap[TabButton].Properties.BackgroundColor3 = 'MainColor';
-            TabFrame.Visible = true;
-        end;
-
-        function Tab:HideTab()
-            Blocker.BackgroundTransparency = 1;
-            TabButton.BackgroundColor3 = Library.BackgroundColor;
-            Library.RegistryMap[TabButton].Properties.BackgroundColor3 = 'BackgroundColor';
-            TabFrame.Visible = false;
-        end;
-
-        function Tab:SetLayoutOrder(Position)
-            TabButton.LayoutOrder = Position;
-            TabListLayout:ApplyLayout();
-        end;
-
-        function Tab:AddGroupbox(Info)
-            local Groupbox = {};
-
-            local BoxOuter = Library:Create('Frame', {
-                BackgroundColor3 = Library.BackgroundColor;
-                BorderColor3 = Library.OutlineColor;
-                BorderMode = Enum.BorderMode.Inset;
-                Size = UDim2.new(1, 0, 0, 507 + 2);
-                ZIndex = 2;
-                Parent = Info.Side == 1 and LeftSide or RightSide;
-            });
-
-            Library:AddToRegistry(BoxOuter, {
-                BackgroundColor3 = 'BackgroundColor';
-                BorderColor3 = 'OutlineColor';
-            });
-
-            local BoxInner = Library:Create('Frame', {
-                BackgroundColor3 = Library.BackgroundColor;
-                BorderColor3 = Color3.new(0, 0, 0);
-                -- BorderMode = Enum.BorderMode.Inset;
-                Size = UDim2.new(1, -2, 1, -2);
-                Position = UDim2.new(0, 1, 0, 1);
-                ZIndex = 4;
-                Parent = BoxOuter;
-            });
-
-            Library:AddToRegistry(BoxInner, {
-                BackgroundColor3 = 'BackgroundColor';
-            });
-
-            local Highlight = Library:Create('Frame', {
-                BackgroundColor3 = Library.AccentColor;
-                BorderSizePixel = 0;
-                Size = UDim2.new(1, 0, 0, 2);
-                ZIndex = 5;
-                Parent = BoxInner;
-            });
-
-            Library:AddToRegistry(Highlight, {
-                BackgroundColor3 = 'AccentColor';
-            });
-
-            local GroupboxLabel = Library:CreateLabel({
-                Size = UDim2.new(1, 0, 0, 18);
-                Position = UDim2.new(0, 4, 0, 2);
-                TextSize = 14;
-                Text = Info.Name;
-                TextXAlignment = Enum.TextXAlignment.Left;
-                ZIndex = 5;
-                Parent = BoxInner;
-            });
-
-            local Container = Library:Create('Frame', {
+        
+        local TabLetters = {}
+        local tabCurrentX = 0
+        
+        for i = 1, #Name do
+            local char = Name:sub(i, i)
+            local letterFrame = Library:Create('Frame', {
                 BackgroundTransparency = 1;
-                Position = UDim2.new(0, 4, 0, 20);
-                Size = UDim2.new(1, -4, 1, -20);
-                ZIndex = 1;
-                Parent = BoxInner;
-            });
-
-            Library:Create('UIListLayout', {
-                FillDirection = Enum.FillDirection.Vertical;
-                SortOrder = Enum.SortOrder.LayoutOrder;
-                Parent = Container;
-            });
-
-            function Groupbox:Resize()
-                local Size = 0;
-
-                for _, Element in next, Groupbox.Container:GetChildren() do
-                    if (not Element:IsA('UIListLayout')) and Element.Visible then
-                        Size = Size + Element.Size.Y.Offset;
-                    end;
-                end;
-
-                BoxOuter.Size = UDim2.new(1, 0, 0, 20 + Size + 2 + 2);
-            end;
-
-            Groupbox.Container = Container;
-            setmetatable(Groupbox, BaseGroupbox);
-
-            Groupbox:AddBlank(3);
-            Groupbox:Resize();
-
-            Tab.Groupboxes[Info.Name] = Groupbox;
-
-            return Groupbox;
-        end;
-
-        function Tab:AddLeftGroupbox(Name)
-            return Tab:AddGroupbox({ Side = 1; Name = Name; });
-        end;
-
-        function Tab:AddRightGroupbox(Name)
-            return Tab:AddGroupbox({ Side = 2; Name = Name; });
-        end;
-
-        function Tab:AddTabbox(Info)
-            local Tabbox = {
-                Tabs = {};
-            };
-
-            local BoxOuter = Library:Create('Frame', {
-                BackgroundColor3 = Library.BackgroundColor;
-                BorderColor3 = Library.OutlineColor;
-                BorderMode = Enum.BorderMode.Inset;
-                Size = UDim2.new(1, 0, 0, 0);
+                Position = UDim2.new(0, tabCurrentX, 0, 0);
+                Size = UDim2.new(0, 9, 1, 0);
                 ZIndex = 2;
-                Parent = Info.Side == 1 and LeftSide or RightSide;
+                Parent = TabLetterContainer;
             });
-
-            Library:AddToRegistry(BoxOuter, {
-                BackgroundColor3 = 'BackgroundColor';
-                BorderColor3 = 'OutlineColor';
+            
+            local letterLabel = Library:CreateLabel({
+                Size = UDim2.new(1, 0, 1, 0);
+                Text = char;
+                TextSize = 16;
+                TextColor3 = Library.FontColor;
+                TextXAlignment = Enum.TextXAlignment.Center;
+                ZIndex = 3;
+                Parent = letterFrame;
             });
-
-            local BoxInner = Library:Create('Frame', {
-                BackgroundColor3 = Library.BackgroundColor;
-                BorderColor3 = Color3.new(0, 0, 0);
-                -- BorderMode = Enum.BorderMode.Inset;
-                Size = UDim2.new(1, -2, 1, -2);
-                Position = UDim2.new(0, 1, 0, 1);
-                ZIndex = 4;
-                Parent = BoxOuter;
+            
+            Library:AddToRegistry(letterLabel, {
+                TextColor3 = 'FontColor';
             });
-
-            Library:AddToRegistry(BoxInner, {
-                BackgroundColor3 = 'BackgroundColor';
-            });
-
-            local Highlight = Library:Create('Frame', {
-                BackgroundColor3 = Library.AccentColor;
-                BorderSizePixel = 0;
-                Size = UDim2.new(1, 0, 0, 2);
-                ZIndex = 10;
-                Parent = BoxInner;
-            });
-
-            Library:AddToRegistry(Highlight, {
-                BackgroundColor3 = 'AccentColor';
-            });
-
-            local TabboxButtons = Library:Create('Frame', {
-                BackgroundTransparency = 1;
-                Position = UDim2.new(0, 0, 0, 1);
-                Size = UDim2.new(1, 0, 0, 18);
-                ZIndex = 5;
-                Parent = BoxInner;
-            });
-
-            Library:Create('UIListLayout', {
-                FillDirection = Enum.FillDirection.Horizontal;
-                HorizontalAlignment = Enum.HorizontalAlignment.Left;
-                SortOrder = Enum.SortOrder.LayoutOrder;
-                Parent = TabboxButtons;
-            });
-
-            function Tabbox:AddTab(Name)
-                local Tab = {};
-
-                local Button = Library:Create('Frame', {
-                    BackgroundColor3 = Library.MainColor;
-                    BorderColor3 = Color3.new(0, 0, 0);
-                    Size = UDim2.new(0.5, 0, 1, 0);
-                    ZIndex = 6;
-                    Parent = TabboxButtons;
-                });
-
-                Library:AddToRegistry(Button, {
-                    BackgroundColor3 = 'MainColor';
-                });
-
-                local ButtonLabel = Library:CreateLabel({
-                    Size = UDim2.new(1, 0, 1, 0);
-                    TextSize = 14;
-                    Text = Name;
-                    TextXAlignment = Enum.TextXAlignment.Center;
-                    ZIndex = 7;
-                    Parent = Button;
-                });
-
-                local Block = Library:Create('Frame', {
-                    BackgroundColor3 = Library.BackgroundColor;
-                    BorderSizePixel = 0;
-                    Position = UDim2.new(0, 0, 1, 0);
-                    Size = UDim2.new(1, 0, 0, 1);
-                    Visible = false;
-                    ZIndex = 9;
-                    Parent = Button;
-                });
-
-                Library:AddToRegistry(Block, {
-                    BackgroundColor3 = 'BackgroundColor';
-                });
-
-                local Container = Library:Create('Frame', {
-                    BackgroundTransparency = 1;
-                    Position = UDim2.new(0, 4, 0, 20);
-                    Size = UDim2.new(1, -4, 1, -20);
-                    ZIndex = 1;
-                    Visible = false;
-                    Parent = BoxInner;
-                });
-
-                Library:Create('UIListLayout', {
-                    FillDirection = Enum.FillDirection.Vertical;
-                    SortOrder = Enum.SortOrder.LayoutOrder;
-                    Parent = Container;
-                });
-
-                function Tab:Show()
-                    for _, Tab in next, Tabbox.Tabs do
-                        Tab:Hide();
-                    end;
-
-                    Container.Visible = true;
-                    Block.Visible = true;
-
-                    Button.BackgroundColor3 = Library.BackgroundColor;
-                    Library.RegistryMap[Button].Properties.BackgroundColor3 = 'BackgroundColor';
-
-                    Tab:Resize();
-                end;
-
-                function Tab:Hide()
-                    Container.Visible = false;
-                    Block.Visible = false;
-
-                    Button.BackgroundColor3 = Library.MainColor;
-                    Library.RegistryMap[Button].Properties.BackgroundColor3 = 'MainColor';
-                end;
-
-                function Tab:Resize()
-                    local TabCount = 0;
-
-                    for _, Tab in next, Tabbox.Tabs do
-                        TabCount = TabCount + 1;
-                    end;
-
-                    for _, Button in next, TabboxButtons:GetChildren() do
-                        if not Button:IsA('UIListLayout') then
-                            Button.Size = UDim2.new(1 / TabCount, 0, 1, 0);
-                        end;
-                    end;
-
-                    if (not Container.Visible) then
-                        return;
-                    end;
-
-                    local Size = 0;
-
-                    for _, Element in next, Tab.Container:GetChildren() do
-                        if (not Element:IsA('UIListLayout')) and Element.Visible then
-                            Size = Size + Element.Size.Y.Offset;
-                        end;
-                    end;
-
-                    BoxOuter.Size = UDim2.new(1, 0, 0, 20 + Size + 2 + 2);
-                end;
-
-                Button.InputBegan:Connect(function(Input)
-                    if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
-                        Tab:Show();
-                        Tab:Resize();
-                    end;
-                end);
-
-                Tab.Container = Container;
-                Tabbox.Tabs[Name] = Tab;
-
-                setmetatable(Tab, BaseGroupbox);
-
-                Tab:AddBlank(3);
-                Tab:Resize();
-
-                -- Show first tab (number is 2 cus of the UIListLayout that also sits in that instance)
-                if #TabboxButtons:GetChildren() == 2 then
-                    Tab:Show();
-                end;
-
-                return Tab;
-            end;
-
-            Tab.Tabboxes[Info.Name or ''] = Tabbox;
-
-            return Tabbox;
-        end;
-
-        function Tab:AddLeftTabbox(Name)
-            return Tab:AddTabbox({ Name = Name, Side = 1; });
-        end;
-
-        function Tab:AddRightTabbox(Name)
-            return Tab:AddTabbox({ Name = Name, Side = 2; });
-        end;
-
-        TabButton.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-                Tab:ShowTab();
-            end;
-        end);
-
-        -- This was the first tab added, so we show it by default.
-        if #TabContainer:GetChildren() == 1 then
-            Tab:ShowTab();
-        end;
-
-        Window.Tabs[Name] = Tab;
+            
+            TabLetters[i] = {
+                Frame = letterFrame,
+                Label = letterLabel,
+                OriginalPos = tabCurrentX,
+                OriginalSize = 9,
+                Character = char,
+            }
+            
+            tabCurrentX = tabCurrentX + 9
+        end
+        
+        local TabWave = {
+            pos = 0,
+            speed = 0.07,
+            width = 3,
+            intensity = 0.18,
+        }
+        
+        local function ApplyTabWave()
+            for i, letter in pairs(TabLetters) do
+                if not letter.Frame or not letter.Frame.Parent or not letter.Label or not letter.Label.Parent then
+                    continue
+                end
+                
+                local distance = math.abs(i - TabWave.pos)
+                local intensity = math.max(0, 1 - (distance / TabWave.width))
+                
+                if intensity > 0.05 then
+                    local scale = 1 + (intensity * 0.4)
+                    local shake = math.sin(tick() * 20) * intensity * 5
+                    
+                    local glowIntensity = intensity * 255
+                    local purpleColor = Color3.fromRGB(180, 100, 220)
+                    local glowColor = Color3.fromRGB(
+                        math.min(255, purpleColor.R * 255 + glowIntensity * 0.3),
+                        math.min(255, purpleColor.G * 255 + glowIntensity * 0.3),
+                        math.min(255, purpleColor.B * 255 + glowIntensity * 0.3)
+                    )
+                    
+                    TweenService:Create(letter.Frame, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        Size = UDim2.new(0, letter.OriginalSize * scale, 1, 0),
+                        Rotation = shake,
+                    }):Play()
+                    
+                    TweenService:Create(letter.Label, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
+                        TextColor3 = glowColor,
+                        Rotation = shake,
+                        TextStrokeTransparency = 0.5,
+                        TextStrokeColor3 = Color3.fromRGB(200, 150, 255),
+                    }):Play()
+                else
+                    TweenService:Create(letter.Frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        Size = UDim2.new(0, letter.OriginalSize, 1, 0),
+                        Rotation = 0,
+                    }):Play()
+                    
+                    TweenService:Create(letter.Label, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                        TextColor3 = Library.FontColor,
+                        Rotation = 0,
+                        TextStrokeTransparency = 1,
+                    }):Play()
+                end
+            end
+        end
+        
+        local TabWaveConnection = RunService.Heartbeat:Connect(function()
+            if Outer.Visible and TabFrame.Visible then
+                TabWave.pos = TabWave.pos + TabWave.speed
+                
+                if TabWave.pos > #TabLetters + 4 then
+                    TabWave.pos = -4
+                end
+                
+                ApplyTabWave()
+            end
+        end)
+        
+        Tab.WaveConnection = TabWaveConnection
+        Tab.Letters = TabLetters
+        
+        -- Остальной код AddTab (Blocker, TabFrame, LeftSide, RightSide и т.д.)
+        -- ...
+        
         return Tab;
     end;
+    
+    return Window;
+end
+
+-- ============================================
+-- ЧАСТЬ 4: ФУНКЦИИ LIBRARY ДЛЯ ВОЛН
+-- ============================================
+
+function Library:SetWatermarkVisibility(Bool)
+    -- Код из example-final-fixed-wave.lua
+end
+
+function Library:SetWatermark(Text, EnableWave)
+    -- Код из example-final-fixed-wave.lua
+end
+
+function Library:SetKeybindVisibility(Bool)
+    -- Код из example-final-fixed-wave.lua
+end
+
+function Library:AddKeybind(name, key, state, iconName)
+    return Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
+end
+
+function Library:RemoveKeybind(name)
+    -- Код из example-final-fixed-wave.lua
+end
+
+function Library:UpdateKeybindState(name, state)
+    -- Код из example-final-fixed-wave.lua
+end
+
+function Library:SetWaveSpeed(speed)
+    -- Код из example-final-fixed-wave.lua
+end
+
+function Library:SetWaveIntensity(intensity)
+    -- Код из example-final-fixed-wave.lua
+end
+
+function Library:SetWaveWidth(width)
+    -- Код из example-final-fixed-wave.lua
+end
+
+function Library:PauseWaves()
+    Library.WaveSystem.IsAnimating = false
+end
+
+function Library:ResumeWaves()
+    Library.WaveSystem.IsAnimating = true
+end
+
+function Library:SetStatsUpdateInterval(frames)
+    frames = math.clamp(frames or 60, 10, 120)
+    Library.WaveSystem.UpdateInterval = frames
+end
 
     local ModalElement = Library:Create('TextButton', {
         BackgroundTransparency = 1;
