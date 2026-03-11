@@ -1035,42 +1035,55 @@ function Library:CreateTab(Window, Name)
     -- Enhanced tab switching with smooth transitions
     TabButton.MouseButton1Click:Connect(function()
         -- Hide all tabs with fade out
-        for _, OtherTab in pairs(Window.Tabs) do
-            if OtherTab.Frame.Visible then
-                local fadeOut = TweenService:Create(OtherTab.Frame,
-                    TweenInfo.new(0.15, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
-                    {ScrollBarImageTransparency = 1}
-                );
-                fadeOut:Play();
-                fadeOut.Completed:Connect(function()
-                    OtherTab.Frame.Visible = false;
-                end);
+        if Window.Tabs then
+            for _, OtherTab in pairs(Window.Tabs) do
+                if OtherTab.Frame and OtherTab.Frame.Visible then
+                    pcall(function()
+                        local fadeOut = TweenService:Create(OtherTab.Frame,
+                            TweenInfo.new(0.15, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
+                            {ScrollBarImageTransparency = 1}
+                        );
+                        fadeOut:Play();
+                        fadeOut.Completed:Connect(function()
+                            OtherTab.Frame.Visible = false;
+                        end);
+                    end);
+                end;
+                -- Reset button colors
+                if OtherTab.Button then
+                    pcall(function()
+                        TweenService:Create(OtherTab.Button,
+                            TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+                            {BackgroundColor3 = Library.MainColor}
+                        ):Play();
+                    end);
+                end;
             end;
-            -- Reset button colors
-            TweenService:Create(OtherTab.Button,
-                TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
-                {BackgroundColor3 = Library.MainColor}
-            ):Play();
         end;
         
         -- Show current tab with fade in
         TabFrame.Visible = true;
         TabFrame.ScrollBarImageTransparency = 1;
-        local fadeIn = TweenService:Create(TabFrame,
-            TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
-            {ScrollBarImageTransparency = 0}
-        );
-        fadeIn:Play();
+        pcall(function()
+            local fadeIn = TweenService:Create(TabFrame,
+                TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+                {ScrollBarImageTransparency = 0}
+            );
+            fadeIn:Play();
+        end);
         
         -- Highlight active button
-        TweenService:Create(TabButton,
-            TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
-            {BackgroundColor3 = Library.AccentColor}
-        ):Play();
+        pcall(function()
+            TweenService:Create(TabButton,
+                TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+                {BackgroundColor3 = Library.AccentColor}
+            ):Play();
+        end);
     end);
     
     -- Auto-resize canvas
     local function UpdateCanvasSize()
+        if not TabFrame or not TabFrame.Parent then return end
         local ContentSize = 0;
         for _, Child in pairs(TabFrame:GetChildren()) do
             if Child:IsA('Frame') then
@@ -1080,8 +1093,11 @@ function Library:CreateTab(Window, Name)
         TabFrame.CanvasSize = UDim2.fromOffset(0, ContentSize + 20);
     end;
     
-    TabFrame.ChildAdded:Connect(UpdateCanvasSize);
-    TabFrame.ChildRemoved:Connect(UpdateCanvasSize);
+    -- Connect events safely
+    pcall(function()
+        TabFrame.ChildAdded:Connect(UpdateCanvasSize);
+        TabFrame.ChildRemoved:Connect(UpdateCanvasSize);
+    end);
     
     Tab.Frame = TabFrame;
     Tab.Button = TabButton;
@@ -1091,7 +1107,12 @@ function Library:CreateTab(Window, Name)
     
     -- Show first tab by default
     if Window.TabCount == 1 then
-        TabButton.MouseButton1Click();
+        task.spawn(function()
+            task.wait(0.1) -- Small delay to ensure everything is ready
+            pcall(function()
+                TabButton.MouseButton1Click:Fire()
+            end)
+        end)
     end;
     
     return Tab;
