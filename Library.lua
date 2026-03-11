@@ -2899,16 +2899,16 @@ do
 
     local KeybindHeaderContainer = Library:Create('Frame', {
         BackgroundTransparency = 1;
-        Position = UDim2.new(0, 0, 0, 5);
-        Size = UDim2.new(1, 0, 0, 20);
+        Position = UDim2.new(0, 0, 0, 2); -- Еще меньше отступ сверху
+        Size = UDim2.new(1, 0, 0, 16); -- Компактнее высота
         ZIndex = 102;
         Parent = KeybindInner;
     });
 
     local KeybindContainer = Library:Create('Frame', {
         BackgroundTransparency = 1;
-        Position = UDim2.new(0, 10, 0, 30);
-        Size = UDim2.new(1, -20, 1, -35);
+        Position = UDim2.new(0, 6, 0, 20); -- Меньше отступы
+        Size = UDim2.new(1, -12, 1, -22); -- Меньше padding
         ZIndex = 102;
         Parent = KeybindInner;
     });
@@ -2916,7 +2916,7 @@ do
     Library:Create('UIListLayout', {
         FillDirection = Enum.FillDirection.Vertical;
         SortOrder = Enum.SortOrder.LayoutOrder;
-        Padding = UDim.new(0, 3);
+        Padding = UDim.new(0, 1); -- Минимальный spacing между кейбиндами
         Parent = KeybindContainer;
     });
 
@@ -3573,7 +3573,7 @@ end
 function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
     local keybindFrame = Library:Create('Frame', {
         BackgroundTransparency = 1;
-        Size = UDim2.new(1, 0, 0, 18);
+        Size = UDim2.new(1, 0, 0, 14); -- Компактнее высота
         ZIndex = 103;
         Parent = Library.KeybindContainer;
     });
@@ -3588,7 +3588,7 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
         if type(iconData) == "table" and iconData.Url then
             iconLabel = Library:Create('ImageLabel', {
                 Position = UDim2.new(0, 0, 0, 1);
-                Size = UDim2.new(0, 14, 0, 14);
+                Size = UDim2.new(0, 12, 0, 12); -- Меньше иконка
                 Image = iconData.Url;
                 ImageRectOffset = iconData.ImageRectOffset;
                 ImageRectSize = iconData.ImageRectSize;
@@ -3600,9 +3600,9 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
         else
             iconLabel = Library:CreateLabel({
                 Position = UDim2.new(0, 0, 0, 0);
-                Size = UDim2.new(0, 14, 1, 0);
+                Size = UDim2.new(0, 12, 1, 0);
                 Text = type(iconData) == "string" and iconData or "🔧";
-                TextSize = 11;
+                TextSize = 10;
                 TextColor3 = Color3.fromRGB(120, 120, 120);
                 TextXAlignment = Enum.TextXAlignment.Center;
                 Font = customFont;
@@ -3611,7 +3611,7 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
             });
         end
         
-        nameStartX = 18
+        nameStartX = 16 -- Меньше отступ
     end
     
     local containerWidth = 180
@@ -3622,7 +3622,7 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
         Position = UDim2.new(0, nameStartX, 0, 0);
         Size = UDim2.new(0, availableWidth * 0.5, 1, 0);
         Text = name;
-        TextSize = 11;
+        TextSize = 10; -- Меньше шрифт
         TextColor3 = Color3.fromRGB(180, 180, 180);
         TextXAlignment = Enum.TextXAlignment.Left;
         Font = customFont;
@@ -3630,12 +3630,12 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
         Parent = keybindFrame;
     });
     
-    -- МИНИМАЛИСТИЧНАЯ КЛАВИША (без рамки, просто текст)
+    -- МИНИМАЛИСТИЧНАЯ КЛАВИША
     local keyLabel = Library:CreateLabel({
         Position = UDim2.new(0, nameStartX + availableWidth * 0.5, 0, 0);
         Size = UDim2.new(0, availableWidth * 0.25, 1, 0);
         Text = key;
-        TextSize = 10;
+        TextSize = 9; -- Меньше шрифт
         TextColor3 = Color3.fromRGB(120, 120, 130);
         TextXAlignment = Enum.TextXAlignment.Center;
         Font = customFont;
@@ -3643,7 +3643,7 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
         Parent = keybindFrame;
     });
     
-    -- ON/OFF С ВОЛНОВЫМ ЭФФЕКТОМ (справа)
+    -- ON/OFF С ВОЛНОВЫМ ЭФФЕКТОМ
     local stateText = state and "ON" or "OFF"
     local stateLetters = {}
     local stateStartX = nameStartX + availableWidth * 0.78
@@ -3652,8 +3652,8 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
         local char = stateText:sub(i, i)
         local letterFrame = Library:Create('Frame', {
             BackgroundTransparency = 1;
-            Position = UDim2.new(0, stateStartX + (i-1) * 9, 0, 0);
-            Size = UDim2.new(0, 9, 1, 0);
+            Position = UDim2.new(0, stateStartX + (i-1) * 8, 0, 0); -- Меньше spacing
+            Size = UDim2.new(0, 8, 1, 0);
             ZIndex = 104;
             Parent = keybindFrame;
         });
@@ -3661,7 +3661,7 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
         local letterLabel = Library:CreateLabel({
             Size = UDim2.new(1, 0, 1, 0);
             Text = char;
-            TextSize = 11;
+            TextSize = 10; -- Меньше шрифт
             TextColor3 = state and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100);
             TextXAlignment = Enum.TextXAlignment.Center;
             Font = customFont;
@@ -3672,8 +3672,8 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
         stateLetters[i] = {
             Frame = letterFrame,
             Label = letterLabel,
-            OriginalPos = stateStartX + (i-1) * 9,
-            OriginalSize = 9,
+            OriginalPos = stateStartX + (i-1) * 8,
+            OriginalSize = 8,
             Character = char,
         }
     end
@@ -3699,8 +3699,8 @@ function Library.WaveSystem:UpdateKeybindVisibility()
     local keybindCount = #self.KeybindItems
     
     if keybindCount > 0 then
-        -- Есть кейбинды - ЖИВОЕ РАСКРЫТИЕ
-        local newHeight = 35 + (keybindCount * 21)
+        -- Есть кейбинды - ЖИВОЕ РАСКРЫТИЕ (компактнее)
+        local newHeight = 24 + (keybindCount * 15) -- Компактнее высота
         
         -- Анимация с bounce эффектом
         TweenService:Create(Library.KeybindFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
@@ -3719,7 +3719,7 @@ function Library.WaveSystem:UpdateKeybindVisibility()
     else
         -- Нет кейбиндов - ПЛАВНОЕ СЖАТИЕ
         TweenService:Create(Library.KeybindFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-            Size = UDim2.new(0, 200, 0, 30)
+            Size = UDim2.new(0, 200, 0, 22) -- Компактнее минимальный размер
         }):Play()
     end
 end
@@ -3794,12 +3794,12 @@ function Library:SetKeybindVisibility(Bool)
         if Bool then
             -- ЖИВАЯ АНИМАЦИЯ ПОЯВЛЕНИЯ кейбиндов
             Library.KeybindFrame.Visible = true;
-            Library.KeybindFrame.Size = UDim2.new(0, 50, 0, 10) -- Маленький размер
+            Library.KeybindFrame.Size = UDim2.new(0, 50, 0, 10)
             Library.KeybindFrame.GroupTransparency = 1
             
             -- Анимация увеличения с bounce
             TweenService:Create(Library.KeybindFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-                Size = UDim2.new(0, 200, 0, 30),
+                Size = UDim2.new(0, 200, 0, 22), -- Компактнее начальный размер
                 GroupTransparency = 0
             }):Play()
             
@@ -3932,6 +3932,7 @@ function Library:Notify(Text, Time)
         NotifyOuter:Destroy();
     end);
 end;
+
 
 
 
