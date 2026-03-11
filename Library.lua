@@ -3707,13 +3707,49 @@ function Library.WaveSystem:UpdateKeybindVisibility()
             Size = UDim2.new(0, 200, 0, newHeight)
         }):Play()
         
-        -- Анимация появления каждого кейбинда с задержкой
+        -- Анимация появления каждого кейбинда с задержкой (через BackgroundTransparency)
         for i, item in ipairs(self.KeybindItems) do
-            item.Frame.GroupTransparency = 1
+            -- Устанавливаем начальную прозрачность для всех элементов
+            if item.IconLabel then
+                if item.IconLabel.ClassName == "ImageLabel" then
+                    item.IconLabel.ImageTransparency = 1
+                else
+                    item.IconLabel.TextTransparency = 1
+                end
+            end
+            item.NameLabel.TextTransparency = 1
+            item.KeyLabel.TextTransparency = 1
+            for _, letter in pairs(item.StateLetters) do
+                letter.Label.TextTransparency = 1
+            end
+            
+            -- Анимация появления с задержкой
             task.delay(i * 0.05, function()
-                TweenService:Create(item.Frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                    GroupTransparency = 0
+                if item.IconLabel then
+                    if item.IconLabel.ClassName == "ImageLabel" then
+                        TweenService:Create(item.IconLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                            ImageTransparency = 0
+                        }):Play()
+                    else
+                        TweenService:Create(item.IconLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                            TextTransparency = 0
+                        }):Play()
+                    end
+                end
+                
+                TweenService:Create(item.NameLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    TextTransparency = 0
                 }):Play()
+                
+                TweenService:Create(item.KeyLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    TextTransparency = 0
+                }):Play()
+                
+                for _, letter in pairs(item.StateLetters) do
+                    TweenService:Create(letter.Label, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        TextTransparency = 0
+                    }):Play()
+                end
             end)
         end
     else
@@ -3795,24 +3831,61 @@ function Library:SetKeybindVisibility(Bool)
             -- ЖИВАЯ АНИМАЦИЯ ПОЯВЛЕНИЯ кейбиндов
             Library.KeybindFrame.Visible = true;
             Library.KeybindFrame.Size = UDim2.new(0, 50, 0, 10)
-            Library.KeybindFrame.GroupTransparency = 1
+            
+            -- Делаем все элементы прозрачными
+            for _, child in pairs(Library.KeybindFrame:GetDescendants()) do
+                if child:IsA("TextLabel") then
+                    child.TextTransparency = 1
+                elseif child:IsA("ImageLabel") then
+                    child.ImageTransparency = 1
+                end
+            end
             
             -- Анимация увеличения с bounce
             TweenService:Create(Library.KeybindFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-                Size = UDim2.new(0, 200, 0, 24),
-                GroupTransparency = 0
+                Size = UDim2.new(0, 200, 0, 24)
             }):Play()
+            
+            -- Плавное появление элементов
+            task.delay(0.2, function()
+                for _, child in pairs(Library.KeybindFrame:GetDescendants()) do
+                    if child:IsA("TextLabel") then
+                        TweenService:Create(child, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                            TextTransparency = 0
+                        }):Play()
+                    elseif child:IsA("ImageLabel") then
+                        TweenService:Create(child, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                            ImageTransparency = 0
+                        }):Play()
+                    end
+                end
+            end)
             
             Library.WaveSystem:CreateKeybindHeader()
             Library.WaveSystem:UpdateKeybindVisibility()
         else
             -- ЖИВАЯ АНИМАЦИЯ ИСЧЕЗНОВЕНИЯ
-            TweenService:Create(Library.KeybindFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
-                Size = UDim2.new(0, 50, 0, 10),
-                GroupTransparency = 1
-            }):Play()
+            -- Сначала делаем элементы прозрачными
+            for _, child in pairs(Library.KeybindFrame:GetDescendants()) do
+                if child:IsA("TextLabel") then
+                    TweenService:Create(child, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                        TextTransparency = 1
+                    }):Play()
+                elseif child:IsA("ImageLabel") then
+                    TweenService:Create(child, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                        ImageTransparency = 1
+                    }):Play()
+                end
+            end
             
-            task.delay(0.3, function()
+            -- Потом сжимаем
+            task.delay(0.2, function()
+                TweenService:Create(Library.KeybindFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+                    Size = UDim2.new(0, 50, 0, 10)
+                }):Play()
+            end)
+            
+            task.delay(0.5, function()
                 Library.KeybindFrame.Visible = false;
             end)
         end
@@ -3932,6 +4005,7 @@ function Library:Notify(Text, Time)
         NotifyOuter:Destroy();
     end);
 end;
+
 
 
 
