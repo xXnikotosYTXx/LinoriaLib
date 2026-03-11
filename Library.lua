@@ -1145,7 +1145,8 @@ function Funcs:AddKeyPicker(Idx, Info)
     end;
 
     function KeyPicker:Update()
-        if Info.NoUI then
+        -- Если используется волновой дисплей, НЕ показываем оригинальный
+        if Info.NoUI or (not Info.NoUI and Library.WaveSystem) then
             return;
         end;
 
@@ -1371,6 +1372,7 @@ function Funcs:AddKeyPicker(Idx, Info)
 
     return self;
 end;
+
 
 
     BaseAddons.__index = Funcs;
