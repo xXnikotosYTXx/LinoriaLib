@@ -2792,7 +2792,7 @@ Library.WaveSystem = {
     LastPing = 0,
     LastTime = "",
     FrameCounter = 0,
-    UpdateInterval = 30,
+    UpdateInterval = 60, -- Обновляем статистику реже (каждые 60 кадров вместо 30)
     
     -- Позиции для обновления
     FPSStartX = 0,
@@ -3342,6 +3342,11 @@ end
 -- ПРИМЕНЕНИЕ ВОЛНЫ С GLOW ЭФФЕКТОМ И ТРЯСКОЙ
 function Library.WaveSystem:ApplyWave(letters, wave, waveColor, normalColor)
     for i, letter in pairs(letters) do
+        -- Проверяем что элементы существуют
+        if not letter.Frame or not letter.Frame.Parent or not letter.Label or not letter.Label.Parent then
+            continue
+        end
+        
         local distance = math.abs(i - wave.pos)
         local intensity = math.max(0, 1 - (distance / wave.width))
         
@@ -3390,6 +3395,11 @@ end
 -- ПРИМЕНЕНИЕ ВОЛНЫ С GLOW ДЛЯ FPS/PING
 function Library.WaveSystem:ApplyWaveWithColors(letters, wave)
     for i, letter in pairs(letters) do
+        -- Проверяем что элементы существуют
+        if not letter.Frame or not letter.Frame.Parent or not letter.Label or not letter.Label.Parent then
+            continue
+        end
+        
         local distance = math.abs(i - wave.pos)
         local intensity = math.max(0, 1 - (distance / wave.width))
         
@@ -3452,6 +3462,11 @@ end
 function Library.WaveSystem:UpdateWaves()
     if not self.IsAnimating then return end
     
+    -- Проверяем что контейнер существует
+    if not self.Container or not self.Container.Parent then
+        return
+    end
+    
     self.FrameCounter = self.FrameCounter + 1
     
     -- Обновляем позиции волн
@@ -3483,21 +3498,33 @@ function Library.WaveSystem:UpdateWaves()
         self.KeybindHeaderWave.pos = -resetBuffer
     end
     
-    -- Применяем волны
-    self:ApplyWave(self.ProjectLetters, self.ProjectWave, 
-        Color3.fromRGB(220, 150, 255), Color3.fromRGB(180, 100, 220)) -- ФИОЛЕТОВЫЙ
-    self:ApplyWave(self.NicknameLetters, self.NicknameWave, 
-        Color3.fromRGB(220, 220, 220), Color3.fromRGB(192, 192, 192)) -- СЕРЕБРИСТЫЙ
-    self:ApplyWaveWithColors(self.FPSLetters, self.FPSWave)
-    self:ApplyWaveWithColors(self.PingLetters, self.PingWave)
-    self:ApplyWave(self.TimeLetters, self.TimeWave, 
-        Color3.fromRGB(160, 160, 160), Color3.fromRGB(120, 120, 120))
-    self:ApplyWave(self.KeybindHeaderLetters, self.KeybindHeaderWave, 
-        Color3.fromRGB(255, 255, 255), Color3.fromRGB(200, 200, 200))
+    -- Применяем волны (с проверкой существования)
+    if #self.ProjectLetters > 0 then
+        self:ApplyWave(self.ProjectLetters, self.ProjectWave, 
+            Color3.fromRGB(220, 150, 255), Color3.fromRGB(180, 100, 220))
+    end
+    if #self.NicknameLetters > 0 then
+        self:ApplyWave(self.NicknameLetters, self.NicknameWave, 
+            Color3.fromRGB(220, 220, 220), Color3.fromRGB(192, 192, 192))
+    end
+    if #self.FPSLetters > 0 then
+        self:ApplyWaveWithColors(self.FPSLetters, self.FPSWave)
+    end
+    if #self.PingLetters > 0 then
+        self:ApplyWaveWithColors(self.PingLetters, self.PingWave)
+    end
+    if #self.TimeLetters > 0 then
+        self:ApplyWave(self.TimeLetters, self.TimeWave, 
+            Color3.fromRGB(160, 160, 160), Color3.fromRGB(120, 120, 120))
+    end
+    if #self.KeybindHeaderLetters > 0 then
+        self:ApplyWave(self.KeybindHeaderLetters, self.KeybindHeaderWave, 
+            Color3.fromRGB(255, 255, 255), Color3.fromRGB(200, 200, 200))
+    end
     
     -- ВОЛНЫ НА ON/OFF В КЕЙБИНДАХ
     for _, item in pairs(self.KeybindItems) do
-        if item.StateLetters then
+        if item.StateLetters and item.Frame and item.Frame.Parent then
             local stateWave = {pos = self.KeybindHeaderWave.pos, speed = 0.065, width = 2, intensity = 0.15}
             local waveColor = item.State and Color3.fromRGB(150, 255, 150) or Color3.fromRGB(255, 150, 150)
             local normalColor = item.State and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
@@ -3506,7 +3533,7 @@ function Library.WaveSystem:UpdateWaves()
     end
     
     -- Анимация иконки palette
-    if self.PaletteIcon then
+    if self.PaletteIcon and self.PaletteIcon.Parent then
         local pulse = math.sin(tick() * 2) * 0.1 + 1
         
         if self.PaletteIcon.ClassName == "ImageLabel" then
@@ -3530,34 +3557,35 @@ end
 
 -- ОБНОВЛЕНИЕ СТАТИСТИКИ
 function Library.WaveSystem:UpdateStats()
-    -- FPS
-    local currentFPS = math.floor(1 / RunService.Heartbeat:Wait())
+    -- FPS (обновляем только если изменился)
+    local currentFPS = math.floor(workspace:GetRealPhysicsFPS())
     if currentFPS ~= self.LastFPS then
         self.LastFPS = currentFPS
         self:CreateFPSText(tostring(currentFPS) .. " FPS")
     end
     
-    -- Пинг с цветовой индикацией
-    pcall(function()
-        local currentPing = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-        if currentPing ~= self.LastPing then
-            self.LastPing = currentPing
-            
-            -- Определяем цвет пинга
-            local pingColor
-            if currentPing < 100 then
-                pingColor = Color3.fromRGB(100, 255, 100) -- ЗЕЛЕНЫЙ <100ms
-            elseif currentPing < 200 then
-                pingColor = Color3.fromRGB(255, 255, 100) -- ЖЕЛТЫЙ 100-200ms
-            else
-                pingColor = Color3.fromRGB(255, 100, 100) -- КРАСНЫЙ >200ms
-            end
-            
-            self:CreatePingText(tostring(currentPing) .. " MS", pingColor)
-        end
+    -- Пинг с цветовой индикацией (обновляем только если изменился)
+    local success, currentPing = pcall(function()
+        return math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
     end)
     
-    -- Время
+    if success and currentPing ~= self.LastPing then
+        self.LastPing = currentPing
+        
+        -- Определяем цвет пинга
+        local pingColor
+        if currentPing < 100 then
+            pingColor = Color3.fromRGB(100, 255, 100) -- ЗЕЛЕНЫЙ <100ms
+        elseif currentPing < 200 then
+            pingColor = Color3.fromRGB(255, 255, 100) -- ЖЕЛТЫЙ 100-200ms
+        else
+            pingColor = Color3.fromRGB(255, 100, 100) -- КРАСНЫЙ >200ms
+        end
+        
+        self:CreatePingText(tostring(currentPing) .. " MS", pingColor)
+    end
+    
+    -- Время (обновляем только если изменилось)
     local gameTime = math.floor(workspace.DistributedGameTime)
     local hours = math.floor(gameTime / 3600)
     local minutes = math.floor((gameTime % 3600) / 60)
@@ -4046,7 +4074,6 @@ function Library:Notify(Text, Time)
         NotifyOuter:Destroy();
     end);
 end;
-
 
 
 
