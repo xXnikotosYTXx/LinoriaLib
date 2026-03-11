@@ -2899,16 +2899,16 @@ do
 
     local KeybindHeaderContainer = Library:Create('Frame', {
         BackgroundTransparency = 1;
-        Position = UDim2.new(0, 0, 0, 2); -- Еще меньше отступ сверху
-        Size = UDim2.new(1, 0, 0, 16); -- Компактнее высота
+        Position = UDim2.new(0, 0, 0, 3);
+        Size = UDim2.new(1, 0, 0, 18);
         ZIndex = 102;
         Parent = KeybindInner;
     });
 
     local KeybindContainer = Library:Create('Frame', {
         BackgroundTransparency = 1;
-        Position = UDim2.new(0, 6, 0, 20); -- Меньше отступы
-        Size = UDim2.new(1, -12, 1, -22); -- Меньше padding
+        Position = UDim2.new(0, 8, 0, 23);
+        Size = UDim2.new(1, -16, 1, -26);
         ZIndex = 102;
         Parent = KeybindInner;
     });
@@ -2916,7 +2916,7 @@ do
     Library:Create('UIListLayout', {
         FillDirection = Enum.FillDirection.Vertical;
         SortOrder = Enum.SortOrder.LayoutOrder;
-        Padding = UDim.new(0, 1); -- Минимальный spacing между кейбиндами
+        Padding = UDim.new(0, 1.5);
         Parent = KeybindContainer;
     });
 
@@ -3573,7 +3573,7 @@ end
 function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
     local keybindFrame = Library:Create('Frame', {
         BackgroundTransparency = 1;
-        Size = UDim2.new(1, 0, 0, 14); -- Компактнее высота
+        Size = UDim2.new(1, 0, 0, 15);
         ZIndex = 103;
         Parent = Library.KeybindContainer;
     });
@@ -3699,8 +3699,8 @@ function Library.WaveSystem:UpdateKeybindVisibility()
     local keybindCount = #self.KeybindItems
     
     if keybindCount > 0 then
-        -- Есть кейбинды - ЖИВОЕ РАСКРЫТИЕ (компактнее)
-        local newHeight = 24 + (keybindCount * 15) -- Компактнее высота
+        -- Есть кейбинды - ЖИВОЕ РАСКРЫТИЕ
+        local newHeight = 26 + (keybindCount * 16.5)
         
         -- Анимация с bounce эффектом
         TweenService:Create(Library.KeybindFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
@@ -3719,7 +3719,7 @@ function Library.WaveSystem:UpdateKeybindVisibility()
     else
         -- Нет кейбиндов - ПЛАВНОЕ СЖАТИЕ
         TweenService:Create(Library.KeybindFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-            Size = UDim2.new(0, 200, 0, 22) -- Компактнее минимальный размер
+            Size = UDim2.new(0, 200, 0, 24)
         }):Play()
     end
 end
@@ -3799,7 +3799,7 @@ function Library:SetKeybindVisibility(Bool)
             
             -- Анимация увеличения с bounce
             TweenService:Create(Library.KeybindFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-                Size = UDim2.new(0, 200, 0, 22), -- Компактнее начальный размер
+                Size = UDim2.new(0, 200, 0, 24),
                 GroupTransparency = 0
             }):Play()
             
@@ -3932,6 +3932,7 @@ function Library:Notify(Text, Time)
         NotifyOuter:Destroy();
     end);
 end;
+
 
 
 
