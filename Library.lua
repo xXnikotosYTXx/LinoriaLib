@@ -2694,6 +2694,7 @@ Library.WaveSystem = {
     NicknameLetters = {},
     FPSLetters = {},
     PingLetters = {},
+    TimeLetters = {}, -- Добавляем буквы времени
     TimeLabel = nil,
     
     -- Волны с разными параметрами
@@ -2701,6 +2702,7 @@ Library.WaveSystem = {
     NicknameWave = {pos = 0, speed = 0.05, width = 3, intensity = 0.1},
     FPSWave = {pos = 0, speed = 0.04, width = 2, intensity = 0.08},
     PingWave = {pos = 0, speed = 0.035, width = 2, intensity = 0.08},
+    TimeWave = {pos = 0, speed = 0.025, width = 4, intensity = 0.06}, -- Плавная волна для времени
     
     -- Состояние
     IsAnimating = false,
@@ -2872,7 +2874,7 @@ function Library.WaveSystem:CreateElements()
     });
     currentX = currentX + 22
     -- 2. НАЗВАНИЕ ПРОЕКТА С ВОЛНОЙ (белое)
-    local projectName = "matcha" -- Как на скриншоте
+    local projectName = "Project Radiant" -- Изменено название
     self.ProjectLetters = {}
     
     for i = 1, #projectName do
@@ -2973,13 +2975,16 @@ function Library.WaveSystem:CreateElements()
     });
     currentX = currentX + 12
     
-    -- 4. FPS С ВОЛНОЙ (зеленый)
+    -- 4. FPS С ВОЛНОЙ (цифры зеленые, буквы серые)
     local fpsText = "143 FPS" -- Начальное значение
     self.FPSLetters = {}
     self.FPSStartX = currentX -- Сохраняем начальную позицию для обновлений
     
     for i = 1, #fpsText do
         local char = fpsText:sub(i, i)
+        local isDigit = tonumber(char) ~= nil
+        local color = isDigit and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(140, 140, 140) -- Зеленые цифры, серые буквы
+        
         local letterFrame = Library:Create('Frame', {
             BackgroundTransparency = 1;
             Position = UDim2.new(0, currentX, 0, 0);
@@ -2992,7 +2997,7 @@ function Library.WaveSystem:CreateElements()
             Size = UDim2.new(1, 0, 1, 0);
             Text = char;
             TextSize = 14;
-            TextColor3 = Color3.fromRGB(100, 255, 100); -- Зеленый
+            TextColor3 = color;
             TextXAlignment = Enum.TextXAlignment.Center;
             ZIndex = 204;
             Parent = letterFrame;
@@ -3004,6 +3009,7 @@ function Library.WaveSystem:CreateElements()
             OriginalPos = currentX,
             OriginalSize = 7,
             Character = char,
+            IsDigit = isDigit,
         }
         
         currentX = currentX + 7
@@ -3023,13 +3029,16 @@ function Library.WaveSystem:CreateElements()
     });
     currentX = currentX + 12
     
-    -- 5. ПИНГ С ВОЛНОЙ (серый)
+    -- 5. ПИНГ С ВОЛНОЙ (цифры зеленые, буквы серые)
     local pingText = "57 MS"
     self.PingLetters = {}
     self.PingStartX = currentX
     
     for i = 1, #pingText do
         local char = pingText:sub(i, i)
+        local isDigit = tonumber(char) ~= nil
+        local color = isDigit and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(140, 140, 140) -- Зеленые цифры, серые буквы
+        
         local letterFrame = Library:Create('Frame', {
             BackgroundTransparency = 1;
             Position = UDim2.new(0, currentX, 0, 0);
@@ -3042,7 +3051,7 @@ function Library.WaveSystem:CreateElements()
             Size = UDim2.new(1, 0, 1, 0);
             Text = char;
             TextSize = 14;
-            TextColor3 = Color3.fromRGB(140, 140, 140); -- Серый
+            TextColor3 = color;
             TextXAlignment = Enum.TextXAlignment.Center;
             ZIndex = 204;
             Parent = letterFrame;
@@ -3054,6 +3063,7 @@ function Library.WaveSystem:CreateElements()
             OriginalPos = currentX,
             OriginalSize = 7,
             Character = char,
+            IsDigit = isDigit,
         }
         
         currentX = currentX + 7
@@ -3072,18 +3082,41 @@ function Library.WaveSystem:CreateElements()
     });
     currentX = currentX + 12
     
-    -- 6. ВРЕМЯ (серое, без волны)
-    self.TimeLabel = Library:CreateLabel({
-        Position = UDim2.new(0, currentX, 0, 0);
-        Size = UDim2.new(0, 65, 1, 0);
-        Text = "00:04:42";
-        TextSize = 14;
-        TextColor3 = Color3.fromRGB(120, 120, 120); -- Темно-серый
-        TextXAlignment = Enum.TextXAlignment.Left;
-        ZIndex = 203;
-        Parent = self.Container;
-    });
-    currentX = currentX + 70
+    -- 6. ВРЕМЯ С ПЛАВНОЙ ВОЛНОЙ (серое)
+    local timeText = "00:04:42"
+    self.TimeLetters = {}
+    self.TimeStartX = currentX
+    
+    for i = 1, #timeText do
+        local char = timeText:sub(i, i)
+        local letterFrame = Library:Create('Frame', {
+            BackgroundTransparency = 1;
+            Position = UDim2.new(0, currentX, 0, 0);
+            Size = UDim2.new(0, 8, 1, 0);
+            ZIndex = 203;
+            Parent = self.Container;
+        });
+        
+        local letterLabel = Library:CreateLabel({
+            Size = UDim2.new(1, 0, 1, 0);
+            Text = char;
+            TextSize = 14;
+            TextColor3 = Color3.fromRGB(120, 120, 120); -- Темно-серый
+            TextXAlignment = Enum.TextXAlignment.Center;
+            ZIndex = 204;
+            Parent = letterFrame;
+        });
+        
+        self.TimeLetters[i] = {
+            Frame = letterFrame,
+            Label = letterLabel,
+            OriginalPos = currentX,
+            OriginalSize = 8,
+            Character = char,
+        }
+        
+        currentX = currentX + 8
+    end
     
     -- Обновляем размер ватермарка для адаптивности
     Library.Watermark.Size = UDim2.new(0, math.max(currentX + 20, 400), 0, 30)
@@ -3100,6 +3133,7 @@ function Library.WaveSystem:UpdateWaves()
     self.NicknameWave.pos = self.NicknameWave.pos + self.NicknameWave.speed
     self.FPSWave.pos = self.FPSWave.pos + self.FPSWave.speed
     self.PingWave.pos = self.PingWave.pos + self.PingWave.speed
+    self.TimeWave.pos = self.TimeWave.pos + self.TimeWave.speed -- Добавляем волну времени
     
     -- Сброс волн при достижении конца
     if self.ProjectWave.pos > #self.ProjectLetters + self.ProjectWave.width then
@@ -3114,12 +3148,16 @@ function Library.WaveSystem:UpdateWaves()
     if self.PingWave.pos > #self.PingLetters + self.PingWave.width then
         self.PingWave.pos = -self.PingWave.width
     end
+    if self.TimeWave.pos > #self.TimeLetters + self.TimeWave.width then
+        self.TimeWave.pos = -self.TimeWave.width
+    end
     
     -- Применяем слабые волны как на скриншоте
     self:ApplyWave(self.ProjectLetters, self.ProjectWave, Color3.fromRGB(255, 255, 255), Color3.fromRGB(220, 220, 220))
     self:ApplyWave(self.NicknameLetters, self.NicknameWave, Color3.fromRGB(200, 200, 200), Color3.fromRGB(160, 160, 160))
-    self:ApplyWave(self.FPSLetters, self.FPSWave, Color3.fromRGB(150, 255, 150), Color3.fromRGB(100, 255, 100))
-    self:ApplyWave(self.PingLetters, self.PingWave, Color3.fromRGB(180, 180, 180), Color3.fromRGB(140, 140, 140))
+    self:ApplyWaveWithColors(self.FPSLetters, self.FPSWave) -- Специальная функция для FPS
+    self:ApplyWaveWithColors(self.PingLetters, self.PingWave) -- Специальная функция для пинга
+    self:ApplyWave(self.TimeLetters, self.TimeWave, Color3.fromRGB(160, 160, 160), Color3.fromRGB(120, 120, 120)) -- Плавная волна времени
     
     -- Обновляем статистику реже для оптимизации
     if self.FrameCounter % self.UpdateInterval == 0 then
@@ -3138,6 +3176,49 @@ function Library.WaveSystem:ApplyWave(letters, wave, waveColor, normalColor)
             local bounce = intensity * 1.5 -- Слабое подпрыгивание
             
             -- Плавная анимация без рывков
+            TweenService:Create(letter.Frame, TweenInfo.new(0.08, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+                Size = UDim2.new(0, letter.OriginalSize * scale, 1, 0),
+                Position = UDim2.new(0, letter.OriginalPos, 0, -bounce),
+            }):Play()
+            
+            TweenService:Create(letter.Label, TweenInfo.new(0.08, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+                TextColor3 = waveColor
+            }):Play()
+        else
+            -- Возврат к нормальному состоянию
+            TweenService:Create(letter.Frame, TweenInfo.new(0.12, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+                Size = UDim2.new(0, letter.OriginalSize, 1, 0),
+                Position = UDim2.new(0, letter.OriginalPos, 0, 0),
+            }):Play()
+            
+            TweenService:Create(letter.Label, TweenInfo.new(0.12, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+                TextColor3 = normalColor
+            }):Play()
+        end
+    end
+end
+
+-- СПЕЦИАЛЬНАЯ ФУНКЦИЯ ДЛЯ FPS И ПИНГА (цифры зеленые, буквы серые)
+function Library.WaveSystem:ApplyWaveWithColors(letters, wave)
+    for i, letter in pairs(letters) do
+        local distance = math.abs(i - wave.pos)
+        local intensity = math.max(0, 1 - (distance / wave.width))
+        
+        -- Определяем цвета в зависимости от типа символа
+        local waveColor, normalColor
+        if letter.IsDigit then
+            waveColor = Color3.fromRGB(150, 255, 150) -- Яркий зеленый для цифр в волне
+            normalColor = Color3.fromRGB(100, 255, 100) -- Обычный зеленый для цифр
+        else
+            waveColor = Color3.fromRGB(180, 180, 180) -- Светло-серый для букв в волне
+            normalColor = Color3.fromRGB(140, 140, 140) -- Обычный серый для букв
+        end
+        
+        if intensity > 0 then
+            -- Слабый волновой эффект
+            local scale = 1 + (intensity * wave.intensity)
+            local bounce = intensity * 1.5
+            
             TweenService:Create(letter.Frame, TweenInfo.new(0.08, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
                 Size = UDim2.new(0, letter.OriginalSize * scale, 1, 0),
                 Position = UDim2.new(0, letter.OriginalPos, 0, -bounce),
@@ -3193,13 +3274,11 @@ function Library.WaveSystem:UpdateStats()
     
     if currentTime ~= self.LastTime then
         self.LastTime = currentTime
-        if self.TimeLabel then
-            self.TimeLabel.Text = currentTime
-        end
+        self:UpdateTimeText(currentTime)
     end
 end
--- ОБНОВЛЕНИЕ ТЕКСТА FPS С АДАПТИВНЫМ РАЗМЕРОМ
-function Library.WaveSystem:UpdateFPSText(newText, color)
+-- ОБНОВЛЕНИЕ ТЕКСТА FPS С АДАПТИВНЫМ РАЗМЕРОМ И ЦВЕТАМИ
+function Library.WaveSystem:UpdateFPSText(newText, baseColor)
     -- Удаляем старые буквы FPS
     for _, letter in pairs(self.FPSLetters) do
         if letter.Frame then
@@ -3209,11 +3288,13 @@ function Library.WaveSystem:UpdateFPSText(newText, color)
     self.FPSLetters = {}
     
     local currentX = self.FPSStartX
-    color = color or Color3.fromRGB(100, 255, 100)
     
-    -- Создаем новые буквы
+    -- Создаем новые буквы с правильными цветами
     for i = 1, #newText do
         local char = newText:sub(i, i)
+        local isDigit = tonumber(char) ~= nil
+        local color = isDigit and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(140, 140, 140)
+        
         local letterFrame = Library:Create('Frame', {
             BackgroundTransparency = 1;
             Position = UDim2.new(0, currentX, 0, 0);
@@ -3238,13 +3319,14 @@ function Library.WaveSystem:UpdateFPSText(newText, color)
             OriginalPos = currentX,
             OriginalSize = 7,
             Character = char,
+            IsDigit = isDigit,
         }
         
         currentX = currentX + 7
     end
 end
 
--- ОБНОВЛЕНИЕ ТЕКСТА ПИНГА
+-- ОБНОВЛЕНИЕ ТЕКСТА ПИНГА С ЦВЕТАМИ
 function Library.WaveSystem:UpdatePingText(newText)
     -- Удаляем старые буквы пинга
     for _, letter in pairs(self.PingLetters) do
@@ -3256,9 +3338,12 @@ function Library.WaveSystem:UpdatePingText(newText)
     
     local currentX = self.PingStartX
     
-    -- Создаем новые буквы
+    -- Создаем новые буквы с правильными цветами
     for i = 1, #newText do
         local char = newText:sub(i, i)
+        local isDigit = tonumber(char) ~= nil
+        local color = isDigit and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(140, 140, 140)
+        
         local letterFrame = Library:Create('Frame', {
             BackgroundTransparency = 1;
             Position = UDim2.new(0, currentX, 0, 0);
@@ -3271,7 +3356,7 @@ function Library.WaveSystem:UpdatePingText(newText)
             Size = UDim2.new(1, 0, 1, 0);
             Text = char;
             TextSize = 14;
-            TextColor3 = Color3.fromRGB(140, 140, 140);
+            TextColor3 = color;
             TextXAlignment = Enum.TextXAlignment.Center;
             ZIndex = 204;
             Parent = letterFrame;
@@ -3283,9 +3368,55 @@ function Library.WaveSystem:UpdatePingText(newText)
             OriginalPos = currentX,
             OriginalSize = 7,
             Character = char,
+            IsDigit = isDigit,
         }
         
         currentX = currentX + 7
+    end
+end
+
+-- ОБНОВЛЕНИЕ ТЕКСТА ВРЕМЕНИ
+function Library.WaveSystem:UpdateTimeText(newText)
+    -- Удаляем старые буквы времени
+    for _, letter in pairs(self.TimeLetters) do
+        if letter.Frame then
+            letter.Frame:Destroy()
+        end
+    end
+    self.TimeLetters = {}
+    
+    local currentX = self.TimeStartX
+    
+    -- Создаем новые буквы времени
+    for i = 1, #newText do
+        local char = newText:sub(i, i)
+        local letterFrame = Library:Create('Frame', {
+            BackgroundTransparency = 1;
+            Position = UDim2.new(0, currentX, 0, 0);
+            Size = UDim2.new(0, 8, 1, 0);
+            ZIndex = 203;
+            Parent = self.Container;
+        });
+        
+        local letterLabel = Library:CreateLabel({
+            Size = UDim2.new(1, 0, 1, 0);
+            Text = char;
+            TextSize = 14;
+            TextColor3 = Color3.fromRGB(120, 120, 120);
+            TextXAlignment = Enum.TextXAlignment.Center;
+            ZIndex = 204;
+            Parent = letterFrame;
+        });
+        
+        self.TimeLetters[i] = {
+            Frame = letterFrame,
+            Label = letterLabel,
+            OriginalPos = currentX,
+            OriginalSize = 8,
+            Character = char,
+        }
+        
+        currentX = currentX + 8
     end
 end
 -- ЗАПУСК И ОСТАНОВКА СИСТЕМЫ
@@ -3424,6 +3555,7 @@ function Library:Notify(Text, Time)
         NotifyOuter:Destroy();
     end);
 end;
+
 function Library:CreateWindow(...)
     local Arguments = { ... }
     local Config = { AnchorPoint = Vector2.zero }
