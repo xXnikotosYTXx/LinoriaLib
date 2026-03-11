@@ -2695,96 +2695,68 @@ do
         Parent = Library.NotificationArea;
     });
 
--- УЛУЧШЕННЫЙ ВАТЕРМАРК В СТИЛЕ PROJECT RADIANT
 local WatermarkOuter = Library:Create('Frame', {
-    BorderColor3 = Color3.new(0, 0, 0);
-    Position = UDim2.new(0, 100, 0, -30); -- Выше
-    Size = UDim2.new(0, 280, 0, 28); -- Больше размер
-    ZIndex = 200;
-    Visible = false;
-    Parent = Library.ScreenGui;
-});
-
--- Основной фрейм с современными цветами
-local WatermarkInner = Library:Create('Frame', {
-    BackgroundColor3 = Color3.fromRGB(15, 15, 20); -- Темный фон
-    BorderColor3 = Color3.fromRGB(100, 200, 255); -- Яркий синий
-    BorderSizePixel = 2; -- Толще граница
-    Size = UDim2.new(1, 0, 1, 0);
-    ZIndex = 201;
-    Parent = WatermarkOuter;
-});
-
--- Внутренний фрейм
-local InnerFrame = Library:Create('Frame', {
-    BackgroundColor3 = Color3.new(1, 1, 1);
-    BorderSizePixel = 0;
-    Position = UDim2.new(0, 2, 0, 2);
-    Size = UDim2.new(1, -4, 1, -4);
-    ZIndex = 202;
-    Parent = WatermarkInner;
-});
-
--- УЛУЧШЕННЫЙ ГРАДИЕНТ
-local Gradient = Library:Create('UIGradient', {
-    Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(10, 10, 15)),
-        ColorSequenceKeypoint.new(0.3, Color3.fromRGB(20, 25, 35)),
-        ColorSequenceKeypoint.new(0.7, Color3.fromRGB(25, 30, 40)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 20, 30)),
+        BorderColor3 = Color3.new(0, 0, 0);
+        Position = UDim2.new(0, 100, 0, -25);
+        Size = UDim2.new(0, 213, 0, 20);
+        ZIndex = 200;
+        Visible = false;
+        Parent = ScreenGui;
     });
-    Rotation = -45; -- Диагональный градиент
-    Parent = InnerFrame;
-});
 
--- АКЦЕНТНАЯ ПОЛОСА СВЕРХУ
-local AccentBar = Library:Create('Frame', {
-    BackgroundColor3 = Color3.fromRGB(100, 200, 255);
-    BorderSizePixel = 0;
-    Size = UDim2.new(1, 0, 0, 3);
-    ZIndex = 203;
-    Parent = InnerFrame;
-});
+    local WatermarkInner = Library:Create('Frame', {
+        BackgroundColor3 = Library.MainColor;
+        BorderColor3 = Library.AccentColor;
+        BorderMode = Enum.BorderMode.Inset;
+        Size = UDim2.new(1, 0, 1, 0);
+        ZIndex = 201;
+        Parent = WatermarkOuter;
+    });
 
--- ИКОНКА МОЛНИИ
-local IconLabel = Library:CreateLabel({
-    Position = UDim2.new(0, 8, 0, 3);
-    Size = UDim2.new(0, 20, 1, -6);
-    Text = '⚡'; -- Иконка для Project Radiant
-    TextSize = 16;
-    TextColor3 = Color3.fromRGB(100, 200, 255);
-    ZIndex = 204;
-    Parent = InnerFrame;
-});
+    Library:AddToRegistry(WatermarkInner, {
+        BorderColor3 = 'AccentColor';
+    });
 
--- ОСНОВНОЙ ТЕКСТ
-local WatermarkLabel = Library:CreateLabel({
-    Position = UDim2.new(0, 32, 0, 3);
-    Size = UDim2.new(1, -36, 1, -6);
-    TextSize = 14;
-    Text = 'Project Radiant';
-    TextColor3 = Color3.fromRGB(220, 230, 255);
-    TextXAlignment = Enum.TextXAlignment.Left;
-    ZIndex = 204;
-    Parent = InnerFrame;
-});
+    local InnerFrame = Library:Create('Frame', {
+        BackgroundColor3 = Color3.new(1, 1, 1);
+        BorderSizePixel = 0;
+        Position = UDim2.new(0, 1, 0, 1);
+        Size = UDim2.new(1, -2, 1, -2);
+        ZIndex = 202;
+        Parent = WatermarkInner;
+    });
 
--- ЭФФЕКТ СВЕЧЕНИЯ
-local GlowFrame = Library:Create('Frame', {
-    BackgroundColor3 = Color3.fromRGB(100, 200, 255);
-    BackgroundTransparency = 0.8;
-    BorderSizePixel = 0;
-    Position = UDim2.new(0, -2, 0, -2);
-    Size = UDim2.new(1, 4, 1, 4);
-    ZIndex = 199;
-    Parent = WatermarkOuter;
-});
+    local Gradient = Library:Create('UIGradient', {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
+            ColorSequenceKeypoint.new(1, Library.MainColor),
+        });
+        Rotation = -90;
+        Parent = InnerFrame;
+    });
 
--- ЗАКРУГЛЕННЫЕ УГЛЫ
-local Corner = Library:Create('UICorner', {
-    CornerRadius = UDim.new(0, 6);
-    Parent = WatermarkInner;
-});
+    Library:AddToRegistry(Gradient, {
+        Color = function()
+            return ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
+                ColorSequenceKeypoint.new(1, Library.MainColor),
+            });
+        end
+    });
+
+    local WatermarkLabel = Library:CreateLabel({
+        Position = UDim2.new(0, 5, 0, 0);
+        Size = UDim2.new(1, -4, 1, 0);
+        TextSize = 14;
+        TextXAlignment = Enum.TextXAlignment.Left;
+        ZIndex = 203;
+        Parent = InnerFrame;
+    });
+
+    Library.Watermark = WatermarkOuter;
+    Library.WatermarkText = WatermarkLabel;
+    Library:MakeDraggable(Library.Watermark);
+
 
 
 
