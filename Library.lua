@@ -4640,8 +4640,7 @@ function Library:CreateWindow(...)
             TabListLayout:ApplyLayout();
         end;
 
--- СТИЛИЗОВАННЫЙ GROUPBOX КАК В MATCHA
--- Название по центру, верх темнее, низ светлее
+local TweenService = game:GetService('TweenService')
 
 function Tab:AddGroupbox(Info)
     local Groupbox = {};
@@ -4660,6 +4659,12 @@ function Tab:AddGroupbox(Info)
         BorderColor3 = 'OutlineColor';
     });
     
+    -- ЗАКРУГЛЕННЫЕ УГЛЫ
+    local OuterCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 6);
+        Parent = BoxOuter;
+    });
+    
     local BoxInner = Library:Create('Frame', {
         BackgroundColor3 = Library.BackgroundColor;
         BorderColor3 = Color3.new(0, 0, 0);
@@ -4673,20 +4678,48 @@ function Tab:AddGroupbox(Info)
         BackgroundColor3 = 'BackgroundColor';
     });
     
+    local InnerCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 5);
+        Parent = BoxInner;
+    });
+    
     -- ВЕРХНЯЯ ЧАСТЬ (ТЕМНЕЕ) - для названия
     local HeaderSection = Library:Create('Frame', {
         BackgroundColor3 = Color3.fromRGB(
-            math.max(0, Library.BackgroundColor.R * 255 - 5),
-            math.max(0, Library.BackgroundColor.G * 255 - 5),
-            math.max(0, Library.BackgroundColor.B * 255 - 5)
+            math.max(0, Library.BackgroundColor.R * 255 - 8),
+            math.max(0, Library.BackgroundColor.G * 255 - 8),
+            math.max(0, Library.BackgroundColor.B * 255 - 8)
         );
         BorderSizePixel = 0;
-        Size = UDim2.new(1, 0, 0, 22);
+        Size = UDim2.new(1, 0, 0, 26);
         ZIndex = 5;
         Parent = BoxInner;
     });
     
-    -- Линия акцента сверху
+    local HeaderCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 5);
+        Parent = HeaderSection;
+    });
+    
+    -- ГРАДИЕНТ НА ЗАГОЛОВКЕ (сверху вниз)
+    local HeaderGradient = Library:Create('UIGradient', {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(
+                math.min(255, Library.BackgroundColor.R * 255 - 5),
+                math.min(255, Library.BackgroundColor.G * 255 - 5),
+                math.min(255, Library.BackgroundColor.B * 255 - 5)
+            )),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(
+                math.max(0, Library.BackgroundColor.R * 255 - 10),
+                math.max(0, Library.BackgroundColor.G * 255 - 10),
+                math.max(0, Library.BackgroundColor.B * 255 - 10)
+            ))
+        });
+        Rotation = 90;
+        Parent = HeaderSection;
+    });
+    
+    -- ЛИНИЯ АКЦЕНТА СВЕРХУ (толще и ярче)
     local Highlight = Library:Create('Frame', {
         BackgroundColor3 = Library.AccentColor;
         BorderSizePixel = 0;
@@ -4699,36 +4732,115 @@ function Tab:AddGroupbox(Info)
         BackgroundColor3 = 'AccentColor';
     });
     
+    local HighlightCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 5);
+        Parent = Highlight;
+    });
+    
+    -- ГРАДИЕНТ НА ЛИНИИ АКЦЕНТА (слева направо)
+    local HighlightGradient = Library:Create('UIGradient', {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(
+                Library.AccentColor.R * 255 * 0.6,
+                Library.AccentColor.G * 255 * 0.6,
+                Library.AccentColor.B * 255 * 0.6
+            )),
+            ColorSequenceKeypoint.new(0.5, Library.AccentColor),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(
+                Library.AccentColor.R * 255 * 0.6,
+                Library.AccentColor.G * 255 * 0.6,
+                Library.AccentColor.B * 255 * 0.6
+            ))
+        });
+        Rotation = 0;
+        Parent = Highlight;
+    });
+    
+    Library:AddToRegistry(HighlightGradient, {
+        Color = function()
+            return ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(
+                    Library.AccentColor.R * 255 * 0.6,
+                    Library.AccentColor.G * 255 * 0.6,
+                    Library.AccentColor.B * 255 * 0.6
+                )),
+                ColorSequenceKeypoint.new(0.5, Library.AccentColor),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(
+                    Library.AccentColor.R * 255 * 0.6,
+                    Library.AccentColor.G * 255 * 0.6,
+                    Library.AccentColor.B * 255 * 0.6
+                ))
+            });
+        end
+    });
+    
     -- НАЗВАНИЕ ПО ЦЕНТРУ
     local GroupboxLabel = Library:CreateLabel({
-        Size = UDim2.new(1, 0, 1, 0);
-        Position = UDim2.new(0, 0, 0, 0);
+        Size = UDim2.new(1, 0, 1, -2);
+        Position = UDim2.new(0, 0, 0, 2);
         TextSize = 14;
         Text = Info.Name;
-        TextXAlignment = Enum.TextXAlignment.Center; -- ПО ЦЕНТРУ
+        TextXAlignment = Enum.TextXAlignment.Center;
         TextYAlignment = Enum.TextYAlignment.Center;
         ZIndex = 7;
+        Parent = HeaderSection;
+    });
+    
+    -- РАЗДЕЛИТЕЛЬНАЯ ЛИНИЯ между заголовком и контентом
+    local Separator = Library:Create('Frame', {
+        BackgroundColor3 = Color3.fromRGB(
+            Library.OutlineColor.R * 255 * 1.2,
+            Library.OutlineColor.G * 255 * 1.2,
+            Library.OutlineColor.B * 255 * 1.2
+        );
+        BorderSizePixel = 0;
+        Position = UDim2.new(0, 0, 1, -1);
+        Size = UDim2.new(1, 0, 0, 1);
+        ZIndex = 6;
         Parent = HeaderSection;
     });
     
     -- НИЖНЯЯ ЧАСТЬ (СВЕТЛЕЕ) - для контента
     local ContentSection = Library:Create('Frame', {
         BackgroundColor3 = Color3.fromRGB(
-            math.min(255, Library.BackgroundColor.R * 255 + 3),
-            math.min(255, Library.BackgroundColor.G * 255 + 3),
-            math.min(255, Library.BackgroundColor.B * 255 + 3)
+            math.min(255, Library.BackgroundColor.R * 255 + 4),
+            math.min(255, Library.BackgroundColor.G * 255 + 4),
+            math.min(255, Library.BackgroundColor.B * 255 + 4)
         );
         BorderSizePixel = 0;
-        Position = UDim2.new(0, 0, 0, 22);
-        Size = UDim2.new(1, 0, 1, -22);
+        Position = UDim2.new(0, 0, 0, 26);
+        Size = UDim2.new(1, 0, 1, -26);
         ZIndex = 4;
         Parent = BoxInner;
     });
     
+    local ContentCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 5);
+        Parent = ContentSection;
+    });
+    
+    -- ЛЕГКИЙ ГРАДИЕНТ НА КОНТЕНТЕ
+    local ContentGradient = Library:Create('UIGradient', {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(
+                math.min(255, Library.BackgroundColor.R * 255 + 2),
+                math.min(255, Library.BackgroundColor.G * 255 + 2),
+                math.min(255, Library.BackgroundColor.B * 255 + 2)
+            )),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(
+                math.min(255, Library.BackgroundColor.R * 255 + 6),
+                math.min(255, Library.BackgroundColor.G * 255 + 6),
+                math.min(255, Library.BackgroundColor.B * 255 + 6)
+            ))
+        });
+        Rotation = 90;
+        Parent = ContentSection;
+    });
+    
     local Container = Library:Create('Frame', {
         BackgroundTransparency = 1;
-        Position = UDim2.new(0, 4, 0, 4);
-        Size = UDim2.new(1, -8, 1, -8);
+        Position = UDim2.new(0, 6, 0, 6);
+        Size = UDim2.new(1, -12, 1, -12);
         ZIndex = 5;
         Parent = ContentSection;
     });
@@ -4736,8 +4848,51 @@ function Tab:AddGroupbox(Info)
     Library:Create('UIListLayout', {
         FillDirection = Enum.FillDirection.Vertical;
         SortOrder = Enum.SortOrder.LayoutOrder;
+        Padding = UDim.new(0, 2);
         Parent = Container;
     });
+    
+    -- HOVER ЭФФЕКТ на заголовке
+    local isHovering = false
+    
+    HeaderSection.InputBegan:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseMovement then
+            isHovering = true
+            
+            -- Подсветка заголовка
+            TweenService:Create(HeaderSection, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                BackgroundColor3 = Color3.fromRGB(
+                    math.max(0, Library.BackgroundColor.R * 255 - 5),
+                    math.max(0, Library.BackgroundColor.G * 255 - 5),
+                    math.max(0, Library.BackgroundColor.B * 255 - 5)
+                )
+            }):Play()
+            
+            -- Усиление линии акцента
+            TweenService:Create(Highlight, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                Size = UDim2.new(1, 0, 0, 3)
+            }):Play()
+        end
+    end)
+    
+    HeaderSection.InputEnded:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseMovement then
+            isHovering = false
+            
+            -- Возврат к обычному состоянию
+            TweenService:Create(HeaderSection, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                BackgroundColor3 = Color3.fromRGB(
+                    math.max(0, Library.BackgroundColor.R * 255 - 8),
+                    math.max(0, Library.BackgroundColor.G * 255 - 8),
+                    math.max(0, Library.BackgroundColor.B * 255 - 8)
+                )
+            }):Play()
+            
+            TweenService:Create(Highlight, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                Size = UDim2.new(1, 0, 0, 2)
+            }):Play()
+        end
+    end)
     
     function Groupbox:Resize()
         local Size = 0;
@@ -4747,8 +4902,8 @@ function Tab:AddGroupbox(Info)
             end;
         end;
         
-        BoxOuter.Size = UDim2.new(1, 0, 0, 22 + Size + 8 + 4);
-        ContentSection.Size = UDim2.new(1, 0, 0, Size + 8);
+        BoxOuter.Size = UDim2.new(1, 0, 0, 26 + Size + 12 + 4);
+        ContentSection.Size = UDim2.new(1, 0, 0, Size + 12);
     end;
     
     Groupbox.Container = Container;
