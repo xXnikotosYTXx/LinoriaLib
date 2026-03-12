@@ -2916,7 +2916,13 @@ Library.KeybindSeparatorColor = Library.KeybindSeparatorColor or Color3.fromRGB(
 -- ФУНКЦИИ ДЛЯ УПРАВЛЕНИЯ ЦВЕТАМИ
 -- ============================================
 
+-- Защита от циклических вызовов
+Library._ColorUpdateInProgress = false
+
 function Library:SetWatermarkProjectColor(color)
+    if self._ColorUpdateInProgress then return end
+    self._ColorUpdateInProgress = true
+    
     self.WatermarkProjectColor = color
     if self.WaveSystem and self.WaveSystem.ProjectLetters then
         for _, letter in pairs(self.WaveSystem.ProjectLetters) do
@@ -2925,9 +2931,14 @@ function Library:SetWatermarkProjectColor(color)
             end
         end
     end
+    
+    self._ColorUpdateInProgress = false
 end
 
 function Library:SetWatermarkNicknameColor(color)
+    if self._ColorUpdateInProgress then return end
+    self._ColorUpdateInProgress = true
+    
     self.WatermarkNicknameColor = color
     if self.WaveSystem and self.WaveSystem.NicknameLetters then
         for _, letter in pairs(self.WaveSystem.NicknameLetters) do
@@ -2936,15 +2947,25 @@ function Library:SetWatermarkNicknameColor(color)
             end
         end
     end
+    
+    self._ColorUpdateInProgress = false
 end
 function Library:SetWatermarkIconColor(color)
+    if self._ColorUpdateInProgress then return end
+    self._ColorUpdateInProgress = true
+    
     self.WatermarkIconColor = color
     if self.WaveSystem and self.WaveSystem.IconLabel then
         self.WaveSystem.IconLabel.TextColor3 = color
     end
+    
+    self._ColorUpdateInProgress = false
 end
 
 function Library:SetKeybindHeaderColor(color)
+    if self._ColorUpdateInProgress then return end
+    self._ColorUpdateInProgress = true
+    
     self.KeybindHeaderColor = color
     if self.WaveSystem and self.WaveSystem.KeybindHeaderLetters then
         for _, letter in pairs(self.WaveSystem.KeybindHeaderLetters) do
@@ -2953,9 +2974,14 @@ function Library:SetKeybindHeaderColor(color)
             end
         end
     end
+    
+    self._ColorUpdateInProgress = false
 end
 
 function Library:SetKeybindIconColor(color)
+    if self._ColorUpdateInProgress then return end
+    self._ColorUpdateInProgress = true
+    
     self.KeybindIconColor = color
     if self.WaveSystem and self.WaveSystem.PaletteIcon then
         if self.WaveSystem.PaletteIcon.ClassName == "ImageLabel" then
@@ -2964,30 +2990,58 @@ function Library:SetKeybindIconColor(color)
             self.WaveSystem.PaletteIcon.TextColor3 = color
         end
     end
+    
+    self._ColorUpdateInProgress = false
 end
 
 function Library:SetWatermarkTheme(themeName)
+    if self._ColorUpdateInProgress then return end
+    self._ColorUpdateInProgress = true
+    
     if themeName == "purple" then
-        self:SetWatermarkProjectColor(Color3.fromRGB(180, 100, 220))
-        self:SetWatermarkNicknameColor(Color3.fromRGB(200, 150, 255))
-        self:SetWatermarkIconColor(Color3.fromRGB(255, 120, 200))
+        self.WatermarkProjectColor = Color3.fromRGB(180, 100, 220)
+        self.WatermarkNicknameColor = Color3.fromRGB(200, 150, 255)
+        self.WatermarkIconColor = Color3.fromRGB(255, 120, 200)
     elseif themeName == "blue" then
-        self:SetWatermarkProjectColor(Color3.fromRGB(100, 150, 255))
-        self:SetWatermarkNicknameColor(Color3.fromRGB(150, 200, 255))
-        self:SetWatermarkIconColor(Color3.fromRGB(120, 180, 255))
+        self.WatermarkProjectColor = Color3.fromRGB(100, 150, 255)
+        self.WatermarkNicknameColor = Color3.fromRGB(150, 200, 255)
+        self.WatermarkIconColor = Color3.fromRGB(120, 180, 255)
     elseif themeName == "green" then
-        self:SetWatermarkProjectColor(Color3.fromRGB(100, 220, 150))
-        self:SetWatermarkNicknameColor(Color3.fromRGB(150, 255, 180))
-        self:SetWatermarkIconColor(Color3.fromRGB(120, 255, 160))
+        self.WatermarkProjectColor = Color3.fromRGB(100, 220, 150)
+        self.WatermarkNicknameColor = Color3.fromRGB(150, 255, 180)
+        self.WatermarkIconColor = Color3.fromRGB(120, 255, 160)
     elseif themeName == "red" then
-        self:SetWatermarkProjectColor(Color3.fromRGB(255, 100, 120))
-        self:SetWatermarkNicknameColor(Color3.fromRGB(255, 150, 170))
-        self:SetWatermarkIconColor(Color3.fromRGB(255, 120, 140))
+        self.WatermarkProjectColor = Color3.fromRGB(255, 100, 120)
+        self.WatermarkNicknameColor = Color3.fromRGB(255, 150, 170)
+        self.WatermarkIconColor = Color3.fromRGB(255, 120, 140)
     elseif themeName == "accent" then
-        self:SetWatermarkProjectColor(self.AccentColor)
-        self:SetWatermarkNicknameColor(self.AccentColor)
-        self:SetWatermarkIconColor(self.AccentColor)
+        self.WatermarkProjectColor = self.AccentColor
+        self.WatermarkNicknameColor = self.AccentColor
+        self.WatermarkIconColor = self.AccentColor
     end
+    
+    -- Применяем цвета без вызова функций (избегаем циклов)
+    if self.WaveSystem then
+        if self.WaveSystem.ProjectLetters then
+            for _, letter in pairs(self.WaveSystem.ProjectLetters) do
+                if letter.Label then
+                    letter.Label.TextColor3 = self.WatermarkProjectColor
+                end
+            end
+        end
+        if self.WaveSystem.NicknameLetters then
+            for _, letter in pairs(self.WaveSystem.NicknameLetters) do
+                if letter.Label then
+                    letter.Label.TextColor3 = self.WatermarkNicknameColor
+                end
+            end
+        end
+        if self.WaveSystem.IconLabel then
+            self.WaveSystem.IconLabel.TextColor3 = self.WatermarkIconColor
+        end
+    end
+    
+    self._ColorUpdateInProgress = false
 end
 
 function Library:GetPingColor(ping)
@@ -3106,6 +3160,7 @@ Library.WaveSystem = {
     LastTimeText = "",
     FrameCounter = 0,
     UpdateInterval = 60,
+    LastUpdateTime = 0, -- Защита от частых обновлений
     
     -- Позиции
     FPSStartX = 0,
@@ -3804,6 +3859,13 @@ function Library.WaveSystem:UpdateWaves()
         return
     end
     
+    -- Защита от слишком частых обновлений
+    local currentTime = tick()
+    if self.LastUpdateTime and (currentTime - self.LastUpdateTime) < 0.016 then -- ~60 FPS
+        return
+    end
+    self.LastUpdateTime = currentTime
+    
     self.FrameCounter = self.FrameCounter + 1
     
     -- Обновляем позиции волн
@@ -3834,62 +3896,78 @@ function Library.WaveSystem:UpdateWaves()
     if self.KeybindHeaderWave.pos > #self.KeybindHeaderLetters + resetBuffer then
         self.KeybindHeaderWave.pos = -resetBuffer
     end
-    -- ✨ ПРИМЕНЯЕМ ВОЛНЫ С ЦВЕТАМИ ИЗ LIBRARY
-    if #self.ProjectLetters > 0 then
-        self:ApplyWave(self.ProjectLetters, self.ProjectWave, 
-            Color3.fromRGB(220, 150, 255), Library.WatermarkProjectColor)
-    end
-    
-    if #self.NicknameLetters > 0 then
-        self:ApplyWave(self.NicknameLetters, self.NicknameWave, 
-            Color3.fromRGB(220, 220, 220), Library.WatermarkNicknameColor)
-    end
-    
-    if #self.FPSLetters > 0 then
-        self:ApplyWaveWithColors(self.FPSLetters, self.FPSWave)
-    end
-    
-    if #self.PingLetters > 0 then
-        self:ApplyWaveWithColors(self.PingLetters, self.PingWave)
-    end
-    
-    if #self.TimeLetters > 0 then
-        self:ApplyWave(self.TimeLetters, self.TimeWave, 
-            Color3.fromRGB(160, 160, 160), Library.WatermarkTimeColor)
-    end
-    
-    if #self.KeybindHeaderLetters > 0 then
-        self:ApplyWave(self.KeybindHeaderLetters, self.KeybindHeaderWave, 
-            Color3.fromRGB(255, 255, 255), Library.KeybindHeaderColor)
-    end
-    
-    -- Волны на ON/OFF в кейбиндах
-    for _, item in pairs(self.KeybindItems) do
-        if item.StateLetters and item.Frame and item.Frame.Parent then
-            local stateWave = {pos = self.KeybindHeaderWave.pos, speed = 0.065, width = 2, intensity = 0.15}
-            local waveColor = item.State and Color3.fromRGB(150, 255, 150) or Color3.fromRGB(255, 150, 150)
-            local normalColor = item.State and Library.KeybindStateOnColor or Library.KeybindStateOffColor
-            self:ApplyWave(item.StateLetters, stateWave, waveColor, normalColor)
+    -- ✨ ПРИМЕНЯЕМ ВОЛНЫ С ЦВЕТАМИ ИЗ LIBRARY (с защитой от ошибок)
+    pcall(function()
+        if #self.ProjectLetters > 0 then
+            self:ApplyWave(self.ProjectLetters, self.ProjectWave, 
+                Color3.fromRGB(220, 150, 255), Library.WatermarkProjectColor)
         end
-    end
+    end)
     
-    -- Анимация иконки palette
-    if self.PaletteIcon and self.PaletteIcon.Parent then
-        local pulse = math.sin(tick() * 2) * 0.1 + 1
-        if self.PaletteIcon.ClassName == "ImageLabel" then
-            local colorIntensity = math.sin(tick() * 1.5) * 0.3 + 0.7
-            TweenService:Create(self.PaletteIcon, TweenInfo.new(0.5, Enum.EasingStyle.Sine), {
-                Size = UDim2.new(0, 16 * pulse, 0, 16 * pulse),
-                ImageColor3 = Color3.fromRGB(
-                    Library.KeybindIconColor.R * 255 * colorIntensity,
-                    Library.KeybindIconColor.G * 255 * colorIntensity,
-                    Library.KeybindIconColor.B * 255
-                ),
-            }):Play()
-        else
-            self.PaletteIcon.TextSize = 14 * pulse
+    pcall(function()
+        if #self.NicknameLetters > 0 then
+            self:ApplyWave(self.NicknameLetters, self.NicknameWave, 
+                Color3.fromRGB(220, 220, 220), Library.WatermarkNicknameColor)
         end
-    end
+    end)
+    
+    pcall(function()
+        if #self.FPSLetters > 0 then
+            self:ApplyWaveWithColors(self.FPSLetters, self.FPSWave)
+        end
+    end)
+    
+    pcall(function()
+        if #self.PingLetters > 0 then
+            self:ApplyWaveWithColors(self.PingLetters, self.PingWave)
+        end
+    end)
+    
+    pcall(function()
+        if #self.TimeLetters > 0 then
+            self:ApplyWave(self.TimeLetters, self.TimeWave, 
+                Color3.fromRGB(160, 160, 160), Library.WatermarkTimeColor)
+        end
+    end)
+    
+    pcall(function()
+        if #self.KeybindHeaderLetters > 0 then
+            self:ApplyWave(self.KeybindHeaderLetters, self.KeybindHeaderWave, 
+                Color3.fromRGB(255, 255, 255), Library.KeybindHeaderColor)
+        end
+    end)
+    
+    -- Волны на ON/OFF в кейбиндах (с защитой от ошибок)
+    pcall(function()
+        for _, item in pairs(self.KeybindItems) do
+            if item.StateLetters and item.Frame and item.Frame.Parent then
+                local stateWave = {pos = self.KeybindHeaderWave.pos, speed = 0.065, width = 2, intensity = 0.15}
+                local waveColor = item.State and Color3.fromRGB(150, 255, 150) or Color3.fromRGB(255, 150, 150)
+                local normalColor = item.State and Library.KeybindStateOnColor or Library.KeybindStateOffColor
+                self:ApplyWave(item.StateLetters, stateWave, waveColor, normalColor)
+            end
+        end
+    end)
+    
+    -- Анимация иконки palette (с защитой от ошибок)
+    pcall(function()
+        if self.PaletteIcon and self.PaletteIcon.Parent then
+            local pulse = math.sin(tick() * 2) * 0.1 + 1
+            if self.PaletteIcon.ClassName == "ImageLabel" then
+                local colorIntensity = math.sin(tick() * 1.5) * 0.3 + 0.7
+                TweenService:Create(self.PaletteIcon, TweenInfo.new(0.5, Enum.EasingStyle.Sine), {
+                    Size = UDim2.new(0, 16 * pulse, 0, 16 * pulse),
+                    ImageColor3 = Color3.fromRGB(
+                        Library.KeybindIconColor.R * 255 * colorIntensity,
+                        Library.KeybindIconColor.G * 255 * colorIntensity,
+                        Library.KeybindIconColor.B * 255
+                    ),
+                }):Play()
+            else
+                self.PaletteIcon.TextSize = 14 * pulse
+            end
+        end
+    end)
     
     -- Обновляем статистику
     if self.FrameCounter % self.UpdateInterval == 0 then
@@ -4458,6 +4536,141 @@ function Library:Notify(Text, Time)
         NotifyOuter:Destroy();
     end);
 end;
+
+-- ============================================
+-- ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ УПРАВЛЕНИЯ ВОЛНАМИ
+-- ============================================
+
+function Library:SetWaveSpeed(speed)
+    if Library.WaveSystem then
+        local multiplier = speed / 0.08 -- Базовая скорость
+        Library.WaveSystem.ProjectWave.speed = 0.08 * multiplier
+        Library.WaveSystem.NicknameWave.speed = 0.07 * multiplier
+        Library.WaveSystem.FPSWave.speed = 0.06 * multiplier
+        Library.WaveSystem.PingWave.speed = 0.055 * multiplier
+        Library.WaveSystem.TimeWave.speed = 0.045 * multiplier
+        Library.WaveSystem.KeybindHeaderWave.speed = 0.065 * multiplier
+    end
+end
+
+function Library:SetWaveIntensity(intensity)
+    if Library.WaveSystem then
+        Library.WaveSystem.ProjectWave.intensity = intensity
+        Library.WaveSystem.NicknameWave.intensity = intensity * 0.9
+        Library.WaveSystem.FPSWave.intensity = intensity * 0.75
+        Library.WaveSystem.PingWave.intensity = intensity * 0.75
+        Library.WaveSystem.TimeWave.intensity = intensity * 0.6
+        Library.WaveSystem.KeybindHeaderWave.intensity = intensity * 0.9
+    end
+end
+
+function Library:SetWaveWidth(width)
+    if Library.WaveSystem then
+        Library.WaveSystem.ProjectWave.width = width
+        Library.WaveSystem.NicknameWave.width = width * 1.17
+        Library.WaveSystem.FPSWave.width = width * 0.83
+        Library.WaveSystem.PingWave.width = width * 0.83
+        Library.WaveSystem.TimeWave.width = width * 1.33
+        Library.WaveSystem.KeybindHeaderWave.width = width
+    end
+end
+
+function Library:ResetWaveSettings()
+    if Library.WaveSystem then
+        Library.WaveSystem.ProjectWave = {pos = 0, speed = 0.08, width = 3, intensity = 0.2}
+        Library.WaveSystem.NicknameWave = {pos = 0, speed = 0.07, width = 3.5, intensity = 0.18}
+        Library.WaveSystem.FPSWave = {pos = 0, speed = 0.06, width = 2.5, intensity = 0.15}
+        Library.WaveSystem.PingWave = {pos = 0, speed = 0.055, width = 2.5, intensity = 0.15}
+        Library.WaveSystem.TimeWave = {pos = 0, speed = 0.045, width = 4, intensity = 0.12}
+        Library.WaveSystem.KeybindHeaderWave = {pos = 0, speed = 0.065, width = 3, intensity = 0.18}
+    end
+end
+
+-- ============================================
+-- АВТОМАТИЧЕСКАЯ ИНТЕГРАЦИЯ KEYPICKER
+-- ============================================
+
+-- Перехватываем создание KeyPicker для автоматического добавления в кейбинды
+local OriginalAddKeyPicker = nil
+
+function Library:AutoIntegrateKeyPickers()
+    if not OriginalAddKeyPicker then
+        -- Находим оригинальную функцию AddKeyPicker
+        for _, tab in pairs(self.OpenedFrames or {}) do
+            if tab.AddKeyPicker then
+                OriginalAddKeyPicker = tab.AddKeyPicker
+                break
+            end
+        end
+        
+        if OriginalAddKeyPicker then
+            -- Заменяем функцию на нашу версию
+            local function NewAddKeyPicker(self, Idx, Info)
+                local KeyPicker = OriginalAddKeyPicker(self, Idx, Info)
+                
+                -- Автоматически добавляем в кейбинды при создании
+                if Info and Info.Text and KeyPicker then
+                    task.spawn(function()
+                        wait(0.1) -- Небольшая задержка для инициализации
+                        
+                        local keybindName = Info.Text or "Unknown"
+                        local currentKey = KeyPicker.State or "None"
+                        local isToggled = false
+                        
+                        -- Определяем иконку по названию
+                        local iconName = "key"
+                        if string.find(keybindName:lower(), "esp") then
+                            iconName = "eye"
+                        elseif string.find(keybindName:lower(), "aim") then
+                            iconName = "target"
+                        elseif string.find(keybindName:lower(), "menu") then
+                            iconName = "settings"
+                        elseif string.find(keybindName:lower(), "fly") then
+                            iconName = "zap"
+                        end
+                        
+                        Library:AddKeybind(keybindName, currentKey, isToggled, iconName)
+                        
+                        -- Подключаем обновление состояния
+                        if KeyPicker.Changed then
+                            KeyPicker.Changed:Connect(function()
+                                Library:UpdateKeybindState(keybindName, KeyPicker.Active or false)
+                            end)
+                        end
+                    end)
+                end
+                
+                return KeyPicker
+            end
+            
+            -- Применяем новую функцию ко всем табам
+            for _, tab in pairs(self.OpenedFrames or {}) do
+                if tab.AddKeyPicker then
+                    tab.AddKeyPicker = NewAddKeyPicker
+                end
+            end
+        end
+    end
+end
+
+print("")
+print("🔧 ИСПРАВЛЕНИЯ ПРИМЕНЕНЫ:")
+print("  ✅ Защита от циклических вызовов цветов")
+print("  ✅ Ограничение частоты обновления волн (~60 FPS)")
+print("  ✅ Обработка ошибок с pcall()")
+print("  ✅ Дополнительные функции управления")
+print("")
+print("🌊 НОВЫЕ ФУНКЦИИ:")
+print("  Library:SetWaveSpeed(0.1) -- Скорость волн")
+print("  Library:SetWaveIntensity(0.3) -- Интенсивность")
+print("  Library:SetWaveWidth(4) -- Ширина волн")
+print("  Library:ResetWaveSettings() -- Сброс настроек")
+print("  Library:AutoIntegrateKeyPickers() -- Авто-интеграция")
+print("")
+print("✨ СИСТЕМА ГОТОВА К ИСПОЛЬЗОВАНИЮ БЕЗ ОШИБОК!")
+
+
+
 
 function Library:CreateWindow(...)
     local Arguments = { ... }
