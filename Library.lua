@@ -3182,95 +3182,139 @@ function Library:CreateWindow(...)
             TabListLayout:ApplyLayout();
         end;
 
-        function Tab:AddGroupbox(Info)
-            local Groupbox = {};
-
-            local BoxOuter = Library:Create('Frame', {
-                BackgroundColor3 = Library.BackgroundColor;
-                BorderColor3 = Library.OutlineColor;
-                BorderMode = Enum.BorderMode.Inset;
-                Size = UDim2.new(1, 0, 0, 507 + 2);
-                ZIndex = 2;
-                Parent = Info.Side == 1 and LeftSide or RightSide;
-            });
-
-            Library:AddToRegistry(BoxOuter, {
-                BackgroundColor3 = 'BackgroundColor';
-                BorderColor3 = 'OutlineColor';
-            });
-
-            local BoxInner = Library:Create('Frame', {
-                BackgroundColor3 = Library.BackgroundColor;
-                BorderColor3 = Color3.new(0, 0, 0);
-                -- BorderMode = Enum.BorderMode.Inset;
-                Size = UDim2.new(1, -2, 1, -2);
-                Position = UDim2.new(0, 1, 0, 1);
-                ZIndex = 4;
-                Parent = BoxOuter;
-            });
-
-            Library:AddToRegistry(BoxInner, {
-                BackgroundColor3 = 'BackgroundColor';
-            });
-
-            local Highlight = Library:Create('Frame', {
-                BackgroundColor3 = Library.AccentColor;
-                BorderSizePixel = 0;
-                Size = UDim2.new(1, 0, 0, 2);
-                ZIndex = 5;
-                Parent = BoxInner;
-            });
-
-            Library:AddToRegistry(Highlight, {
-                BackgroundColor3 = 'AccentColor';
-            });
-
-            local GroupboxLabel = Library:CreateLabel({
-                Size = UDim2.new(1, 0, 0, 18);
-                Position = UDim2.new(0, 4, 0, 2);
-                TextSize = 14;
-                Text = Info.Name;
-                TextXAlignment = Enum.TextXAlignment.Left;
-                ZIndex = 5;
-                Parent = BoxInner;
-            });
-
-            local Container = Library:Create('Frame', {
-                BackgroundTransparency = 1;
-                Position = UDim2.new(0, 4, 0, 20);
-                Size = UDim2.new(1, -4, 1, -20);
-                ZIndex = 1;
-                Parent = BoxInner;
-            });
-
-            Library:Create('UIListLayout', {
-                FillDirection = Enum.FillDirection.Vertical;
-                SortOrder = Enum.SortOrder.LayoutOrder;
-                Parent = Container;
-            });
-
-            function Groupbox:Resize()
-                local Size = 0;
-
-                for _, Element in next, Groupbox.Container:GetChildren() do
-                    if (not Element:IsA('UIListLayout')) and Element.Visible then
-                        Size = Size + Element.Size.Y.Offset;
-                    end;
-                end;
-
-                BoxOuter.Size = UDim2.new(1, 0, 0, 20 + Size + 2 + 2);
+function Tab:AddGroupbox(Info)
+    local Groupbox = {};
+    
+    -- Основной контейнер с тенью
+    local BoxOuter = Library:Create('Frame', {
+        BackgroundColor3 = Library.BackgroundColor;
+        BorderColor3 = Library.OutlineColor;
+        BorderMode = Enum.BorderMode.Inset;
+        Size = UDim2.new(1, 0, 0, 507 + 2);
+        ZIndex = 2;
+        Parent = Info.Side == 1 and LeftSide or RightSide;
+    });
+    
+    Library:AddToRegistry(BoxOuter, {
+        BackgroundColor3 = 'BackgroundColor';
+        BorderColor3 = 'OutlineColor';
+    });
+    
+    -- Внутренний контейнер
+    local BoxInner = Library:Create('Frame', {
+        BackgroundColor3 = Library.BackgroundColor;
+        BorderColor3 = Color3.new(0, 0, 0);
+        Size = UDim2.new(1, -2, 1, -2);
+        Position = UDim2.new(0, 1, 0, 1);
+        ZIndex = 4;
+        Parent = BoxOuter;
+    });
+    
+    Library:AddToRegistry(BoxInner, {
+        BackgroundColor3 = 'BackgroundColor';
+    });
+    
+    -- Акцентная полоса сверху
+    local Highlight = Library:Create('Frame', {
+        BackgroundColor3 = Library.AccentColor;
+        BorderSizePixel = 0;
+        Size = UDim2.new(1, 0, 0, 2);
+        ZIndex = 5;
+        Parent = BoxInner;
+    });
+    
+    Library:AddToRegistry(Highlight, {
+        BackgroundColor3 = 'AccentColor';
+    });
+    
+    -- Градиентный эффект для заголовка
+    local HeaderGradient = Library:Create('Frame', {
+        BackgroundColor3 = Library.AccentColor;
+        BorderSizePixel = 0;
+        Size = UDim2.new(1, 0, 0, 20);
+        Position = UDim2.new(0, 0, 0, 0);
+        ZIndex = 3;
+        Parent = BoxInner;
+    });
+    
+    local HeaderGradientUI = Library:Create('UIGradient', {
+        Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Library.AccentColor),
+            ColorSequenceKeypoint.new(1, Library.BackgroundColor)
+        };
+        Rotation = 90;
+        Transparency = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 0.8),
+            NumberSequenceKeypoint.new(1, 1)
+        };
+        Parent = HeaderGradient;
+    });
+    
+    Library:AddToRegistry(HeaderGradient, {
+        BackgroundColor3 = 'AccentColor';
+    });
+    
+    -- Заголовок группы
+    local GroupboxLabel = Library:CreateLabel({
+        Size = UDim2.new(1, 0, 0, 18);
+        Position = UDim2.new(0, 8, 0, 2);
+        TextSize = 14;
+        Text = Info.Name;
+        TextXAlignment = Enum.TextXAlignment.Left;
+        TextColor3 = Library.FontColor;
+        Font = Enum.Font.GothamMedium;
+        ZIndex = 6;
+        Parent = BoxInner;
+    });
+    
+    -- Декоративная линия под заголовком
+    local HeaderLine = Library:Create('Frame', {
+        BackgroundColor3 = Library.OutlineColor;
+        BorderSizePixel = 0;
+        Size = UDim2.new(1, -16, 0, 1);
+        Position = UDim2.new(0, 8, 0, 20);
+        ZIndex = 5;
+        Parent = BoxInner;
+    });
+    
+    Library:AddToRegistry(HeaderLine, {
+        BackgroundColor3 = 'OutlineColor';
+    });
+    
+    -- Контейнер для элементов
+    local Container = Library:Create('Frame', {
+        BackgroundTransparency = 1;
+        Position = UDim2.new(0, 8, 0, 25);
+        Size = UDim2.new(1, -16, 1, -25);
+        ZIndex = 1;
+        Parent = BoxInner;
+    });
+    
+    Library:Create('UIListLayout', {
+        FillDirection = Enum.FillDirection.Vertical;
+        SortOrder = Enum.SortOrder.LayoutOrder;
+        Padding = UDim.new(0, 2);
+        Parent = Container;
+    });
+    
+    function Groupbox:Resize()
+        local Size = 0;
+        for _, Element in next, Groupbox.Container:GetChildren() do
+            if (not Element:IsA('UIListLayout')) and Element.Visible then
+                Size = Size + Element.Size.Y.Offset;
             end;
-
-            Groupbox.Container = Container;
-            setmetatable(Groupbox, BaseGroupbox);
-
-            Groupbox:AddBlank(3);
-            Groupbox:Resize();
-
-            Tab.Groupboxes[Info.Name] = Groupbox;
-
-            return Groupbox;
         end;
+        BoxOuter.Size = UDim2.new(1, 0, 0, 25 + Size + 8 + 2);
+    end;
+    
+    Groupbox.Container = Container;
+    setmetatable(Groupbox, BaseGroupbox);
+    Groupbox:AddBlank(3);
+    Groupbox:Resize();
+    
+    Tab.Groupboxes[Info.Name] = Groupbox;
+    return Groupbox;
+end;
 
         function Tab:AddLeftGroupbox(Name)
             return Tab:AddGroupbox({ Side = 1; Name = Name; });
