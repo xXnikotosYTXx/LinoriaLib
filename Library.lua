@@ -5046,49 +5046,103 @@ function Tab:AddGroupbox(Info)
         Parent = ScrollBarThumb;
     });
     
-    -- Обновление scrollbar
-    local function UpdateScrollBar()
-        local canvasSize = ScrollFrame.CanvasSize.Y.Offset;
-        local frameSize = ScrollFrame.AbsoluteSize.Y;
+   -- ИСПРАВЛЕННЫЙ КОД SCROLLBAR БЕЗ ОШИБОК RE-ENTRANCY
+
+-- Флаг для предотвращения циклических вызовов
+local isUpdatingScrollBar = false
+
+-- Обновление scrollbar с защитой от ошибок
+local function UpdateScrollBar()
+    -- Защита от повторных вызовов
+    if isUpdatingScrollBar then return end
+    isUpdatingScrollBar = true
+    
+    -- Безопасное обновление с проверками
+    pcall(function()
+        if not ScrollFrame or not ScrollFrame.Parent then
+            isUpdatingScrollBar = false
+            return
+        end
+        
+        local canvasSize = ScrollFrame.CanvasSize.Y.Offset
+        local frameSize = ScrollFrame.AbsoluteSize.Y
         
         if canvasSize > frameSize + 10 then
-            ScrollBarTrack.Visible = true;
-            local thumbSize = math.max(20, (frameSize / canvasSize) * frameSize);
-            ScrollBarThumb.Size = UDim2.new(1, 0, 0, thumbSize);
-            local scrollPercent = ScrollFrame.CanvasPosition.Y / (canvasSize - frameSize);
-            local maxThumbPos = frameSize - thumbSize - 8;
-            ScrollBarThumb.Position = UDim2.new(0, 0, 0, 4 + scrollPercent * maxThumbPos);
+            if ScrollBarTrack then
+                ScrollBarTrack.Visible = true
+                
+                if ScrollBarThumb then
+                    local thumbSize = math.max(20, (frameSize / canvasSize) * frameSize)
+                    ScrollBarThumb.Size = UDim2.new(1, 0, 0, thumbSize)
+                    
+                    local scrollPercent = ScrollFrame.CanvasPosition.Y / math.max(1, canvasSize - frameSize)
+                    local maxThumbPos = frameSize - thumbSize - 8
+                    ScrollBarThumb.Position = UDim2.new(0, 0, 0, 4 + scrollPercent * maxThumbPos)
+                end
+            end
         else
-            ScrollBarTrack.Visible = false;
+            if ScrollBarTrack then
+                ScrollBarTrack.Visible = false
+            end
         end
-    end
+    end)
     
-    ScrollFrame:GetPropertyChangedSignal('CanvasPosition'):Connect(UpdateScrollBar);
-    ScrollFrame:GetPropertyChangedSignal('CanvasSize'):Connect(UpdateScrollBar);
-    ScrollFrame:GetPropertyChangedSignal('AbsoluteSize'):Connect(UpdateScrollBar);
+    -- Небольшая задержка для предотвращения циклов
+    task.wait()
+    isUpdatingScrollBar = false
+end
 
+-- Безопасное подключение событий с защитой от ошибок
+pcall(function()
+    if ScrollFrame then
+        ScrollFrame:GetPropertyChangedSignal('CanvasPosition'):Connect(function()
+            task.spawn(UpdateScrollBar)
+        end)
+        
+        ScrollFrame:GetPropertyChangedSignal('CanvasSize'):Connect(function()
+            task.spawn(UpdateScrollBar)
+        end)
+        
+        ScrollFrame:GetPropertyChangedSignal('AbsoluteSize'):Connect(function()
+            task.spawn(UpdateScrollBar)
+        end)
+    end
+end)
+
+-- Контейнер для элементов с защитой от ошибок
+local Container = Library:Create('Frame', {
+    BackgroundTransparency = 1;
+    Position = UDim2.new(0, 8, 0, 4);
+    Size = UDim2.new(1, -16, 1, 0);
+    ClipsDescendants = false;
+    ZIndex = 6;
+    Parent = ScrollFrame;
+})
+
+Library:Create('UIListLayout', {
+    FillDirection = Enum.FillDirection.Vertical;
+    SortOrder = Enum.SortOrder.LayoutOrder;
+    Padding = UDim.new(0, 4);
+    Parent = Container;
+})
+
+-- Флаг для предотвращения циклических вызовов размера контейнера
+local isUpdatingCanvasSize = false
+
+Container:GetPropertyChangedSignal('AbsoluteSize'):Connect(function()
+    if isUpdatingCanvasSize then return end
+    isUpdatingCanvasSize = true
     
-    -- Контейнер для элементов
-    local Container = Library:Create('Frame', {
-        BackgroundTransparency = 1;
-        Position = UDim2.new(0, 8, 0, 4);
-        Size = UDim2.new(1, -16, 1, 0);
-        ClipsDescendants = false;
-        ZIndex = 6;
-        Parent = ScrollFrame;
-    });
+    pcall(function()
+        if ScrollFrame and ScrollFrame.Parent and Container then
+            ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, Container.AbsoluteSize.Y + 8)
+            task.spawn(UpdateScrollBar)
+        end
+    end)
     
-    Library:Create('UIListLayout', {
-        FillDirection = Enum.FillDirection.Vertical;
-        SortOrder = Enum.SortOrder.LayoutOrder;
-        Padding = UDim.new(0, 4);
-        Parent = Container;
-    });
-    
-    Container:GetPropertyChangedSignal('AbsoluteSize'):Connect(function()
-        ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, Container.AbsoluteSize.Y + 8);
-        UpdateScrollBar();
-    end);
+    task.wait()
+    isUpdatingCanvasSize = false
+end)
     
     -- HOVER ЭФФЕКТ на заголовке
     HeaderSection.InputBegan:Connect(function(Input)
