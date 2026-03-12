@@ -26,25 +26,176 @@ getgenv().Options = Options;
 local Library = {
     Registry = {};
     RegistryMap = {};
-
     HudRegistry = {};
-
+    
+    -- ОСНОВНЫЕ ЦВЕТА
     FontColor = Color3.fromRGB(255, 255, 255);
     MainColor = Color3.fromRGB(28, 28, 28);
     BackgroundColor = Color3.fromRGB(20, 20, 20);
     AccentColor = Color3.fromRGB(0, 85, 255);
     OutlineColor = Color3.fromRGB(50, 50, 50);
-    RiskColor = Color3.fromRGB(255, 50, 50),
-
+    RiskColor = Color3.fromRGB(255, 50, 50);
     Black = Color3.new(0, 0, 0);
-    Font = Enum.Font.Code,
-
+    Font = Enum.Font.Code;
+    
+    -- ✨ НОВЫЕ ЦВЕТА ДЛЯ ВАТЕРМАРКА
+    WatermarkProjectColor = Color3.fromRGB(180, 100, 220);  -- Фиолетовый для "Project Radiant"
+    WatermarkNicknameColor = Color3.fromRGB(192, 192, 192); -- Серебристый для никнейма
+    WatermarkFPSColor = Color3.fromRGB(100, 255, 100);      -- Зеленый для FPS цифр
+    WatermarkFPSTextColor = Color3.fromRGB(140, 140, 140);  -- Серый для "FPS" текста
+    WatermarkPingGoodColor = Color3.fromRGB(100, 255, 100); -- Зеленый пинг <100ms
+    WatermarkPingMediumColor = Color3.fromRGB(255, 255, 100); -- Желтый пинг 100-200ms
+    WatermarkPingBadColor = Color3.fromRGB(255, 100, 100);  -- Красный пинг >200ms
+    WatermarkPingTextColor = Color3.fromRGB(140, 140, 140); -- Серый для "MS" текста
+    WatermarkTimeColor = Color3.fromRGB(120, 120, 120);     -- Серый для времени
+    WatermarkSeparatorColor = Color3.fromRGB(100, 100, 100); -- Серый для разделителей |
+    WatermarkIconColor = Color3.fromRGB(255, 120, 200);     -- Розовый для иконки молнии
+    
+    -- ✨ НОВЫЕ ЦВЕТА ДЛЯ КЕЙБИНДОВ
+    KeybindHeaderColor = Color3.fromRGB(200, 200, 200);     -- Белый для "Keybinds"
+    KeybindIconColor = Color3.fromRGB(150, 150, 255);       -- Синий для иконки палитры
+    KeybindNameColor = Color3.fromRGB(180, 180, 180);       -- Серый для названий кейбиндов
+    KeybindKeyColor = Color3.fromRGB(120, 120, 130);        -- Темно-серый для клавиш
+    KeybindStateOnColor = Color3.fromRGB(100, 255, 100);    -- Зеленый для ON
+    KeybindStateOffColor = Color3.fromRGB(255, 100, 100);   -- Красный для OFF
+    KeybindSeparatorColor = Color3.fromRGB(100, 100, 100);  -- Серый для разделителя |
+    
     OpenedFrames = {};
     DependencyBoxes = {};
-
     Signals = {};
     ScreenGui = ScreenGui;
 };
+
+-- ✨ ФУНКЦИИ ДЛЯ ИЗМЕНЕНИЯ ЦВЕТОВ ВАТЕРМАРКА
+function Library:SetWatermarkProjectColor(color)
+    self.WatermarkProjectColor = color
+    -- Обновляем цвет в реальном времени если ватермарк активен
+    if self.WaveSystem and self.WaveSystem.ProjectLetters then
+        for _, letter in pairs(self.WaveSystem.ProjectLetters) do
+            if letter.Label then
+                letter.Label.TextColor3 = color
+            end
+        end
+    end
+end
+
+function Library:SetWatermarkNicknameColor(color)
+    self.WatermarkNicknameColor = color
+    if self.WaveSystem and self.WaveSystem.NicknameLetters then
+        for _, letter in pairs(self.WaveSystem.NicknameLetters) do
+            if letter.Label then
+                letter.Label.TextColor3 = color
+            end
+        end
+    end
+end
+
+function Library:SetWatermarkFPSColor(color)
+    self.WatermarkFPSColor = color
+    if self.WaveSystem and self.WaveSystem.FPSLetters then
+        for _, letter in pairs(self.WaveSystem.FPSLetters) do
+            if letter.Label and letter.IsDigit then
+                letter.Label.TextColor3 = color
+            end
+        end
+    end
+end
+
+function Library:SetWatermarkTimeColor(color)
+    self.WatermarkTimeColor = color
+    if self.WaveSystem and self.WaveSystem.TimeLetters then
+        for _, letter in pairs(self.WaveSystem.TimeLetters) do
+            if letter.Label then
+                letter.Label.TextColor3 = color
+            end
+        end
+    end
+end
+
+function Library:SetWatermarkIconColor(color)
+    self.WatermarkIconColor = color
+    if self.WaveSystem and self.WaveSystem.IconLabel then
+        self.WaveSystem.IconLabel.TextColor3 = color
+    end
+end
+
+-- ✨ ФУНКЦИИ ДЛЯ ИЗМЕНЕНИЯ ЦВЕТОВ КЕЙБИНДОВ
+function Library:SetKeybindHeaderColor(color)
+    self.KeybindHeaderColor = color
+    if self.WaveSystem and self.WaveSystem.KeybindHeaderLetters then
+        for _, letter in pairs(self.WaveSystem.KeybindHeaderLetters) do
+            if letter.Label then
+                letter.Label.TextColor3 = color
+            end
+        end
+    end
+end
+
+function Library:SetKeybindIconColor(color)
+    self.KeybindIconColor = color
+    if self.WaveSystem and self.WaveSystem.PaletteIcon then
+        if self.WaveSystem.PaletteIcon.ClassName == "ImageLabel" then
+            self.WaveSystem.PaletteIcon.ImageColor3 = color
+        else
+            self.WaveSystem.PaletteIcon.TextColor3 = color
+        end
+    end
+end
+
+-- ✨ ФУНКЦИЯ ДЛЯ УСТАНОВКИ ТЕМЫ ВАТЕРМАРКА
+function Library:SetWatermarkTheme(themeName)
+    if themeName == "purple" then
+        -- Фиолетовая тема
+        self:SetWatermarkProjectColor(Color3.fromRGB(180, 100, 220))
+        self:SetWatermarkNicknameColor(Color3.fromRGB(200, 150, 255))
+        self:SetWatermarkIconColor(Color3.fromRGB(255, 120, 200))
+        
+    elseif themeName == "blue" then
+        -- Синяя тема
+        self:SetWatermarkProjectColor(Color3.fromRGB(100, 150, 255))
+        self:SetWatermarkNicknameColor(Color3.fromRGB(150, 200, 255))
+        self:SetWatermarkIconColor(Color3.fromRGB(120, 180, 255))
+        
+    elseif themeName == "green" then
+        -- Зеленая тема
+        self:SetWatermarkProjectColor(Color3.fromRGB(100, 220, 150))
+        self:SetWatermarkNicknameColor(Color3.fromRGB(150, 255, 180))
+        self:SetWatermarkIconColor(Color3.fromRGB(120, 255, 160))
+        
+    elseif themeName == "red" then
+        -- Красная тема
+        self:SetWatermarkProjectColor(Color3.fromRGB(255, 100, 120))
+        self:SetWatermarkNicknameColor(Color3.fromRGB(255, 150, 170))
+        self:SetWatermarkIconColor(Color3.fromRGB(255, 120, 140))
+        
+    elseif themeName == "rainbow" then
+        -- Радужная тема (будет меняться автоматически)
+        self.WatermarkRainbowMode = true
+        
+    elseif themeName == "accent" then
+        -- Использовать AccentColor библиотеки
+        self:SetWatermarkProjectColor(self.AccentColor)
+        self:SetWatermarkNicknameColor(self.AccentColor)
+        self:SetWatermarkIconColor(self.AccentColor)
+        
+    else
+        -- Стандартная тема
+        self:SetWatermarkProjectColor(Color3.fromRGB(180, 100, 220))
+        self:SetWatermarkNicknameColor(Color3.fromRGB(192, 192, 192))
+        self:SetWatermarkIconColor(Color3.fromRGB(255, 120, 200))
+    end
+end
+
+-- ✨ ФУНКЦИЯ ДЛЯ ПОЛУЧЕНИЯ ЦВЕТА ПИНГА ПО ЗНАЧЕНИЮ
+function Library:GetPingColor(ping)
+    if ping < 100 then
+        return self.WatermarkPingGoodColor
+    elseif ping < 200 then
+        return self.WatermarkPingMediumColor
+    else
+        return self.WatermarkPingBadColor
+    end
+end
 
 local RainbowStep = 0
 local Hue = 0
