@@ -4650,6 +4650,7 @@ function Tab:AddGroupbox(Info)
         BorderColor3 = Library.OutlineColor;
         BorderMode = Enum.BorderMode.Inset;
         Size = UDim2.new(1, 0, 0, 507 + 2);
+        ClipsDescendants = false; -- НЕ обрезаем контент
         ZIndex = 2;
         Parent = Info.Side == 1 and LeftSide or RightSide;
     });
@@ -4670,6 +4671,7 @@ function Tab:AddGroupbox(Info)
         BorderColor3 = Color3.new(0, 0, 0);
         Size = UDim2.new(1, -2, 1, -2);
         Position = UDim2.new(0, 1, 0, 1);
+        ClipsDescendants = false; -- НЕ обрезаем контент
         ZIndex = 4;
         Parent = BoxOuter;
     });
@@ -4839,8 +4841,9 @@ function Tab:AddGroupbox(Info)
     
     local Container = Library:Create('Frame', {
         BackgroundTransparency = 1;
-        Position = UDim2.new(0, 6, 0, 6);
-        Size = UDim2.new(1, -12, 1, -12);
+        Position = UDim2.new(0, 4, 0, 4); -- Меньше отступ
+        Size = UDim2.new(1, -8, 1, -8); -- Больше места для контента
+        ClipsDescendants = false; -- НЕ обрезаем контент
         ZIndex = 5;
         Parent = ContentSection;
     });
@@ -4902,8 +4905,9 @@ function Tab:AddGroupbox(Info)
             end;
         end;
         
-        BoxOuter.Size = UDim2.new(1, 0, 0, 26 + Size + 12 + 4);
-        ContentSection.Size = UDim2.new(1, 0, 0, Size + 12);
+        -- Добавляем больше места для контента
+        BoxOuter.Size = UDim2.new(1, 0, 0, 26 + Size + 8 + 4);
+        ContentSection.Size = UDim2.new(1, 0, 0, Size + 8);
     end;
     
     Groupbox.Container = Container;
@@ -4922,6 +4926,7 @@ end;
 function Tab:AddRightGroupbox(Name)
     return Tab:AddGroupbox({ Side = 2; Name = Name; });
 end;
+
         function Tab:AddTabbox(Info)
             local Tabbox = {
                 Tabs = {};
