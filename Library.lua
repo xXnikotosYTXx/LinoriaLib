@@ -4570,7 +4570,37 @@ end
 -- ============================================
 -- АВТОМАТИЧЕСКАЯ ИНТЕГРАЦИЯ KEYPICKER
 -- ============================================
--- Перехватываем создание KeyPicker для автоматического добавления в кейбинды
+function Library:UpdateKeybindKey(name, newKey)
+    for _, item in ipairs(Library.WaveSystem.KeybindItems) do
+        if item.Name == name then
+            item.Key = newKey
+            item.KeyLabel.Text = newKey
+            
+            -- Анимация подсветки при изменении клавиши
+            local highlightColor = Color3.fromRGB(100, 150, 255)
+            local normalColor = Library.KeybindKeyColor
+            
+            TweenService:Create(item.KeyLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                TextColor3 = highlightColor,
+                TextSize = 11,
+            }):Play()
+            
+            task.delay(0.8, function()
+                TweenService:Create(item.KeyLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    TextColor3 = normalColor,
+                    TextSize = 9,
+                }):Play()
+            end)
+            
+            print("🔑 Клавиша кейбинда '" .. name .. "' обновлена на: " .. newKey)
+            break
+        end
+    end
+end
+
+-- ============================================
+-- ЗАМЕНИ ФУНКЦИЮ Library:AutoIntegrateKeyPickers НА ЭТУ:
+-- ============================================
 local OriginalAddKeyPicker = nil
 
 function Library:AutoIntegrateKeyPickers()
@@ -4606,10 +4636,6 @@ function Library:AutoIntegrateKeyPickers()
                         elseif string.find(keybindName:lower(), "menu") then
                             iconName = "settings"
                         elseif string.find(keybindName:lower(), "fly") then
-                            iconName = "zap"
-                        elseif string.find(keybindName:lower(), "speed") then
-                            iconName = "zap"
-                        elseif string.find(keybindName:lower(), "teleport") then
                             iconName = "zap"
                         end
                         
@@ -4679,6 +4705,7 @@ function Library:AutoIntegrateKeyPickers()
         end
     end
 end
+                
 
 print("🌊 ПОЛНОСТЬЮ ИСПРАВЛЕННАЯ ВОЛНОВАЯ СИСТЕМА ЗАГРУЖЕНА!")
 print("✅ Исправлены ВСЕ баги с цветами волн при смене цвета")
@@ -4718,120 +4745,166 @@ print("   🎯 Автоматическое обновление при смен
 function Library:CreateWindow(...)
     local Arguments = { ... }
     local Config = { AnchorPoint = Vector2.zero }
-
+    
     if type(...) == 'table' then
         Config = ...;
     else
         Config.Title = Arguments[1]
         Config.AutoShow = Arguments[2] or false;
     end
-
+    
     if type(Config.Title) ~= 'string' then Config.Title = 'No title' end
     if type(Config.TabPadding) ~= 'number' then Config.TabPadding = 0 end
     if type(Config.MenuFadeTime) ~= 'number' then Config.MenuFadeTime = 0.2 end
-
     if typeof(Config.Position) ~= 'UDim2' then Config.Position = UDim2.fromOffset(175, 50) end
     if typeof(Config.Size) ~= 'UDim2' then Config.Size = UDim2.fromOffset(550, 600) end
-
+    
     if Config.Center then
         Config.AnchorPoint = Vector2.new(0.5, 0.5)
         Config.Position = UDim2.fromScale(0.5, 0.5)
     end
-
+    
     local Window = {
         Tabs = {};
     };
-
+    
+    -- 🎨 OUTER FRAME КАК У WATERMARK/KEYBINDS
     local Outer = Library:Create('Frame', {
         AnchorPoint = Config.AnchorPoint,
-        BackgroundColor3 = Color3.new(0, 0, 0);
-        BorderSizePixel = 0;
+        BackgroundTransparency = 1;
         Position = Config.Position,
         Size = Config.Size,
         Visible = false;
         ZIndex = 1;
         Parent = ScreenGui;
     });
-
+    
     Library:MakeDraggable(Outer, 25);
-
+    
+    -- 🎨 ОСНОВНОЙ ФОН КАК У GROUPBOX
     local Inner = Library:Create('Frame', {
         BackgroundColor3 = Library.MainColor;
-        BorderColor3 = Library.AccentColor;
+        BorderColor3 = Library.OutlineColor;
         BorderMode = Enum.BorderMode.Inset;
-        Position = UDim2.new(0, 1, 0, 1);
-        Size = UDim2.new(1, -2, 1, -2);
+        Size = UDim2.new(1, 0, 1, 0);
         ZIndex = 1;
         Parent = Outer;
     });
-
+    
     Library:AddToRegistry(Inner, {
         BackgroundColor3 = 'MainColor';
-        BorderColor3 = 'AccentColor';
+        BorderColor3 = 'OutlineColor';
     });
-
+    
+    -- 🎨 ВНУТРЕННЯЯ РАМКА КАК У GROUPBOX
+    local WindowFrame = Library:Create('Frame', {
+        BackgroundColor3 = Color3.new(1, 1, 1);
+        BorderSizePixel = 0;
+        Position = UDim2.new(0, 1, 0, 1);
+        Size = UDim2.new(1, -2, 1, -2);
+        ZIndex = 2;
+        Parent = Inner;
+    });
+    
+    -- 🌈 ЛИНИЯ ГРАДИЕНТА КАК У GROUPBOX
+    local WindowGradient = Library:Create('UIGradient', {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
+            ColorSequenceKeypoint.new(1, Library.MainColor),
+        });
+        Rotation = -90;
+        Parent = WindowFrame;
+    });
+    
+    -- 🎨 ЛЕВАЯ ЦВЕТНАЯ ЛИНИЯ КАК У GROUPBOX
+    local WindowLeftColor = Library:Create('Frame', {
+        BackgroundColor3 = Library.AccentColor;
+        BorderSizePixel = 0;
+        Position = UDim2.new(0, -1, 0, -1);
+        Size = UDim2.new(0, 3, 1, 2);
+        ZIndex = 4;
+        Parent = Outer;
+    });
+    
+    -- Регистрируем для обновления цветов
+    Library:AddToRegistry(WindowGradient, {
+        Color = function()
+            return ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
+                ColorSequenceKeypoint.new(1, Library.MainColor),
+            });
+        end
+    });
+    
+    Library:AddToRegistry(WindowLeftColor, {
+        BackgroundColor3 = 'AccentColor';
+    }, true);
+    
+    -- 🏷️ ЗАГОЛОВОК ОКНА
     local WindowLabel = Library:CreateLabel({
-        Position = UDim2.new(0, 7, 0, 0);
+        Position = UDim2.new(0, 10, 0, 4);
         Size = UDim2.new(0, 0, 0, 25);
         Text = Config.Title or '';
         TextXAlignment = Enum.TextXAlignment.Left;
-        ZIndex = 1;
-        Parent = Inner;
+        ZIndex = 3;
+        Parent = WindowFrame;
     });
-
+    
+    -- 📦 ОСНОВНАЯ СЕКЦИЯ
     local MainSectionOuter = Library:Create('Frame', {
         BackgroundColor3 = Library.BackgroundColor;
         BorderColor3 = Library.OutlineColor;
         Position = UDim2.new(0, 8, 0, 25);
         Size = UDim2.new(1, -16, 1, -33);
-        ZIndex = 1;
-        Parent = Inner;
+        ZIndex = 3;
+        Parent = WindowFrame;
     });
-
+    
     Library:AddToRegistry(MainSectionOuter, {
         BackgroundColor3 = 'BackgroundColor';
         BorderColor3 = 'OutlineColor';
     });
-
+    
     local MainSectionInner = Library:Create('Frame', {
         BackgroundColor3 = Library.BackgroundColor;
         BorderColor3 = Color3.new(0, 0, 0);
         BorderMode = Enum.BorderMode.Inset;
         Position = UDim2.new(0, 0, 0, 0);
         Size = UDim2.new(1, 0, 1, 0);
-        ZIndex = 1;
+        ZIndex = 3;
         Parent = MainSectionOuter;
     });
-
+    
     Library:AddToRegistry(MainSectionInner, {
         BackgroundColor3 = 'BackgroundColor';
     });
-
+    
+    -- 📑 ОБЛАСТЬ ТАБОВ
     local TabArea = Library:Create('Frame', {
         BackgroundTransparency = 1;
         Position = UDim2.new(0, 8, 0, 8);
         Size = UDim2.new(1, -16, 0, 21);
-        ZIndex = 1;
+        ZIndex = 3;
         Parent = MainSectionInner;
     });
-
+    
     local TabListLayout = Library:Create('UIListLayout', {
         Padding = UDim.new(0, Config.TabPadding);
         FillDirection = Enum.FillDirection.Horizontal;
         SortOrder = Enum.SortOrder.LayoutOrder;
         Parent = TabArea;
     });
-
+    
+    -- 📋 КОНТЕЙНЕР ТАБОВ
     local TabContainer = Library:Create('Frame', {
         BackgroundColor3 = Library.MainColor;
         BorderColor3 = Library.OutlineColor;
         Position = UDim2.new(0, 8, 0, 30);
         Size = UDim2.new(1, -16, 1, -38);
-        ZIndex = 2;
+        ZIndex = 4;
         Parent = MainSectionInner;
     });
     
-
     Library:AddToRegistry(TabContainer, {
         BackgroundColor3 = 'MainColor';
         BorderColor3 = 'OutlineColor';
