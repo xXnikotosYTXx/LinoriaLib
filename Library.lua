@@ -2893,24 +2893,7 @@ local HttpService = game:GetService('HttpService')
 
 -- ✨ НОВЫЕ ЦВЕТА ДЛЯ ВАТЕРМАРКА (добавь в Library = {})
 Library.WatermarkProjectColor = Library.WatermarkProjectColor or Color3.fromRGB(180, 100, 220)
-Library.WatermarkNicknameColor = Library.WatermarkNicknameColor or Color3.fromRGB(192, 192, 192)
-Library.WatermarkFPSColor = Library.WatermarkFPSColor or Color3.fromRGB(100, 255, 100)
-Library.WatermarkFPSTextColor = Library.WatermarkFPSTextColor or Color3.fromRGB(140, 140, 140)
-Library.WatermarkPingGoodColor = Library.WatermarkPingGoodColor or Color3.fromRGB(100, 255, 100)
-Library.WatermarkPingMediumColor = Library.WatermarkPingMediumColor or Color3.fromRGB(255, 255, 100)
-Library.WatermarkPingBadColor = Library.WatermarkPingBadColor or Color3.fromRGB(255, 100, 100)
-Library.WatermarkPingTextColor = Library.WatermarkPingTextColor or Color3.fromRGB(140, 140, 140)
-Library.WatermarkTimeColor = Library.WatermarkTimeColor or Color3.fromRGB(120, 120, 120)
-Library.WatermarkSeparatorColor = Library.WatermarkSeparatorColor or Color3.fromRGB(100, 100, 100)
-Library.WatermarkIconColor = Library.WatermarkIconColor or Color3.fromRGB(255, 120, 200)
-
-Library.KeybindHeaderColor = Library.KeybindHeaderColor or Color3.fromRGB(200, 200, 200)
-Library.KeybindIconColor = Library.KeybindIconColor or Color3.fromRGB(150, 150, 255)
-Library.KeybindNameColor = Library.KeybindNameColor or Color3.fromRGB(180, 180, 180)
-Library.KeybindKeyColor = Library.KeybindKeyColor or Color3.fromRGB(120, 120, 130)
-Library.KeybindStateOnColor = Library.KeybindStateOnColor or Color3.fromRGB(100, 255, 100)
-Library.KeybindStateOffColor = Library.KeybindStateOffColor or Color3.fromRGB(255, 100, 100)
-Library.KeybindSeparatorColor = Library.KeybindSeparatorColor or Color3.fromRGB(100, 100, 100)
+Library.WatermarkGeneralColor = Library.WatermarkGeneralColor or Color3.fromRGB(255, 255, 255)
 
 -- ============================================
 -- ФУНКЦИИ ДЛЯ УПРАВЛЕНИЯ ЦВЕТАМИ
@@ -2935,64 +2918,94 @@ function Library:SetWatermarkProjectColor(color)
     self._ColorUpdateInProgress = false
 end
 
-function Library:SetWatermarkNicknameColor(color)
+function Library:SetWatermarkGeneralColor(color)
     if self._ColorUpdateInProgress then return end
     self._ColorUpdateInProgress = true
     
-    self.WatermarkNicknameColor = color
-    if self.WaveSystem and self.WaveSystem.NicknameLetters then
-        for _, letter in pairs(self.WaveSystem.NicknameLetters) do
-            if letter.Label then
-                letter.Label.TextColor3 = color
+    self.WatermarkGeneralColor = color
+    
+    -- Применяем ко всем элементам кроме Project Name
+    if self.WaveSystem then
+        -- Никнейм
+        if self.WaveSystem.NicknameLetters then
+            for _, letter in pairs(self.WaveSystem.NicknameLetters) do
+                if letter.Label then
+                    letter.Label.TextColor3 = color
+                end
+            end
+        end
+        
+        -- FPS текст (не цифры)
+        if self.WaveSystem.FPSLetters then
+            for _, letter in pairs(self.WaveSystem.FPSLetters) do
+                if letter.Label and not letter.IsDigit then
+                    letter.Label.TextColor3 = color
+                end
+            end
+        end
+        
+        -- Пинг текст (не цифры)
+        if self.WaveSystem.PingLetters then
+            for _, letter in pairs(self.WaveSystem.PingLetters) do
+                if letter.Label and not letter.IsDigit then
+                    letter.Label.TextColor3 = color
+                end
+            end
+        end
+        
+        -- Время
+        if self.WaveSystem.TimeLetters then
+            for _, letter in pairs(self.WaveSystem.TimeLetters) do
+                if letter.Label then
+                    letter.Label.TextColor3 = color
+                end
+            end
+        end
+        
+        -- Кейбинды заголовок
+        if self.WaveSystem.KeybindHeaderLetters then
+            for _, letter in pairs(self.WaveSystem.KeybindHeaderLetters) do
+                if letter.Label then
+                    letter.Label.TextColor3 = color
+                end
+            end
+        end
+        
+        -- Кейбинды элементы
+        for _, item in pairs(self.WaveSystem.KeybindItems or {}) do
+            if item.NameLabel then
+                item.NameLabel.TextColor3 = color
+            end
+            if item.KeyLabel then
+                item.KeyLabel.TextColor3 = color
+            end
+        end
+        
+        -- Разделители
+        if self.WaveSystem.Container then
+            for _, child in pairs(self.WaveSystem.Container:GetChildren()) do
+                if child:IsA("TextLabel") and child.Text == "|" then
+                    child.TextColor3 = color
+                end
+            end
+        end
+        
+        -- Иконки
+        if self.WaveSystem.IconLabel then
+            self.WaveSystem.IconLabel.TextColor3 = color
+        end
+        if self.WaveSystem.PaletteIcon then
+            if self.WaveSystem.PaletteIcon.ClassName == "ImageLabel" then
+                self.WaveSystem.PaletteIcon.ImageColor3 = color
+            else
+                self.WaveSystem.PaletteIcon.TextColor3 = color
             end
         end
     end
     
     self._ColorUpdateInProgress = false
 end
-function Library:SetWatermarkIconColor(color)
-    if self._ColorUpdateInProgress then return end
-    self._ColorUpdateInProgress = true
-    
-    self.WatermarkIconColor = color
-    if self.WaveSystem and self.WaveSystem.IconLabel then
-        self.WaveSystem.IconLabel.TextColor3 = color
-    end
-    
-    self._ColorUpdateInProgress = false
-end
 
-function Library:SetKeybindHeaderColor(color)
-    if self._ColorUpdateInProgress then return end
-    self._ColorUpdateInProgress = true
-    
-    self.KeybindHeaderColor = color
-    if self.WaveSystem and self.WaveSystem.KeybindHeaderLetters then
-        for _, letter in pairs(self.WaveSystem.KeybindHeaderLetters) do
-            if letter.Label then
-                letter.Label.TextColor3 = color
-            end
-        end
-    end
-    
-    self._ColorUpdateInProgress = false
-end
-
-function Library:SetKeybindIconColor(color)
-    if self._ColorUpdateInProgress then return end
-    self._ColorUpdateInProgress = true
-    
-    self.KeybindIconColor = color
-    if self.WaveSystem and self.WaveSystem.PaletteIcon then
-        if self.WaveSystem.PaletteIcon.ClassName == "ImageLabel" then
-            self.WaveSystem.PaletteIcon.ImageColor3 = color
-        else
-            self.WaveSystem.PaletteIcon.TextColor3 = color
-        end
-    end
-    
-    self._ColorUpdateInProgress = false
-end
 
 function Library:SetWatermarkTheme(themeName)
     if self._ColorUpdateInProgress then return end
@@ -3000,24 +3013,19 @@ function Library:SetWatermarkTheme(themeName)
     
     if themeName == "purple" then
         self.WatermarkProjectColor = Color3.fromRGB(180, 100, 220)
-        self.WatermarkNicknameColor = Color3.fromRGB(200, 150, 255)
-        self.WatermarkIconColor = Color3.fromRGB(255, 120, 200)
+        self.WatermarkGeneralColor = Color3.fromRGB(255, 255, 255)
     elseif themeName == "blue" then
         self.WatermarkProjectColor = Color3.fromRGB(100, 150, 255)
-        self.WatermarkNicknameColor = Color3.fromRGB(150, 200, 255)
-        self.WatermarkIconColor = Color3.fromRGB(120, 180, 255)
+        self.WatermarkGeneralColor = Color3.fromRGB(255, 255, 255)
     elseif themeName == "green" then
         self.WatermarkProjectColor = Color3.fromRGB(100, 220, 150)
-        self.WatermarkNicknameColor = Color3.fromRGB(150, 255, 180)
-        self.WatermarkIconColor = Color3.fromRGB(120, 255, 160)
+        self.WatermarkGeneralColor = Color3.fromRGB(255, 255, 255)
     elseif themeName == "red" then
         self.WatermarkProjectColor = Color3.fromRGB(255, 100, 120)
-        self.WatermarkNicknameColor = Color3.fromRGB(255, 150, 170)
-        self.WatermarkIconColor = Color3.fromRGB(255, 120, 140)
+        self.WatermarkGeneralColor = Color3.fromRGB(255, 255, 255)
     elseif themeName == "accent" then
         self.WatermarkProjectColor = self.AccentColor
-        self.WatermarkNicknameColor = self.AccentColor
-        self.WatermarkIconColor = self.AccentColor
+        self.WatermarkGeneralColor = Color3.fromRGB(255, 255, 255)
     end
     
     -- Применяем цвета без вызова функций (избегаем циклов)
@@ -3029,16 +3037,8 @@ function Library:SetWatermarkTheme(themeName)
                 end
             end
         end
-        if self.WaveSystem.NicknameLetters then
-            for _, letter in pairs(self.WaveSystem.NicknameLetters) do
-                if letter.Label then
-                    letter.Label.TextColor3 = self.WatermarkNicknameColor
-                end
-            end
-        end
-        if self.WaveSystem.IconLabel then
-            self.WaveSystem.IconLabel.TextColor3 = self.WatermarkIconColor
-        end
+        -- Применяем общий цвет ко всем остальным элементам
+        self:SetWatermarkGeneralColor(self.WatermarkGeneralColor)
     end
     
     self._ColorUpdateInProgress = false
@@ -3313,7 +3313,7 @@ function Library.WaveSystem:CreateElements()
         Size = UDim2.new(0, 18, 1, 0);
         Text = "⚡";
         TextSize = 15;
-        TextColor3 = Library.WatermarkIconColor; -- ✨ ИЗ LIBRARY
+        TextColor3 = Library.WatermarkGeneralColor; -- ✨ ИЗ LIBRARY
         TextXAlignment = Enum.TextXAlignment.Center;
         Font = customFont;
         ZIndex = 203;
@@ -3390,7 +3390,7 @@ function Library.WaveSystem:CreateElements()
             Size = UDim2.new(1, 0, 1, 0);
             Text = char;
             TextSize = 14;
-            TextColor3 = Library.WatermarkNicknameColor; -- ✨ ИЗ LIBRARY
+            TextColor3 = Library.WatermarkGeneralColor; -- ✨ ИЗ LIBRARY
             TextXAlignment = Enum.TextXAlignment.Center;
             Font = customFont;
             ZIndex = 204;
@@ -4652,22 +4652,6 @@ function Library:AutoIntegrateKeyPickers()
         end
     end
 end
-
-print("")
-print("🔧 ИСПРАВЛЕНИЯ ПРИМЕНЕНЫ:")
-print("  ✅ Защита от циклических вызовов цветов")
-print("  ✅ Ограничение частоты обновления волн (~60 FPS)")
-print("  ✅ Обработка ошибок с pcall()")
-print("  ✅ Дополнительные функции управления")
-print("")
-print("🌊 НОВЫЕ ФУНКЦИИ:")
-print("  Library:SetWaveSpeed(0.1) -- Скорость волн")
-print("  Library:SetWaveIntensity(0.3) -- Интенсивность")
-print("  Library:SetWaveWidth(4) -- Ширина волн")
-print("  Library:ResetWaveSettings() -- Сброс настроек")
-print("  Library:AutoIntegrateKeyPickers() -- Авто-интеграция")
-print("")
-print("✨ СИСТЕМА ГОТОВА К ИСПОЛЬЗОВАНИЮ БЕЗ ОШИБОК!")
 
 
 
