@@ -26,137 +26,26 @@ getgenv().Options = Options;
 local Library = {
     Registry = {};
     RegistryMap = {};
+
     HudRegistry = {};
-    
-    -- ОСНОВНЫЕ ЦВЕТА
+
     FontColor = Color3.fromRGB(255, 255, 255);
     MainColor = Color3.fromRGB(28, 28, 28);
     BackgroundColor = Color3.fromRGB(20, 20, 20);
     AccentColor = Color3.fromRGB(0, 85, 255);
     OutlineColor = Color3.fromRGB(50, 50, 50);
-    RiskColor = Color3.fromRGB(255, 50, 50);
+    RiskColor = Color3.fromRGB(255, 50, 50),
+
     Black = Color3.new(0, 0, 0);
-    Font = Enum.Font.Code;
-    
-    -- ✨ ЦВЕТА ДЛЯ ВАТЕРМАРКА
-    WatermarkProjectColor = Color3.fromRGB(180, 100, 220);
-    WatermarkNicknameColor = Color3.fromRGB(192, 192, 192);
-    WatermarkFPSColor = Color3.fromRGB(100, 255, 100);
-    WatermarkFPSTextColor = Color3.fromRGB(140, 140, 140);
-    WatermarkPingGoodColor = Color3.fromRGB(100, 255, 100);
-    WatermarkPingMediumColor = Color3.fromRGB(255, 255, 100);
-    WatermarkPingBadColor = Color3.fromRGB(255, 100, 100);
-    WatermarkPingTextColor = Color3.fromRGB(140, 140, 140);
-    WatermarkTimeColor = Color3.fromRGB(120, 120, 120);
-    WatermarkSeparatorColor = Color3.fromRGB(100, 100, 100);
-    WatermarkIconColor = Color3.fromRGB(255, 120, 200);
-    
-    -- ✨ ЦВЕТА ДЛЯ КЕЙБИНДОВ
-    KeybindHeaderColor = Color3.fromRGB(200, 200, 200);
-    KeybindIconColor = Color3.fromRGB(150, 150, 255);
-    KeybindNameColor = Color3.fromRGB(180, 180, 180);
-    KeybindKeyColor = Color3.fromRGB(120, 120, 130);
-    KeybindStateOnColor = Color3.fromRGB(100, 255, 100);
-    KeybindStateOffColor = Color3.fromRGB(255, 100, 100);
-    KeybindSeparatorColor = Color3.fromRGB(100, 100, 100);
-    
+    Font = Enum.Font.Code,
+
     OpenedFrames = {};
     DependencyBoxes = {};
+
     Signals = {};
     ScreenGui = ScreenGui;
-    
-    -- Защита от циклических вызовов
-    _ColorUpdateInProgress = false;
 };
 
-
--- ✨ ИСПРАВЛЕННЫЕ ФУНКЦИИ БЕЗ ОШИБОК
-function Library:SetWatermarkProjectColor(color)
-    if self._ColorUpdateInProgress then return end
-    self._ColorUpdateInProgress = true
-    
-    self.WatermarkProjectColor = color
-    
-    -- Безопасное обновление с защитой от ошибок
-    pcall(function()
-        if self.WaveSystem and self.WaveSystem.ProjectLetters then
-            for _, letter in pairs(self.WaveSystem.ProjectLetters) do
-                if letter and letter.Label and letter.Label.Parent then
-                    letter.Label.TextColor3 = color
-                end
-            end
-        end
-    end)
-    
-    task.wait() -- Небольшая задержка для предотвращения циклов
-    self._ColorUpdateInProgress = false
-end
-
-function Library:SetWatermarkNicknameColor(color)
-    if self._ColorUpdateInProgress then return end
-    self._ColorUpdateInProgress = true
-    
-    self.WatermarkNicknameColor = color
-    
-    pcall(function()
-        if self.WaveSystem and self.WaveSystem.NicknameLetters then
-            for _, letter in pairs(self.WaveSystem.NicknameLetters) do
-                if letter and letter.Label and letter.Label.Parent then
-                    letter.Label.TextColor3 = color
-                end
-            end
-        end
-    end)
-    
-    task.wait()
-    self._ColorUpdateInProgress = false
-end
-
-function Library:SetWatermarkTimeColor(color)
-    if self._ColorUpdateInProgress then return end
-    self._ColorUpdateInProgress = true
-    
-    self.WatermarkTimeColor = color
-    
-    pcall(function()
-        if self.WaveSystem and self.WaveSystem.TimeLetters then
-            for _, letter in pairs(self.WaveSystem.TimeLetters) do
-                if letter and letter.Label and letter.Label.Parent then
-                    letter.Label.TextColor3 = color
-                end
-            end
-        end
-    end)
-    
-    task.wait()
-    self._ColorUpdateInProgress = false
-end
-
-function Library:SetWatermarkIconColor(color)
-    if self._ColorUpdateInProgress then return end
-    self._ColorUpdateInProgress = true
-    
-    self.WatermarkIconColor = color
-    
-    pcall(function()
-        if self.WaveSystem and self.WaveSystem.IconLabel and self.WaveSystem.IconLabel.Parent then
-            self.WaveSystem.IconLabel.TextColor3 = color
-        end
-    end)
-    
-    task.wait()
-    self._ColorUpdateInProgress = false
-end
-
-function Library:GetPingColor(ping)
-    if ping < 100 then
-        return self.WatermarkPingGoodColor
-    elseif ping < 200 then
-        return self.WatermarkPingMediumColor
-    else
-        return self.WatermarkPingBadColor
-    end
-end
 local RainbowStep = 0
 local Hue = 0
 
@@ -1111,380 +1000,332 @@ do
         return self;
     end;
 
-function Funcs:AddKeyPicker(Idx, Info)
-    local ParentObj = self;
-    local ToggleLabel = self.TextLabel;
-    local Container = self.Container;
+    function Funcs:AddKeyPicker(Idx, Info)
+        local ParentObj = self;
+        local ToggleLabel = self.TextLabel;
+        local Container = self.Container;
 
-    assert(Info.Default, 'AddKeyPicker: Missing default value.');
+        assert(Info.Default, 'AddKeyPicker: Missing default value.');
 
-    local KeyPicker = {
-        Value = Info.Default;
-        Toggled = false;
-        Mode = Info.Mode or 'Toggle'; -- Always, Toggle, Hold
-        Type = 'KeyPicker';
-        Callback = Info.Callback or function(Value) end;
-        ChangedCallback = Info.ChangedCallback or function(New) end;
-        SyncToggleState = Info.SyncToggleState or false;
-    };
+        local KeyPicker = {
+            Value = Info.Default;
+            Toggled = false;
+            Mode = Info.Mode or 'Toggle'; -- Always, Toggle, Hold
+            Type = 'KeyPicker';
+            Callback = Info.Callback or function(Value) end;
+            ChangedCallback = Info.ChangedCallback or function(New) end;
 
-    if KeyPicker.SyncToggleState then
-        Info.Modes = { 'Toggle' }
-        Info.Mode = 'Toggle'
-    end
+            SyncToggleState = Info.SyncToggleState or false;
+        };
 
-    local PickOuter = Library:Create('Frame', {
-        BackgroundColor3 = Color3.new(0, 0, 0);
-        BorderColor3 = Color3.new(0, 0, 0);
-        Size = UDim2.new(0, 28, 0, 15);
-        ZIndex = 6;
-        Parent = ToggleLabel;
-    });
+        if KeyPicker.SyncToggleState then
+            Info.Modes = { 'Toggle' }
+            Info.Mode = 'Toggle'
+        end
 
-    local PickInner = Library:Create('Frame', {
-        BackgroundColor3 = Library.BackgroundColor;
-        BorderColor3 = Library.OutlineColor;
-        BorderMode = Enum.BorderMode.Inset;
-        Size = UDim2.new(1, 0, 1, 0);
-        ZIndex = 7;
-        Parent = PickOuter;
-    });
+        local PickOuter = Library:Create('Frame', {
+            BackgroundColor3 = Color3.new(0, 0, 0);
+            BorderColor3 = Color3.new(0, 0, 0);
+            Size = UDim2.new(0, 28, 0, 15);
+            ZIndex = 6;
+            Parent = ToggleLabel;
+        });
 
-    Library:AddToRegistry(PickInner, {
-        BackgroundColor3 = 'BackgroundColor';
-        BorderColor3 = 'OutlineColor';
-    });
+        local PickInner = Library:Create('Frame', {
+            BackgroundColor3 = Library.BackgroundColor;
+            BorderColor3 = Library.OutlineColor;
+            BorderMode = Enum.BorderMode.Inset;
+            Size = UDim2.new(1, 0, 1, 0);
+            ZIndex = 7;
+            Parent = PickOuter;
+        });
 
-    local DisplayLabel = Library:CreateLabel({
-        Size = UDim2.new(1, 0, 1, 0);
-        TextSize = 13;
-        Text = Info.Default;
-        TextWrapped = true;
-        ZIndex = 8;
-        Parent = PickInner;
-    });
+        Library:AddToRegistry(PickInner, {
+            BackgroundColor3 = 'BackgroundColor';
+            BorderColor3 = 'OutlineColor';
+        });
 
-    local ModeSelectOuter = Library:Create('Frame', {
-        BorderColor3 = Color3.new(0, 0, 0);
-        Position = UDim2.fromOffset(ToggleLabel.AbsolutePosition.X + ToggleLabel.AbsoluteSize.X + 4, ToggleLabel.AbsolutePosition.Y + 1);
-        Size = UDim2.new(0, 60, 0, 45 + 2);
-        Visible = false;
-        ZIndex = 14;
-        Parent = ScreenGui;
-    });
-
-    ToggleLabel:GetPropertyChangedSignal('AbsolutePosition'):Connect(function()
-        ModeSelectOuter.Position = UDim2.fromOffset(ToggleLabel.AbsolutePosition.X + ToggleLabel.AbsoluteSize.X + 4, ToggleLabel.AbsolutePosition.Y + 1);
-    end);
-
-    local ModeSelectInner = Library:Create('Frame', {
-        BackgroundColor3 = Library.BackgroundColor;
-        BorderColor3 = Library.OutlineColor;
-        BorderMode = Enum.BorderMode.Inset;
-        Size = UDim2.new(1, 0, 1, 0);
-        ZIndex = 15;
-        Parent = ModeSelectOuter;
-    });
-
-    Library:AddToRegistry(ModeSelectInner, {
-        BackgroundColor3 = 'BackgroundColor';
-        BorderColor3 = 'OutlineColor';
-    });
-
-    Library:Create('UIListLayout', {
-        FillDirection = Enum.FillDirection.Vertical;
-        SortOrder = Enum.SortOrder.LayoutOrder;
-        Parent = ModeSelectInner;
-    });
-
-    local ContainerLabel = Library:CreateLabel({
-        TextXAlignment = Enum.TextXAlignment.Left;
-        Size = UDim2.new(1, 0, 0, 18);
-        TextSize = 13;
-        Visible = false;
-        ZIndex = 110;
-        Parent = Library.KeybindContainer;
-    },  true);
-
-    local Modes = Info.Modes or { 'Always', 'Toggle', 'Hold' };
-    local ModeButtons = {};
-
-    for Idx, Mode in next, Modes do
-        local ModeButton = {};
-
-        local Label = Library:CreateLabel({
-            Active = false;
-            Size = UDim2.new(1, 0, 0, 15);
+        local DisplayLabel = Library:CreateLabel({
+            Size = UDim2.new(1, 0, 1, 0);
             TextSize = 13;
-            Text = Mode;
-            ZIndex = 16;
+            Text = Info.Default;
+            TextWrapped = true;
+            ZIndex = 8;
+            Parent = PickInner;
+        });
+
+        local ModeSelectOuter = Library:Create('Frame', {
+            BorderColor3 = Color3.new(0, 0, 0);
+            Position = UDim2.fromOffset(ToggleLabel.AbsolutePosition.X + ToggleLabel.AbsoluteSize.X + 4, ToggleLabel.AbsolutePosition.Y + 1);
+            Size = UDim2.new(0, 60, 0, 45 + 2);
+            Visible = false;
+            ZIndex = 14;
+            Parent = ScreenGui;
+        });
+
+        ToggleLabel:GetPropertyChangedSignal('AbsolutePosition'):Connect(function()
+            ModeSelectOuter.Position = UDim2.fromOffset(ToggleLabel.AbsolutePosition.X + ToggleLabel.AbsoluteSize.X + 4, ToggleLabel.AbsolutePosition.Y + 1);
+        end);
+
+        local ModeSelectInner = Library:Create('Frame', {
+            BackgroundColor3 = Library.BackgroundColor;
+            BorderColor3 = Library.OutlineColor;
+            BorderMode = Enum.BorderMode.Inset;
+            Size = UDim2.new(1, 0, 1, 0);
+            ZIndex = 15;
+            Parent = ModeSelectOuter;
+        });
+
+        Library:AddToRegistry(ModeSelectInner, {
+            BackgroundColor3 = 'BackgroundColor';
+            BorderColor3 = 'OutlineColor';
+        });
+
+        Library:Create('UIListLayout', {
+            FillDirection = Enum.FillDirection.Vertical;
+            SortOrder = Enum.SortOrder.LayoutOrder;
             Parent = ModeSelectInner;
         });
 
-        function ModeButton:Select()
-            for _, Button in next, ModeButtons do
-                Button:Deselect();
-            end;
+        local ContainerLabel = Library:CreateLabel({
+            TextXAlignment = Enum.TextXAlignment.Left;
+            Size = UDim2.new(1, 0, 0, 18);
+            TextSize = 13;
+            Visible = false;
+            ZIndex = 110;
+            Parent = Library.KeybindContainer;
+        },  true);
 
-            KeyPicker.Mode = Mode;
+        local Modes = Info.Modes or { 'Always', 'Toggle', 'Hold' };
+        local ModeButtons = {};
 
-            Label.TextColor3 = Library.AccentColor;
-            Library.RegistryMap[Label].Properties.TextColor3 = 'AccentColor';
+        for Idx, Mode in next, Modes do
+            local ModeButton = {};
 
-            ModeSelectOuter.Visible = false;
-        end;
+            local Label = Library:CreateLabel({
+                Active = false;
+                Size = UDim2.new(1, 0, 0, 15);
+                TextSize = 13;
+                Text = Mode;
+                ZIndex = 16;
+                Parent = ModeSelectInner;
+            });
 
-        function ModeButton:Deselect()
-            KeyPicker.Mode = nil;
-
-            Label.TextColor3 = Library.FontColor;
-            Library.RegistryMap[Label].Properties.TextColor3 = 'FontColor';
-        end;
-
-        Label.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-                ModeButton:Select();
-                Library:AttemptSave();
-            end;
-        end);
-
-        if Mode == KeyPicker.Mode then
-            ModeButton:Select();
-        end;
-
-        ModeButtons[Mode] = ModeButton;
-    end;
-
-    function KeyPicker:Update()
-        -- Если используется волновой дисплей, НЕ показываем оригинальный
-        if Info.NoUI or (not Info.NoUI and Library.WaveSystem) then
-            return;
-        end;
-
-        local State = KeyPicker:GetState();
-
-        ContainerLabel.Text = string.format('[%s] %s (%s)', KeyPicker.Value, Info.Text, KeyPicker.Mode);
-        ContainerLabel.Visible = true;
-        ContainerLabel.TextColor3 = State and Library.AccentColor or Library.FontColor;
-
-        Library.RegistryMap[ContainerLabel].Properties.TextColor3 = State and 'AccentColor' or 'FontColor';
-
-        local YSize = 0
-        local XSize = 0
-
-        for _, Label in next, Library.KeybindContainer:GetChildren() do
-            if Label:IsA('TextLabel') and Label.Visible then
-                YSize = YSize + 18;
-
-                if (Label.TextBounds.X > XSize) then
-                    XSize = Label.TextBounds.X
-                end
-            end;
-        end;
-
-        Library.KeybindFrame.Size = UDim2.new(0, math.max(XSize + 10, 210), 0, YSize + 23)
-    end;
-
-    function KeyPicker:GetState()
-        if KeyPicker.Mode == 'Always' then
-            return true;
-        elseif KeyPicker.Mode == 'Hold' then
-            if KeyPicker.Value == 'None' then
-                return false;
-            end
-
-            local Key = KeyPicker.Value;
-
-            if Key == 'MB1' or Key == 'MB2' then
-                return Key == 'MB1' and InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
-                    or Key == 'MB2' and InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2);
-            else
-                return InputService:IsKeyDown(Enum.KeyCode[KeyPicker.Value]);
-            end;
-        else
-            return KeyPicker.Toggled;
-        end;
-    end;
-
-    function KeyPicker:SetValue(Data)
-        local Key, Mode = Data[1], Data[2];
-        DisplayLabel.Text = Key;
-        KeyPicker.Value = Key;
-        ModeButtons[Mode]:Select();
-        KeyPicker:Update();
-    end;
-
-    function KeyPicker:OnClick(Callback)
-        KeyPicker.Clicked = Callback
-    end
-
-    function KeyPicker:OnChanged(Callback)
-        KeyPicker.Changed = Callback
-        Callback(KeyPicker.Value)
-    end
-
-    if ParentObj.Addons then
-        table.insert(ParentObj.Addons, KeyPicker)
-    end
-
-    function KeyPicker:DoClick()
-        if ParentObj.Type == 'Toggle' and KeyPicker.SyncToggleState then
-            ParentObj:SetValue(not ParentObj.Value)
-        end
-
-        Library:SafeCallback(KeyPicker.Callback, KeyPicker.Toggled)
-        Library:SafeCallback(KeyPicker.Clicked, KeyPicker.Toggled)
-    end
-
-    local Picking = false;
-
-    PickOuter.InputBegan:Connect(function(Input)
-        if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
-            Picking = true;
-            DisplayLabel.Text = '';
-
-            local Break;
-            local Text = '';
-
-            task.spawn(function()
-                while (not Break) do
-                    if Text == '...' then
-                        Text = '';
-                    end;
-
-                    Text = Text .. '.';
-                    DisplayLabel.Text = Text;
-
-                    wait(0.4);
-                end;
-            end);
-
-            wait(0.2);
-
-            local Event;
-            Event = InputService.InputBegan:Connect(function(Input)
-                local Key;
-
-                if Input.UserInputType == Enum.UserInputType.Keyboard then
-                    Key = Input.KeyCode.Name;
-                elseif Input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    Key = 'MB1';
-                elseif Input.UserInputType == Enum.UserInputType.MouseButton2 then
-                    Key = 'MB2';
+            function ModeButton:Select()
+                for _, Button in next, ModeButtons do
+                    Button:Deselect();
                 end;
 
-                Break = true;
-                Picking = false;
+                KeyPicker.Mode = Mode;
 
-                DisplayLabel.Text = Key;
-                KeyPicker.Value = Key;
-
-                Library:SafeCallback(KeyPicker.ChangedCallback, Input.KeyCode or Input.UserInputType)
-                Library:SafeCallback(KeyPicker.Changed, Input.KeyCode or Input.UserInputType)
-
-                Library:AttemptSave();
-
-                Event:Disconnect();
-            end);
-        elseif Input.UserInputType == Enum.UserInputType.MouseButton2 and not Library:MouseIsOverOpenedFrame() then
-            ModeSelectOuter.Visible = true;
-        end;
-    end);
-
-    Library:GiveSignal(InputService.InputBegan:Connect(function(Input)
-        if (not Picking) then
-            if KeyPicker.Mode == 'Toggle' then
-                local Key = KeyPicker.Value;
-
-                if Key == 'MB1' or Key == 'MB2' then
-                    if Key == 'MB1' and Input.UserInputType == Enum.UserInputType.MouseButton1
-                        or Key == 'MB2' and Input.UserInputType == Enum.UserInputType.MouseButton2 then
-
-                        KeyPicker.Toggled = not KeyPicker.Toggled
-                        KeyPicker:DoClick()
-                    end;
-                elseif Input.UserInputType == Enum.UserInputType.Keyboard then
-                    if Input.KeyCode.Name == Key then
-                        KeyPicker.Toggled = not KeyPicker.Toggled;
-                        KeyPicker:DoClick()
-                    end;
-                end;
-            end;
-
-            KeyPicker:Update();
-        end;
-
-        if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-            local AbsPos, AbsSize = ModeSelectOuter.AbsolutePosition, ModeSelectOuter.AbsoluteSize;
-
-            if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X
-                or Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
+                Label.TextColor3 = Library.AccentColor;
+                Library.RegistryMap[Label].Properties.TextColor3 = 'AccentColor';
 
                 ModeSelectOuter.Visible = false;
             end;
-        end;
-    end))
 
-    Library:GiveSignal(InputService.InputEnded:Connect(function(Input)
-        if (not Picking) then
+            function ModeButton:Deselect()
+                KeyPicker.Mode = nil;
+
+                Label.TextColor3 = Library.FontColor;
+                Library.RegistryMap[Label].Properties.TextColor3 = 'FontColor';
+            end;
+
+            Label.InputBegan:Connect(function(Input)
+                if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    ModeButton:Select();
+                    Library:AttemptSave();
+                end;
+            end);
+
+            if Mode == KeyPicker.Mode then
+                ModeButton:Select();
+            end;
+
+            ModeButtons[Mode] = ModeButton;
+        end;
+
+        function KeyPicker:Update()
+            if Info.NoUI then
+                return;
+            end;
+
+            local State = KeyPicker:GetState();
+
+            ContainerLabel.Text = string.format('[%s] %s (%s)', KeyPicker.Value, Info.Text, KeyPicker.Mode);
+
+            ContainerLabel.Visible = true;
+            ContainerLabel.TextColor3 = State and Library.AccentColor or Library.FontColor;
+
+            Library.RegistryMap[ContainerLabel].Properties.TextColor3 = State and 'AccentColor' or 'FontColor';
+
+            local YSize = 0
+            local XSize = 0
+
+            for _, Label in next, Library.KeybindContainer:GetChildren() do
+                if Label:IsA('TextLabel') and Label.Visible then
+                    YSize = YSize + 18;
+                    if (Label.TextBounds.X > XSize) then
+                        XSize = Label.TextBounds.X
+                    end
+                end;
+            end;
+
+            Library.KeybindFrame.Size = UDim2.new(0, math.max(XSize + 10, 210), 0, YSize + 23)
+        end;
+
+        function KeyPicker:GetState()
+            if KeyPicker.Mode == 'Always' then
+                return true;
+            elseif KeyPicker.Mode == 'Hold' then
+                if KeyPicker.Value == 'None' then
+                    return false;
+                end
+
+                local Key = KeyPicker.Value;
+
+                if Key == 'MB1' or Key == 'MB2' then
+                    return Key == 'MB1' and InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
+                        or Key == 'MB2' and InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2);
+                else
+                    return InputService:IsKeyDown(Enum.KeyCode[KeyPicker.Value]);
+                end;
+            else
+                return KeyPicker.Toggled;
+            end;
+        end;
+
+        function KeyPicker:SetValue(Data)
+            local Key, Mode = Data[1], Data[2];
+            DisplayLabel.Text = Key;
+            KeyPicker.Value = Key;
+            ModeButtons[Mode]:Select();
             KeyPicker:Update();
         end;
-    end))
 
-    KeyPicker:Update();
-
-    -- ============================================
-    -- ИНТЕГРАЦИЯ С ВОЛНОВЫМ ДИСПЛЕЕМ
-    -- ============================================
-    
-    if not Info.NoUI and Info.Text and Library.WaveSystem then
-        local icon = "key"
-        local lowerText = string.lower(Info.Text)
-        
-        if string.find(lowerText, "esp") or string.find(lowerText, "box") or string.find(lowerText, "tracer") then
-            icon = "eye"
-        elseif string.find(lowerText, "aim") then
-            icon = "target"
-        elseif string.find(lowerText, "health") or string.find(lowerText, "hp") then
-            icon = "heart"
-        elseif string.find(lowerText, "fly") or string.find(lowerText, "speed") then
-            icon = "zap"
-        elseif string.find(lowerText, "menu") or string.find(lowerText, "setting") then
-            icon = "settings"
-        elseif string.find(lowerText, "lock") or string.find(lowerText, "safe") then
-            icon = "lock"
-        elseif string.find(lowerText, "weapon") or string.find(lowerText, "gun") then
-            icon = "sword"
+        function KeyPicker:OnClick(Callback)
+            KeyPicker.Clicked = Callback
         end
-        
-        local keyText = Info.Default or "None"
-        if type(keyText) == "string" then
-            if keyText == "LeftShift" then keyText = "LShift"
-            elseif keyText == "RightShift" then keyText = "RShift"
-            elseif keyText == "LeftControl" then keyText = "LCtrl"
-            elseif keyText == "RightControl" then keyText = "RCtrl"
-            elseif keyText == "LeftAlt" then keyText = "LAlt"
-            elseif keyText == "RightAlt" then keyText = "RAlt"
-            end
+
+        function KeyPicker:OnChanged(Callback)
+            KeyPicker.Changed = Callback
+            Callback(KeyPicker.Value)
         end
-        
-        Library:AddKeybind(Info.Text, keyText, false, icon)
-        
-        task.spawn(function()
-            while task.wait(0.1) do
-                if Library.Unloaded then break end
-                local state = KeyPicker:GetState()
-                Library:UpdateKeybindState(Info.Text, state)
+
+        if ParentObj.Addons then
+            table.insert(ParentObj.Addons, KeyPicker)
+        end
+
+        function KeyPicker:DoClick()
+            if ParentObj.Type == 'Toggle' and KeyPicker.SyncToggleState then
+                ParentObj:SetValue(not ParentObj.Value)
             end
-        end)
-    end
 
-    Options[Idx] = KeyPicker;
+            Library:SafeCallback(KeyPicker.Callback, KeyPicker.Toggled)
+            Library:SafeCallback(KeyPicker.Clicked, KeyPicker.Toggled)
+        end
 
-    return self;
-end;
+        local Picking = false;
 
+        PickOuter.InputBegan:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
+                Picking = true;
 
+                DisplayLabel.Text = '';
+
+                local Break;
+                local Text = '';
+
+                task.spawn(function()
+                    while (not Break) do
+                        if Text == '...' then
+                            Text = '';
+                        end;
+
+                        Text = Text .. '.';
+                        DisplayLabel.Text = Text;
+
+                        wait(0.4);
+                    end;
+                end);
+
+                wait(0.2);
+
+                local Event;
+                Event = InputService.InputBegan:Connect(function(Input)
+                    local Key;
+
+                    if Input.UserInputType == Enum.UserInputType.Keyboard then
+                        Key = Input.KeyCode.Name;
+                    elseif Input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        Key = 'MB1';
+                    elseif Input.UserInputType == Enum.UserInputType.MouseButton2 then
+                        Key = 'MB2';
+                    end;
+
+                    Break = true;
+                    Picking = false;
+
+                    DisplayLabel.Text = Key;
+                    KeyPicker.Value = Key;
+
+                    Library:SafeCallback(KeyPicker.ChangedCallback, Input.KeyCode or Input.UserInputType)
+                    Library:SafeCallback(KeyPicker.Changed, Input.KeyCode or Input.UserInputType)
+
+                    Library:AttemptSave();
+
+                    Event:Disconnect();
+                end);
+            elseif Input.UserInputType == Enum.UserInputType.MouseButton2 and not Library:MouseIsOverOpenedFrame() then
+                ModeSelectOuter.Visible = true;
+            end;
+        end);
+
+        Library:GiveSignal(InputService.InputBegan:Connect(function(Input)
+            if (not Picking) then
+                if KeyPicker.Mode == 'Toggle' then
+                    local Key = KeyPicker.Value;
+
+                    if Key == 'MB1' or Key == 'MB2' then
+                        if Key == 'MB1' and Input.UserInputType == Enum.UserInputType.MouseButton1
+                        or Key == 'MB2' and Input.UserInputType == Enum.UserInputType.MouseButton2 then
+                            KeyPicker.Toggled = not KeyPicker.Toggled
+                            KeyPicker:DoClick()
+                        end;
+                    elseif Input.UserInputType == Enum.UserInputType.Keyboard then
+                        if Input.KeyCode.Name == Key then
+                            KeyPicker.Toggled = not KeyPicker.Toggled;
+                            KeyPicker:DoClick()
+                        end;
+                    end;
+                end;
+
+                KeyPicker:Update();
+            end;
+
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+                local AbsPos, AbsSize = ModeSelectOuter.AbsolutePosition, ModeSelectOuter.AbsoluteSize;
+
+                if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X
+                    or Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
+
+                    ModeSelectOuter.Visible = false;
+                end;
+            end;
+        end))
+
+        Library:GiveSignal(InputService.InputEnded:Connect(function(Input)
+            if (not Picking) then
+                KeyPicker:Update();
+            end;
+        end))
+
+        KeyPicker:Update();
+
+        Options[Idx] = KeyPicker;
+
+        return self;
+    end;
 
     BaseAddons.__index = Funcs;
     BaseAddons.__namecall = function(Table, Key, ...)
@@ -4567,10 +4408,37 @@ function Library:ResetWaveSettings()
     end
 end
 
+function Library:UpdateKeybindKey(name, newKey)
+    for _, item in ipairs(Library.WaveSystem.KeybindItems) do
+        if item.Name == name then
+            item.Key = newKey
+            item.KeyLabel.Text = newKey
+            
+            -- Анимация подсветки при изменении клавиши
+            local highlightColor = Color3.fromRGB(100, 150, 255)
+            local normalColor = Library.KeybindKeyColor
+            
+            TweenService:Create(item.KeyLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                TextColor3 = highlightColor,
+                TextSize = 11,
+            }):Play()
+            
+            task.delay(0.8, function()
+                TweenService:Create(item.KeyLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    TextColor3 = normalColor,
+                    TextSize = 9,
+                }):Play()
+            end)
+            
+            print("🔑 Клавиша кейбинда '" .. name .. "' обновлена на: " .. newKey)
+            break
+        end
+    end
+end
+
 -- ============================================
--- АВТОМАТИЧЕСКАЯ ИНТЕГРАЦИЯ KEYPICKER
+-- ЗАМЕНИ ФУНКЦИЮ Library:AutoIntegrateKeyPickers НА ЭТУ:
 -- ============================================
--- Перехватываем создание KeyPicker для автоматического добавления в кейбинды
 local OriginalAddKeyPicker = nil
 
 function Library:AutoIntegrateKeyPickers()
@@ -4606,10 +4474,6 @@ function Library:AutoIntegrateKeyPickers()
                         elseif string.find(keybindName:lower(), "menu") then
                             iconName = "settings"
                         elseif string.find(keybindName:lower(), "fly") then
-                            iconName = "zap"
-                        elseif string.find(keybindName:lower(), "speed") then
-                            iconName = "zap"
-                        elseif string.find(keybindName:lower(), "teleport") then
                             iconName = "zap"
                         end
                         
@@ -4714,14 +4578,7 @@ print("   🎯 Автоматическое обновление при смен
 -- Tab1:AddToggle('Tab1Toggle', { Text = 'Tab1 Toggle' });
 -- local Tab2 = TabBox:AddTab('Tab 2')
 -- Tab2:AddToggle('Tab2Toggle', { Text = 'Tab2 Toggle' });
--- ============================================
--- TABBOX КОД (НЕ УДАЛЕН)
--- ============================================
--- Anything we can do in a Groupbox, we can do in a Tabbox tab (AddToggle, AddSlider, AddLabel, etc etc...)
--- local Tab1 = TabBox:AddTab('Tab 1')
--- Tab1:AddToggle('Tab1Toggle', { Text = 'Tab1 Toggle' });
--- local Tab2 = TabBox:AddTab('Tab 2')
--- Tab2:AddToggle('Tab2Toggle', { Text = 'Tab2 Toggle' });
+
 function Library:CreateWindow(...)
     local Arguments = { ... }
     local Config = { AnchorPoint = Vector2.zero }
@@ -4972,337 +4829,137 @@ function Library:CreateWindow(...)
             TabListLayout:ApplyLayout();
         end;
 
--- MATCHA STYLE GROUPBOX
--- Минималистичный, чистый дизайн как в скриншоте
-
-local TweenService = game:GetService('TweenService')
+-- Modern Groupbox & Tabbox Design
+-- Улучшенный дизайн с современными элементами
 
 function Tab:AddGroupbox(Info)
     local Groupbox = {};
     
-    -- ОСНОВНОЙ КОНТЕЙНЕР (без лишних рамок)
+    -- Основной контейнер с тенью
     local BoxOuter = Library:Create('Frame', {
-        BackgroundColor3 = Color3.fromRGB(18, 18, 22); -- Темный фон
-        BorderSizePixel = 0;
-        Size = UDim2.new(1, 0, 0, 507);
-        ClipsDescendants = false;
+        BackgroundColor3 = Library.BackgroundColor;
+        BorderColor3 = Library.OutlineColor;
+        BorderMode = Enum.BorderMode.Inset;
+        Size = UDim2.new(1, 0, 0, 507 + 2);
         ZIndex = 2;
         Parent = Info.Side == 1 and LeftSide or RightSide;
     });
     
-    -- Закругленные углы
-    local OuterCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 4);
-        Parent = BoxOuter;
+    Library:AddToRegistry(BoxOuter, {
+        BackgroundColor3 = 'BackgroundColor';
+        BorderColor3 = 'OutlineColor';
     });
     
-    -- МЯГКИЙ ГРАДИЕНТ НА ФОНЕ (сверху вниз)
-    local BackgroundGradient = Library:Create('UIGradient', {
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 24)), -- Чуть светлее сверху
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 16, 20))  -- Чуть темнее снизу
-        });
-        Rotation = 90;
-        Parent = BoxOuter;
-    });
-    
-    -- ТОНКАЯ ЛИНИЯ АКЦЕНТА СВЕРХУ (как в Matcha)
-    local TopAccent = Library:Create('Frame', {
-        BackgroundColor3 = Library.AccentColor;
-        BorderSizePixel = 0;
-        Size = UDim2.new(1, 0, 0, 2);
-        ZIndex = 10;
-        Parent = BoxOuter;
-    });
-    
-    Library:AddToRegistry(TopAccent, {
-        BackgroundColor3 = 'AccentColor';
-    });
-    
-    local AccentCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 4);
-        Parent = TopAccent;
-    });
-    
-    -- МЯГКИЙ ГРАДИЕНТ НА ЛИНИИ АКЦЕНТА (слева направо)
-    local AccentGradient = Library:Create('UIGradient', {
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(
-                Library.AccentColor.R * 255 * 0.5,
-                Library.AccentColor.G * 255 * 0.5,
-                Library.AccentColor.B * 255 * 0.5
-            )),
-            ColorSequenceKeypoint.new(0.5, Library.AccentColor),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(
-                Library.AccentColor.R * 255 * 0.5,
-                Library.AccentColor.G * 255 * 0.5,
-                Library.AccentColor.B * 255 * 0.5
-            ))
-        });
-        Rotation = 0;
-        Parent = TopAccent;
-    });
-    
-    Library:AddToRegistry(AccentGradient, {
-        Color = function()
-            return ColorSequence.new({
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(
-                    Library.AccentColor.R * 255 * 0.5,
-                    Library.AccentColor.G * 255 * 0.5,
-                    Library.AccentColor.B * 255 * 0.5
-                )),
-                ColorSequenceKeypoint.new(0.5, Library.AccentColor),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(
-                    Library.AccentColor.R * 255 * 0.5,
-                    Library.AccentColor.G * 255 * 0.5,
-                    Library.AccentColor.B * 255 * 0.5
-                ))
-            });
-        end
-    });
-    
-    -- ЗАГОЛОВОК (минималистичный)
-    local HeaderSection = Library:Create('Frame', {
-        BackgroundTransparency = 1;
-        Position = UDim2.new(0, 0, 0, 2);
-        Size = UDim2.new(1, 0, 0, 28);
-        ZIndex = 5;
-        Parent = BoxOuter;
-    });
-    
-    -- Название по центру
-    local GroupboxLabel = Library:CreateLabel({
-        Size = UDim2.new(1, 0, 1, 0);
-        TextSize = 15;
-        Text = Info.Name;
-        TextColor3 = Color3.fromRGB(220, 220, 220);
-        TextXAlignment = Enum.TextXAlignment.Center;
-        TextYAlignment = Enum.TextYAlignment.Center;
-        Font = Enum.Font.GothamSemibold;
-        ZIndex = 6;
-        Parent = HeaderSection;
-    });
-    
-    -- Тонкая разделительная линия
-    local Divider = Library:Create('Frame', {
-        BackgroundColor3 = Color3.fromRGB(40, 40, 45);
-        BorderSizePixel = 0;
-        Position = UDim2.new(0, 8, 1, -1);
-        Size = UDim2.new(1, -16, 0, 1);
-        ZIndex = 5;
-        Parent = HeaderSection;
-    });
-
-    
-    -- КОНТЕНТ СЕКЦИЯ
-    local ContentSection = Library:Create('Frame', {
-        BackgroundTransparency = 1;
-        Position = UDim2.new(0, 0, 0, 30);
-        Size = UDim2.new(1, 0, 1, -30);
-        ClipsDescendants = true;
+    -- Внутренний контейнер
+    local BoxInner = Library:Create('Frame', {
+        BackgroundColor3 = Library.BackgroundColor;
+        BorderColor3 = Color3.new(0, 0, 0);
+        Size = UDim2.new(1, -2, 1, -2);
+        Position = UDim2.new(0, 1, 0, 1);
         ZIndex = 4;
         Parent = BoxOuter;
     });
     
-    -- SCROLLING FRAME (невидимый стандартный scrollbar)
-    local ScrollFrame = Library:Create('ScrollingFrame', {
-        BackgroundTransparency = 1;
-        Position = UDim2.new(0, 0, 0, 0);
-        Size = UDim2.new(1, -6, 1, 0);
-        CanvasSize = UDim2.new(0, 0, 0, 0);
-        ScrollBarThickness = 0;
-        BorderSizePixel = 0;
-        ScrollingEnabled = true;
-        ZIndex = 5;
-        Parent = ContentSection;
+    Library:AddToRegistry(BoxInner, {
+        BackgroundColor3 = 'BackgroundColor';
     });
     
-    -- КАСТОМНЫЙ SCROLLBAR (тонкий и минималистичный)
-    local ScrollBarTrack = Library:Create('Frame', {
-        BackgroundColor3 = Color3.fromRGB(30, 30, 35);
-        BorderSizePixel = 0;
-        Position = UDim2.new(1, -4, 0, 4);
-        Size = UDim2.new(0, 2, 1, -8);
-        Visible = false;
-        ZIndex = 10;
-        Parent = ContentSection;
-    });
-    
-    local TrackCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(1, 0);
-        Parent = ScrollBarTrack;
-    });
-    
-    -- Ползунок
-    local ScrollBarThumb = Library:Create('Frame', {
+    -- Акцентная полоса сверху
+    local Highlight = Library:Create('Frame', {
         BackgroundColor3 = Library.AccentColor;
         BorderSizePixel = 0;
-        Position = UDim2.new(0, 0, 0, 0);
-        Size = UDim2.new(1, 0, 0, 50);
-        ZIndex = 11;
-        Parent = ScrollBarTrack;
+        Size = UDim2.new(1, 0, 0, 2);
+        ZIndex = 5;
+        Parent = BoxInner;
     });
     
-    Library:AddToRegistry(ScrollBarThumb, {
+    Library:AddToRegistry(Highlight, {
         BackgroundColor3 = 'AccentColor';
     });
     
-    local ThumbCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(1, 0);
-        Parent = ScrollBarThumb;
+    -- Градиентный эффект для заголовка
+    local HeaderGradient = Library:Create('Frame', {
+        BackgroundColor3 = Library.AccentColor;
+        BorderSizePixel = 0;
+        Size = UDim2.new(1, 0, 0, 20);
+        Position = UDim2.new(0, 0, 0, 0);
+        ZIndex = 3;
+        Parent = BoxInner;
     });
     
-   -- ИСПРАВЛЕННЫЙ КОД SCROLLBAR БЕЗ ОШИБОК RE-ENTRANCY
-
--- Флаг для предотвращения циклических вызовов
-local isUpdatingScrollBar = false
-
--- Обновление scrollbar с защитой от ошибок
-local function UpdateScrollBar()
-    -- Защита от повторных вызовов
-    if isUpdatingScrollBar then return end
-    isUpdatingScrollBar = true
+    local HeaderGradientUI = Library:Create('UIGradient', {
+        Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Library.AccentColor),
+            ColorSequenceKeypoint.new(1, Library.BackgroundColor)
+        };
+        Rotation = 90;
+        Transparency = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 0.8),
+            NumberSequenceKeypoint.new(1, 1)
+        };
+        Parent = HeaderGradient;
+    });
     
-    -- Безопасное обновление с проверками
-    pcall(function()
-        if not ScrollFrame or not ScrollFrame.Parent then
-            isUpdatingScrollBar = false
-            return
-        end
-        
-        local canvasSize = ScrollFrame.CanvasSize.Y.Offset
-        local frameSize = ScrollFrame.AbsoluteSize.Y
-        
-        if canvasSize > frameSize + 10 then
-            if ScrollBarTrack then
-                ScrollBarTrack.Visible = true
-                
-                if ScrollBarThumb then
-                    local thumbSize = math.max(20, (frameSize / canvasSize) * frameSize)
-                    ScrollBarThumb.Size = UDim2.new(1, 0, 0, thumbSize)
-                    
-                    local scrollPercent = ScrollFrame.CanvasPosition.Y / math.max(1, canvasSize - frameSize)
-                    local maxThumbPos = frameSize - thumbSize - 8
-                    ScrollBarThumb.Position = UDim2.new(0, 0, 0, 4 + scrollPercent * maxThumbPos)
-                end
-            end
-        else
-            if ScrollBarTrack then
-                ScrollBarTrack.Visible = false
-            end
-        end
-    end)
+    Library:AddToRegistry(HeaderGradient, {
+        BackgroundColor3 = 'AccentColor';
+    });
     
-    -- Небольшая задержка для предотвращения циклов
-    task.wait()
-    isUpdatingScrollBar = false
-end
-
--- Безопасное подключение событий с защитой от ошибок
-pcall(function()
-    if ScrollFrame then
-        ScrollFrame:GetPropertyChangedSignal('CanvasPosition'):Connect(function()
-            task.spawn(UpdateScrollBar)
-        end)
-        
-        ScrollFrame:GetPropertyChangedSignal('CanvasSize'):Connect(function()
-            task.spawn(UpdateScrollBar)
-        end)
-        
-        ScrollFrame:GetPropertyChangedSignal('AbsoluteSize'):Connect(function()
-            task.spawn(UpdateScrollBar)
-        end)
-    end
-end)
-
--- Контейнер для элементов с защитой от ошибок
-local Container = Library:Create('Frame', {
-    BackgroundTransparency = 1;
-    Position = UDim2.new(0, 8, 0, 4);
-    Size = UDim2.new(1, -16, 1, 0);
-    ClipsDescendants = false;
-    ZIndex = 6;
-    Parent = ScrollFrame;
-})
-
-Library:Create('UIListLayout', {
-    FillDirection = Enum.FillDirection.Vertical;
-    SortOrder = Enum.SortOrder.LayoutOrder;
-    Padding = UDim.new(0, 4);
-    Parent = Container;
-})
-
--- Флаг для предотвращения циклических вызовов размера контейнера
-local isUpdatingCanvasSize = false
-
-Container:GetPropertyChangedSignal('AbsoluteSize'):Connect(function()
-    if isUpdatingCanvasSize then return end
-    isUpdatingCanvasSize = true
+    -- Заголовок группы
+    local GroupboxLabel = Library:CreateLabel({
+        Size = UDim2.new(1, 0, 0, 18);
+        Position = UDim2.new(0, 8, 0, 2);
+        TextSize = 14;
+        Text = Info.Name;
+        TextXAlignment = Enum.TextXAlignment.Left;
+        TextColor3 = Library.FontColor;
+        Font = Enum.Font.GothamMedium;
+        ZIndex = 6;
+        Parent = BoxInner;
+    });
     
-    pcall(function()
-        if ScrollFrame and ScrollFrame.Parent and Container then
-            ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, Container.AbsoluteSize.Y + 8)
-            task.spawn(UpdateScrollBar)
-        end
-    end)
+    -- Декоративная линия под заголовком
+    local HeaderLine = Library:Create('Frame', {
+        BackgroundColor3 = Library.OutlineColor;
+        BorderSizePixel = 0;
+        Size = UDim2.new(1, -16, 0, 1);
+        Position = UDim2.new(0, 8, 0, 20);
+        ZIndex = 5;
+        Parent = BoxInner;
+    });
     
-    task.wait()
-    isUpdatingCanvasSize = false
-end)
+    Library:AddToRegistry(HeaderLine, {
+        BackgroundColor3 = 'OutlineColor';
+    });
     
-    -- HOVER ЭФФЕКТ на заголовке
-    HeaderSection.InputBegan:Connect(function(Input)
-        if Input.UserInputType == Enum.UserInputType.MouseMovement then
-            TweenService:Create(GroupboxLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-                TextColor3 = Library.AccentColor
-            }):Play();
-            TweenService:Create(TopAccent, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-                Size = UDim2.new(1, 0, 0, 3)
-            }):Play();
-        end
-    end);
+    -- Контейнер для элементов
+    local Container = Library:Create('Frame', {
+        BackgroundTransparency = 1;
+        Position = UDim2.new(0, 8, 0, 25);
+        Size = UDim2.new(1, -16, 1, -25);
+        ZIndex = 1;
+        Parent = BoxInner;
+    });
     
-    HeaderSection.InputEnded:Connect(function(Input)
-        if Input.UserInputType == Enum.UserInputType.MouseMovement then
-            TweenService:Create(GroupboxLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-                TextColor3 = Color3.fromRGB(220, 220, 220)
-            }):Play();
-            TweenService:Create(TopAccent, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-                Size = UDim2.new(1, 0, 0, 2)
-            }):Play();
-        end
-    end);
+    Library:Create('UIListLayout', {
+        FillDirection = Enum.FillDirection.Vertical;
+        SortOrder = Enum.SortOrder.LayoutOrder;
+        Padding = UDim.new(0, 2);
+        Parent = Container;
+    });
     
     function Groupbox:Resize()
-        local ContentSize = 0;
-        local ElementCount = 0;
-        
+        local Size = 0;
         for _, Element in next, Groupbox.Container:GetChildren() do
             if (not Element:IsA('UIListLayout')) and Element.Visible then
-                ContentSize = ContentSize + Element.Size.Y.Offset;
-                ElementCount = ElementCount + 1;
+                Size = Size + Element.Size.Y.Offset;
             end;
         end;
-        
-        if ElementCount > 1 then
-            ContentSize = ContentSize + (4 * (ElementCount - 1));
-        end;
-        
-        ContentSize = math.max(ContentSize, 40);
-        local MaxHeight = 450;
-        local ActualHeight = math.min(ContentSize, MaxHeight);
-        
-        BoxOuter.Size = UDim2.new(1, 0, 0, 30 + ActualHeight + 8);
-        ContentSection.Size = UDim2.new(1, 0, 0, ActualHeight + 8);
-        ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, ContentSize + 8);
-        
-        task.wait(0.05);
-        UpdateScrollBar();
+        BoxOuter.Size = UDim2.new(1, 0, 0, 25 + Size + 8 + 2);
     end;
     
     Groupbox.Container = Container;
     setmetatable(Groupbox, BaseGroupbox);
-    Groupbox:AddBlank(2);
+    Groupbox:AddBlank(3);
     Groupbox:Resize();
     
     Tab.Groupboxes[Info.Name] = Groupbox;
@@ -5317,21 +4974,247 @@ function Tab:AddRightGroupbox(Name)
     return Tab:AddGroupbox({ Side = 2; Name = Name; });
 end;
 
-
-        TabButton.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-                Tab:ShowTab();
+function Tab:AddTabbox(Info)
+    local Tabbox = {
+        Tabs = {};
+    };
+    
+    -- Основной контейнер
+    local BoxOuter = Library:Create('Frame', {
+        BackgroundColor3 = Library.BackgroundColor;
+        BorderColor3 = Library.OutlineColor;
+        BorderMode = Enum.BorderMode.Inset;
+        Size = UDim2.new(1, 0, 0, 0);
+        ZIndex = 2;
+        Parent = Info.Side == 1 and LeftSide or RightSide;
+    });
+    
+    Library:AddToRegistry(BoxOuter, {
+        BackgroundColor3 = 'BackgroundColor';
+        BorderColor3 = 'OutlineColor';
+    });
+    
+    local BoxInner = Library:Create('Frame', {
+        BackgroundColor3 = Library.BackgroundColor;
+        BorderColor3 = Color3.new(0, 0, 0);
+        Size = UDim2.new(1, -2, 1, -2);
+        Position = UDim2.new(0, 1, 0, 1);
+        ZIndex = 4;
+        Parent = BoxOuter;
+    });
+    
+    Library:AddToRegistry(BoxInner, {
+        BackgroundColor3 = 'BackgroundColor';
+    });
+    
+    -- Акцентная полоса
+    local Highlight = Library:Create('Frame', {
+        BackgroundColor3 = Library.AccentColor;
+        BorderSizePixel = 0;
+        Size = UDim2.new(1, 0, 0, 2);
+        ZIndex = 10;
+        Parent = BoxInner;
+    });
+    
+    Library:AddToRegistry(Highlight, {
+        BackgroundColor3 = 'AccentColor';
+    });
+    
+    -- Контейнер для кнопок табов
+    local TabboxButtons = Library:Create('Frame', {
+        BackgroundColor3 = Library.MainColor;
+        BorderSizePixel = 0;
+        Position = UDim2.new(0, 0, 0, 2);
+        Size = UDim2.new(1, 0, 0, 24);
+        ZIndex = 5;
+        Parent = BoxInner;
+    });
+    
+    Library:AddToRegistry(TabboxButtons, {
+        BackgroundColor3 = 'MainColor';
+    });
+    
+    Library:Create('UIListLayout', {
+        FillDirection = Enum.FillDirection.Horizontal;
+        HorizontalAlignment = Enum.HorizontalAlignment.Left;
+        SortOrder = Enum.SortOrder.LayoutOrder;
+        Parent = TabboxButtons;
+    });
+    
+    function Tabbox:AddTab(Name)
+        local Tab = {};
+        
+        -- Кнопка таба с современным дизайном
+        local Button = Library:Create('Frame', {
+            BackgroundColor3 = Library.MainColor;
+            BorderSizePixel = 0;
+            Size = UDim2.new(0.5, 0, 1, 0);
+            ZIndex = 6;
+            Parent = TabboxButtons;
+        });
+        
+        Library:AddToRegistry(Button, {
+            BackgroundColor3 = 'MainColor';
+        });
+        
+        -- Градиент для неактивной кнопки
+        local ButtonGradient = Library:Create('UIGradient', {
+            Color = ColorSequence.new{
+                ColorSequenceKeypoint.new(0, Library.MainColor),
+                ColorSequenceKeypoint.new(1, Color3.new(
+                    math.max(0, Library.MainColor.R - 0.05),
+                    math.max(0, Library.MainColor.G - 0.05),
+                    math.max(0, Library.MainColor.B - 0.05)
+                ))
+            };
+            Rotation = 90;
+            Parent = Button;
+        });
+        
+        -- Текст кнопки
+        local ButtonLabel = Library:CreateLabel({
+            Size = UDim2.new(1, 0, 1, 0);
+            TextSize = 13;
+            Text = Name;
+            TextXAlignment = Enum.TextXAlignment.Center;
+            Font = Enum.Font.GothamMedium;
+            ZIndex = 7;
+            Parent = Button;
+        });
+        
+        -- Индикатор активного таба
+        local ActiveIndicator = Library:Create('Frame', {
+            BackgroundColor3 = Library.AccentColor;
+            BorderSizePixel = 0;
+            Position = UDim2.new(0, 0, 1, -2);
+            Size = UDim2.new(1, 0, 0, 2);
+            Visible = false;
+            ZIndex = 9;
+            Parent = Button;
+        });
+        
+        Library:AddToRegistry(ActiveIndicator, {
+            BackgroundColor3 = 'AccentColor';
+        });
+        
+        -- Блокировка линии снизу для активного таба
+        local Block = Library:Create('Frame', {
+            BackgroundColor3 = Library.BackgroundColor;
+            BorderSizePixel = 0;
+            Position = UDim2.new(0, 0, 1, 0);
+            Size = UDim2.new(1, 0, 0, 1);
+            Visible = false;
+            ZIndex = 9;
+            Parent = Button;
+        });
+        
+        Library:AddToRegistry(Block, {
+            BackgroundColor3 = 'BackgroundColor';
+        });
+        
+        -- Контейнер содержимого таба
+        local Container = Library:Create('Frame', {
+            BackgroundTransparency = 1;
+            Position = UDim2.new(0, 8, 0, 30);
+            Size = UDim2.new(1, -16, 1, -30);
+            ZIndex = 1;
+            Visible = false;
+            Parent = BoxInner;
+        });
+        
+        Library:Create('UIListLayout', {
+            FillDirection = Enum.FillDirection.Vertical;
+            SortOrder = Enum.SortOrder.LayoutOrder;
+            Padding = UDim.new(0, 2);
+            Parent = Container;
+        });
+        
+        function Tab:Show()
+            -- Скрыть все табы
+            for _, OtherTab in next, Tabbox.Tabs do
+                OtherTab:Hide();
+            end;
+            
+            -- Показать текущий таб
+            Container.Visible = true;
+            Block.Visible = true;
+            ActiveIndicator.Visible = true;
+            Button.BackgroundColor3 = Library.BackgroundColor;
+            ButtonGradient.Enabled = false;
+            Library.RegistryMap[Button].Properties.BackgroundColor3 = 'BackgroundColor';
+            
+            Tab:Resize();
+        end;
+        
+        function Tab:Hide()
+            Container.Visible = false;
+            Block.Visible = false;
+            ActiveIndicator.Visible = false;
+            Button.BackgroundColor3 = Library.MainColor;
+            ButtonGradient.Enabled = true;
+            Library.RegistryMap[Button].Properties.BackgroundColor3 = 'MainColor';
+        end;
+        
+        function Tab:Resize()
+            local TabCount = 0;
+            for _, Tab in next, Tabbox.Tabs do
+                TabCount = TabCount + 1;
+            end;
+            
+            -- Изменить размер кнопок
+            for _, Button in next, TabboxButtons:GetChildren() do
+                if not Button:IsA('UIListLayout') then
+                    Button.Size = UDim2.new(1 / TabCount, 0, 1, 0);
+                end;
+            end;
+            
+            if (not Container.Visible) then
+                return;
+            end;
+            
+            local Size = 0;
+            for _, Element in next, Tab.Container:GetChildren() do
+                if (not Element:IsA('UIListLayout')) and Element.Visible then
+                    Size = Size + Element.Size.Y.Offset;
+                end;
+            end;
+            
+            BoxOuter.Size = UDim2.new(1, 0, 0, 30 + Size + 8 + 2);
+        end;
+        
+        -- Обработка клика
+        Button.InputBegan:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
+                Tab:Show();
+                Tab:Resize();
             end;
         end);
-
-        -- This was the first tab added, so we show it by default.
-        if #TabContainer:GetChildren() == 1 then
-            Tab:ShowTab();
+        
+        Tab.Container = Container;
+        Tabbox.Tabs[Name] = Tab;
+        setmetatable(Tab, BaseGroupbox);
+        Tab:AddBlank(3);
+        Tab:Resize();
+        
+        -- Показать первый таб по умолчанию
+        if #TabboxButtons:GetChildren() == 2 then
+            Tab:Show();
         end;
-
-        Window.Tabs[Name] = Tab;
+        
         return Tab;
     end;
+    
+    Tab.Tabboxes[Info.Name or ''] = Tabbox;
+    return Tabbox;
+end;
+
+function Tab:AddLeftTabbox(Name)
+    return Tab:AddTabbox({ Name = Name, Side = 1; });
+end;
+
+function Tab:AddRightTabbox(Name)
+    return Tab:AddTabbox({ Name = Name, Side = 2; });
+end;
 
     local ModalElement = Library:Create('TextButton', {
         BackgroundTransparency = 1;
