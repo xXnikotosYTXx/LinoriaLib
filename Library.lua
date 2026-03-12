@@ -69,20 +69,31 @@ local Library = {
     _ColorUpdateInProgress = false;
 };
 
--- ✨ ФУНКЦИИ ДЛЯ ИЗМЕНЕНИЯ ЦВЕТОВ
+- ИСПРАВЛЕННЫЕ ФУНКЦИИ ДЛЯ LIBRARY БЕЗ ОШИБОК RE-ENTRANCY
+-- Заменяет функции в library-minimal-clean.lua
+
+-- Защита от циклических вызовов
+Library._ColorUpdateInProgress = false;
+
+-- ✨ ИСПРАВЛЕННЫЕ ФУНКЦИИ БЕЗ ОШИБОК
 function Library:SetWatermarkProjectColor(color)
     if self._ColorUpdateInProgress then return end
     self._ColorUpdateInProgress = true
     
     self.WatermarkProjectColor = color
-    if self.WaveSystem and self.WaveSystem.ProjectLetters then
-        for _, letter in pairs(self.WaveSystem.ProjectLetters) do
-            if letter.Label then
-                letter.Label.TextColor3 = color
+    
+    -- Безопасное обновление с защитой от ошибок
+    pcall(function()
+        if self.WaveSystem and self.WaveSystem.ProjectLetters then
+            for _, letter in pairs(self.WaveSystem.ProjectLetters) do
+                if letter and letter.Label and letter.Label.Parent then
+                    letter.Label.TextColor3 = color
+                end
             end
         end
-    end
+    end)
     
+    task.wait() -- Небольшая задержка для предотвращения циклов
     self._ColorUpdateInProgress = false
 end
 
@@ -91,14 +102,18 @@ function Library:SetWatermarkNicknameColor(color)
     self._ColorUpdateInProgress = true
     
     self.WatermarkNicknameColor = color
-    if self.WaveSystem and self.WaveSystem.NicknameLetters then
-        for _, letter in pairs(self.WaveSystem.NicknameLetters) do
-            if letter.Label then
-                letter.Label.TextColor3 = color
+    
+    pcall(function()
+        if self.WaveSystem and self.WaveSystem.NicknameLetters then
+            for _, letter in pairs(self.WaveSystem.NicknameLetters) do
+                if letter and letter.Label and letter.Label.Parent then
+                    letter.Label.TextColor3 = color
+                end
             end
         end
-    end
+    end)
     
+    task.wait()
     self._ColorUpdateInProgress = false
 end
 
@@ -107,14 +122,18 @@ function Library:SetWatermarkTimeColor(color)
     self._ColorUpdateInProgress = true
     
     self.WatermarkTimeColor = color
-    if self.WaveSystem and self.WaveSystem.TimeLetters then
-        for _, letter in pairs(self.WaveSystem.TimeLetters) do
-            if letter.Label then
-                letter.Label.TextColor3 = color
+    
+    pcall(function()
+        if self.WaveSystem and self.WaveSystem.TimeLetters then
+            for _, letter in pairs(self.WaveSystem.TimeLetters) do
+                if letter and letter.Label and letter.Label.Parent then
+                    letter.Label.TextColor3 = color
+                end
             end
         end
-    end
+    end)
     
+    task.wait()
     self._ColorUpdateInProgress = false
 end
 
@@ -123,10 +142,14 @@ function Library:SetWatermarkIconColor(color)
     self._ColorUpdateInProgress = true
     
     self.WatermarkIconColor = color
-    if self.WaveSystem and self.WaveSystem.IconLabel then
-        self.WaveSystem.IconLabel.TextColor3 = color
-    end
     
+    pcall(function()
+        if self.WaveSystem and self.WaveSystem.IconLabel and self.WaveSystem.IconLabel.Parent then
+            self.WaveSystem.IconLabel.TextColor3 = color
+        end
+    end)
+    
+    task.wait()
     self._ColorUpdateInProgress = false
 end
 
@@ -139,7 +162,6 @@ function Library:GetPingColor(ping)
         return self.WatermarkPingBadColor
     end
 end
-
 local RainbowStep = 0
 local Hue = 0
 
