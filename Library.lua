@@ -65,15 +65,10 @@ local Library = {
     Signals = {};
     ScreenGui = ScreenGui;
     
-    -- Защита от ошибок
+    -- Защита от циклических вызовов
     _ColorUpdateInProgress = false;
 };
 
-- ИСПРАВЛЕННЫЕ ФУНКЦИИ ДЛЯ LIBRARY БЕЗ ОШИБОК RE-ENTRANCY
--- Заменяет функции в library-minimal-clean.lua
-
--- Защита от циклических вызовов
-Library._ColorUpdateInProgress = false;
 
 -- ✨ ИСПРАВЛЕННЫЕ ФУНКЦИИ БЕЗ ОШИБОК
 function Library:SetWatermarkProjectColor(color)
