@@ -4266,15 +4266,17 @@ function Library:CreateWindow(...)
 -- ============================================
 -- СОВРЕМЕННЫЙ ДИЗАЙН GROUPBOX
 -- ============================================
+local TweenService = game:GetService('TweenService')
+
 function Tab:AddGroupbox(Info)
     local Groupbox = {};
     
-    -- Основной контейнер с тенью
     local BoxOuter = Library:Create('Frame', {
         BackgroundColor3 = Library.BackgroundColor;
         BorderColor3 = Library.OutlineColor;
         BorderMode = Enum.BorderMode.Inset;
         Size = UDim2.new(1, 0, 0, 507 + 2);
+        ClipsDescendants = false; -- НЕ обрезаем контент
         ZIndex = 2;
         Parent = Info.Side == 1 and LeftSide or RightSide;
     });
@@ -4284,12 +4286,18 @@ function Tab:AddGroupbox(Info)
         BorderColor3 = 'OutlineColor';
     });
     
-    -- Внутренний контейнер
+    -- ЗАКРУГЛЕННЫЕ УГЛЫ
+    local OuterCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 6);
+        Parent = BoxOuter;
+    });
+    
     local BoxInner = Library:Create('Frame', {
         BackgroundColor3 = Library.BackgroundColor;
         BorderColor3 = Color3.new(0, 0, 0);
         Size = UDim2.new(1, -2, 1, -2);
         Position = UDim2.new(0, 1, 0, 1);
+        ClipsDescendants = false; -- НЕ обрезаем контент
         ZIndex = 4;
         Parent = BoxOuter;
     });
@@ -4298,80 +4306,302 @@ function Tab:AddGroupbox(Info)
         BackgroundColor3 = 'BackgroundColor';
     });
     
-    -- Акцентная полоса сверху
+    local InnerCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 5);
+        Parent = BoxInner;
+    });
+    
+    -- ВЕРХНЯЯ ЧАСТЬ (ТЕМНЕЕ) - для названия
+    local HeaderSection = Library:Create('Frame', {
+        BackgroundColor3 = Color3.fromRGB(
+            math.max(0, Library.BackgroundColor.R * 255 - 8),
+            math.max(0, Library.BackgroundColor.G * 255 - 8),
+            math.max(0, Library.BackgroundColor.B * 255 - 8)
+        );
+        BorderSizePixel = 0;
+        Size = UDim2.new(1, 0, 0, 26);
+        ZIndex = 5;
+        Parent = BoxInner;
+    });
+    
+    local HeaderCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 5);
+        Parent = HeaderSection;
+    });
+    
+    -- ГРАДИЕНТ НА ЗАГОЛОВКЕ (сверху вниз)
+    local HeaderGradient = Library:Create('UIGradient', {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(
+                math.min(255, Library.BackgroundColor.R * 255 - 5),
+                math.min(255, Library.BackgroundColor.G * 255 - 5),
+                math.min(255, Library.BackgroundColor.B * 255 - 5)
+            )),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(
+                math.max(0, Library.BackgroundColor.R * 255 - 10),
+                math.max(0, Library.BackgroundColor.G * 255 - 10),
+                math.max(0, Library.BackgroundColor.B * 255 - 10)
+            ))
+        });
+        Rotation = 90;
+        Parent = HeaderSection;
+    });
+    
+    -- ЛИНИЯ АКЦЕНТА СВЕРХУ (толще и ярче)
     local Highlight = Library:Create('Frame', {
         BackgroundColor3 = Library.AccentColor;
         BorderSizePixel = 0;
         Size = UDim2.new(1, 0, 0, 2);
-        ZIndex = 5;
-        Parent = BoxInner;
+        ZIndex = 6;
+        Parent = HeaderSection;
     });
     
     Library:AddToRegistry(Highlight, {
         BackgroundColor3 = 'AccentColor';
     });
     
-    -- Градиентный эффект для заголовка
-    local HeaderGradient = Library:Create('Frame', {
-        BackgroundColor3 = Library.AccentColor;
+    local HighlightCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 5);
+        Parent = Highlight;
+    });
+    
+    -- ГРАДИЕНТ НА ЛИНИИ АКЦЕНТА (слева направо)
+    local HighlightGradient = Library:Create('UIGradient', {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(
+                Library.AccentColor.R * 255 * 0.6,
+                Library.AccentColor.G * 255 * 0.6,
+                Library.AccentColor.B * 255 * 0.6
+            )),
+            ColorSequenceKeypoint.new(0.5, Library.AccentColor),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(
+                Library.AccentColor.R * 255 * 0.6,
+                Library.AccentColor.G * 255 * 0.6,
+                Library.AccentColor.B * 255 * 0.6
+            ))
+        });
+        Rotation = 0;
+        Parent = Highlight;
+    });
+    
+    Library:AddToRegistry(HighlightGradient, {
+        Color = function()
+            return ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(
+                    Library.AccentColor.R * 255 * 0.6,
+                    Library.AccentColor.G * 255 * 0.6,
+                    Library.AccentColor.B * 255 * 0.6
+                )),
+                ColorSequenceKeypoint.new(0.5, Library.AccentColor),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(
+                    Library.AccentColor.R * 255 * 0.6,
+                    Library.AccentColor.G * 255 * 0.6,
+                    Library.AccentColor.B * 255 * 0.6
+                ))
+            });
+        end
+    });
+    
+    -- НАЗВАНИЕ ПО ЦЕНТРУ
+    local GroupboxLabel = Library:CreateLabel({
+        Size = UDim2.new(1, 0, 1, -2);
+        Position = UDim2.new(0, 0, 0, 2);
+        TextSize = 14;
+        Text = Info.Name;
+        TextXAlignment = Enum.TextXAlignment.Center;
+        TextYAlignment = Enum.TextYAlignment.Center;
+        ZIndex = 7;
+        Parent = HeaderSection;
+    });
+    
+    -- РАЗДЕЛИТЕЛЬНАЯ ЛИНИЯ между заголовком и контентом
+    local Separator = Library:Create('Frame', {
+        BackgroundColor3 = Color3.fromRGB(
+            Library.OutlineColor.R * 255 * 1.2,
+            Library.OutlineColor.G * 255 * 1.2,
+            Library.OutlineColor.B * 255 * 1.2
+        );
         BorderSizePixel = 0;
-        Size = UDim2.new(1, 0, 0, 20);
-        Position = UDim2.new(0, 0, 0, 0);
-        ZIndex = 3;
+        Position = UDim2.new(0, 0, 1, -1);
+        Size = UDim2.new(1, 0, 0, 1);
+        ZIndex = 6;
+        Parent = HeaderSection;
+    });
+    
+    -- НИЖНЯЯ ЧАСТЬ (СВЕТЛЕЕ) - для контента
+    local ContentSection = Library:Create('Frame', {
+        BackgroundColor3 = Color3.fromRGB(
+            math.min(255, Library.BackgroundColor.R * 255 + 4),
+            math.min(255, Library.BackgroundColor.G * 255 + 4),
+            math.min(255, Library.BackgroundColor.B * 255 + 4)
+        );
+        BorderSizePixel = 0;
+        Position = UDim2.new(0, 0, 0, 26);
+        Size = UDim2.new(1, 0, 1, -26);
+        ClipsDescendants = true; -- Обрезаем контент который выходит за границы
+        ZIndex = 4;
         Parent = BoxInner;
     });
     
-    local HeaderGradientUI = Library:Create('UIGradient', {
-        Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Library.AccentColor),
-            ColorSequenceKeypoint.new(1, Library.BackgroundColor)
-        };
-        Rotation = 90;
-        Transparency = NumberSequence.new{
-            NumberSequenceKeypoint.new(0, 0.8),
-            NumberSequenceKeypoint.new(1, 1)
-        };
-        Parent = HeaderGradient;
+    local ContentCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 5);
+        Parent = ContentSection;
     });
     
-    Library:AddToRegistry(HeaderGradient, {
+    -- ЛЕГКИЙ ГРАДИЕНТ НА КОНТЕНТЕ
+    local ContentGradient = Library:Create('UIGradient', {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(
+                math.min(255, Library.BackgroundColor.R * 255 + 2),
+                math.min(255, Library.BackgroundColor.G * 255 + 2),
+                math.min(255, Library.BackgroundColor.B * 255 + 2)
+            )),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(
+                math.min(255, Library.BackgroundColor.R * 255 + 6),
+                math.min(255, Library.BackgroundColor.G * 255 + 6),
+                math.min(255, Library.BackgroundColor.B * 255 + 6)
+            ))
+        });
+        Rotation = 90;
+        Parent = ContentSection;
+    });
+    
+    -- SCROLLING FRAME для контента (только если не помещается)
+    local ScrollFrame = Library:Create('ScrollingFrame', {
+        BackgroundTransparency = 1;
+        Position = UDim2.new(0, 0, 0, 0);
+        Size = UDim2.new(1, 0, 1, 0);
+        CanvasSize = UDim2.new(0, 0, 0, 0);
+        ScrollBarThickness = 0; -- Скрываем стандартный scrollbar
+        BorderSizePixel = 0;
+        ScrollingEnabled = true;
+        ZIndex = 5;
+        Parent = ContentSection;
+    });
+    
+    -- КАСТОМНЫЙ SCROLLBAR (красивый)
+    local ScrollBarBackground = Library:Create('Frame', {
+        BackgroundColor3 = Color3.fromRGB(
+            math.max(0, Library.BackgroundColor.R * 255 - 10),
+            math.max(0, Library.BackgroundColor.G * 255 - 10),
+            math.max(0, Library.BackgroundColor.B * 255 - 10)
+        );
+        BorderSizePixel = 0;
+        Position = UDim2.new(1, -6, 0, 2);
+        Size = UDim2.new(0, 4, 1, -4);
+        Visible = false; -- Скрыт по умолчанию
+        ZIndex = 10;
+        Parent = ContentSection;
+    });
+    
+    local ScrollBarCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(1, 0); -- Полностью закругленный
+        Parent = ScrollBarBackground;
+    });
+    
+    -- ПОЛЗУНОК SCROLLBAR
+    local ScrollBarThumb = Library:Create('Frame', {
+        BackgroundColor3 = Library.AccentColor;
+        BorderSizePixel = 0;
+        Position = UDim2.new(0, 0, 0, 0);
+        Size = UDim2.new(1, 0, 0, 50);
+        ZIndex = 11;
+        Parent = ScrollBarBackground;
+    });
+    
+    Library:AddToRegistry(ScrollBarThumb, {
         BackgroundColor3 = 'AccentColor';
     });
     
-    -- Заголовок группы
-    local GroupboxLabel = Library:CreateLabel({
-        Size = UDim2.new(1, 0, 0, 18);
-        Position = UDim2.new(0, 8, 0, 2);
-        TextSize = 14;
-        Text = Info.Name;
-        TextXAlignment = Enum.TextXAlignment.Left;
-        TextColor3 = Library.FontColor;
-        Font = Enum.Font.GothamMedium;
-        ZIndex = 6;
-        Parent = BoxInner;
+    local ThumbCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(1, 0); -- Полностью закругленный
+        Parent = ScrollBarThumb;
     });
     
-    -- Декоративная линия под заголовком
-    local HeaderLine = Library:Create('Frame', {
-        BackgroundColor3 = Library.OutlineColor;
-        BorderSizePixel = 0;
-        Size = UDim2.new(1, -16, 0, 1);
-        Position = UDim2.new(0, 8, 0, 20);
-        ZIndex = 5;
-        Parent = BoxInner;
+    -- ГРАДИЕНТ НА ПОЛЗУНКЕ
+    local ThumbGradient = Library:Create('UIGradient', {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Library.AccentColor),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(
+                math.min(255, Library.AccentColor.R * 255 * 1.2),
+                math.min(255, Library.AccentColor.G * 255 * 1.2),
+                math.min(255, Library.AccentColor.B * 255 * 1.2)
+            )),
+            ColorSequenceKeypoint.new(1, Library.AccentColor)
+        });
+        Rotation = 90;
+        Parent = ScrollBarThumb;
     });
     
-    Library:AddToRegistry(HeaderLine, {
-        BackgroundColor3 = 'OutlineColor';
+    Library:AddToRegistry(ThumbGradient, {
+        Color = function()
+            return ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Library.AccentColor),
+                ColorSequenceKeypoint.new(0.5, Color3.fromRGB(
+                    math.min(255, Library.AccentColor.R * 255 * 1.2),
+                    math.min(255, Library.AccentColor.G * 255 * 1.2),
+                    math.min(255, Library.AccentColor.B * 255 * 1.2)
+                )),
+                ColorSequenceKeypoint.new(1, Library.AccentColor)
+            });
+        end
     });
     
-    -- Контейнер для элементов
+    -- Обновление позиции и размера ползунка
+    local function UpdateScrollBar()
+        local canvasSize = ScrollFrame.CanvasSize.Y.Offset;
+        local frameSize = ScrollFrame.AbsoluteSize.Y;
+        
+        -- Показываем scrollbar только если контент не помещается
+        if canvasSize > frameSize then
+            ScrollBarBackground.Visible = true;
+            
+            -- Размер ползунка пропорционален видимой области
+            local thumbSize = math.max(30, (frameSize / canvasSize) * frameSize);
+            ScrollBarThumb.Size = UDim2.new(1, 0, 0, thumbSize);
+            
+            -- Позиция ползунка
+            local scrollPercent = ScrollFrame.CanvasPosition.Y / (canvasSize - frameSize);
+            local maxThumbPos = frameSize - thumbSize;
+            ScrollBarThumb.Position = UDim2.new(0, 0, 0, scrollPercent * maxThumbPos);
+        else
+            ScrollBarBackground.Visible = false;
+        end
+    end
+    
+    -- Обновляем scrollbar при скролле
+    ScrollFrame:GetPropertyChangedSignal('CanvasPosition'):Connect(UpdateScrollBar);
+    ScrollFrame:GetPropertyChangedSignal('CanvasSize'):Connect(UpdateScrollBar);
+    ScrollFrame:GetPropertyChangedSignal('AbsoluteSize'):Connect(UpdateScrollBar);
+    
+    -- HOVER ЭФФЕКТ на scrollbar
+    local scrollbarHovering = false;
+    
+    ScrollBarBackground.InputBegan:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseMovement then
+            scrollbarHovering = true;
+            TweenService:Create(ScrollBarThumb, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                Size = UDim2.new(1.5, 0, ScrollBarThumb.Size.Y.Scale, ScrollBarThumb.Size.Y.Offset)
+            }):Play();
+        end
+    end);
+    
+    ScrollBarBackground.InputEnded:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseMovement then
+            scrollbarHovering = false;
+            TweenService:Create(ScrollBarThumb, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                Size = UDim2.new(1, 0, ScrollBarThumb.Size.Y.Scale, ScrollBarThumb.Size.Y.Offset)
+            }):Play();
+        end
+    end);
+    
     local Container = Library:Create('Frame', {
         BackgroundTransparency = 1;
-        Position = UDim2.new(0, 8, 0, 25);
-        Size = UDim2.new(1, -16, 1, -25);
-        ZIndex = 1;
-        Parent = BoxInner;
+        Position = UDim2.new(0, 4, 0, 4);
+        Size = UDim2.new(1, -8, 1, 0); -- Высота будет автоматически
+        ClipsDescendants = false;
+        ZIndex = 6;
+        Parent = ScrollFrame;
     });
     
     Library:Create('UIListLayout', {
@@ -4381,14 +4611,91 @@ function Tab:AddGroupbox(Info)
         Parent = Container;
     });
     
+    -- Автоматическое обновление размера canvas при изменении контента
+    Container:GetPropertyChangedSignal('AbsoluteSize'):Connect(function()
+        ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, Container.AbsoluteSize.Y + 8);
+        UpdateScrollBar(); -- Обновляем scrollbar
+    end);
+    
+    -- HOVER ЭФФЕКТ на заголовке
+    local isHovering = false
+    
+    HeaderSection.InputBegan:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseMovement then
+            isHovering = true
+            
+            -- Подсветка заголовка
+            TweenService:Create(HeaderSection, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                BackgroundColor3 = Color3.fromRGB(
+                    math.max(0, Library.BackgroundColor.R * 255 - 5),
+                    math.max(0, Library.BackgroundColor.G * 255 - 5),
+                    math.max(0, Library.BackgroundColor.B * 255 - 5)
+                )
+            }):Play()
+            
+            -- Усиление линии акцента
+            TweenService:Create(Highlight, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                Size = UDim2.new(1, 0, 0, 3)
+            }):Play()
+        end
+    end)
+    
+    HeaderSection.InputEnded:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseMovement then
+            isHovering = false
+            
+            -- Возврат к обычному состоянию
+            TweenService:Create(HeaderSection, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                BackgroundColor3 = Color3.fromRGB(
+                    math.max(0, Library.BackgroundColor.R * 255 - 8),
+                    math.max(0, Library.BackgroundColor.G * 255 - 8),
+                    math.max(0, Library.BackgroundColor.B * 255 - 8)
+                )
+            }):Play()
+            
+            TweenService:Create(Highlight, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                Size = UDim2.new(1, 0, 0, 2)
+            }):Play()
+        end
+    end)
+    
     function Groupbox:Resize()
-        local Size = 0;
+        local ContentSize = 0;
+        
+        -- Считаем размер всех видимых элементов
         for _, Element in next, Groupbox.Container:GetChildren() do
             if (not Element:IsA('UIListLayout')) and Element.Visible then
-                Size = Size + Element.Size.Y.Offset;
+                ContentSize = ContentSize + Element.Size.Y.Offset;
             end;
         end;
-        BoxOuter.Size = UDim2.new(1, 0, 0, 25 + Size + 8 + 2);
+        
+        -- Добавляем padding между элементами (2px * количество элементов)
+        local ElementCount = 0;
+        for _, Element in next, Groupbox.Container:GetChildren() do
+            if (not Element:IsA('UIListLayout')) and Element.Visible then
+                ElementCount = ElementCount + 1;
+            end;
+        end;
+        if ElementCount > 1 then
+            ContentSize = ContentSize + (2 * (ElementCount - 1));
+        end;
+        
+        -- Минимальная высота контента
+        local MinContentHeight = 50;
+        ContentSize = math.max(ContentSize, MinContentHeight);
+        
+        -- Максимальная высота groupbox (чтобы не был слишком большой)
+        local MaxContentHeight = 480; -- Уменьшил с 500 до 480
+        local ActualContentHeight = math.min(ContentSize, MaxContentHeight);
+        
+        -- Обновляем размеры
+        BoxOuter.Size = UDim2.new(1, 0, 0, 26 + ActualContentHeight + 8);
+        ContentSection.Size = UDim2.new(1, 0, 0, ActualContentHeight + 8);
+        ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, ContentSize + 8);
+        
+        -- Обновляем scrollbar
+        task.wait(0.1); -- Небольшая задержка для корректного расчета
+        UpdateScrollBar();
     end;
     
     Groupbox.Container = Container;
@@ -4400,14 +4707,14 @@ function Tab:AddGroupbox(Info)
     return Groupbox;
 end;
 
+function Tab:AddLeftGroupbox(Name)
+    return Tab:AddGroupbox({ Side = 1; Name = Name; });
+end;
 
-        function Tab:AddLeftGroupbox(Name)
-            return Tab:AddGroupbox({ Side = 1; Name = Name; });
-        end;
+function Tab:AddRightGroupbox(Name)
+    return Tab:AddGroupbox({ Side = 2; Name = Name; });
+end;
 
-        function Tab:AddRightGroupbox(Name)
-            return Tab:AddGroupbox({ Side = 2; Name = Name; });
-        end;
 
 function Tab:AddTabbox(Info)
     local Tabbox = {
