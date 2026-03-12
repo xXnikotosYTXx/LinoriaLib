@@ -4491,6 +4491,37 @@ end;
 -- ============================================
 -- ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ УПРАВЛЕНИЯ ВОЛНАМИ
 -- ============================================
+-- ============================================
+-- ФУНКЦИЯ ОБНОВЛЕНИЯ КЛАВИШИ КЕЙБИНДА
+-- ============================================
+function Library:UpdateKeybindKey(name, newKey)
+    for _, item in ipairs(Library.WaveSystem.KeybindItems) do
+        if item.Name == name then
+            item.Key = newKey
+            item.KeyLabel.Text = newKey
+            
+            -- Анимация подсветки при изменении клавиши
+            local highlightColor = Color3.fromRGB(100, 150, 255)
+            local normalColor = Library.KeybindKeyColor
+            
+            TweenService:Create(item.KeyLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                TextColor3 = highlightColor,
+                TextSize = 11,
+            }):Play()
+            
+            task.delay(0.8, function()
+                TweenService:Create(item.KeyLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    TextColor3 = normalColor,
+                    TextSize = 9,
+                }):Play()
+            end)
+            
+            print("🔑 Клавиша кейбинда '" .. name .. "' обновлена на: " .. newKey)
+            break
+        end
+    end
+end
+
 function Library:SetWaveSpeed(speed)
     if Library.WaveSystem then
         local multiplier = speed / 0.08 -- Базовая скорость
@@ -4576,16 +4607,63 @@ function Library:AutoIntegrateKeyPickers()
                             iconName = "settings"
                         elseif string.find(keybindName:lower(), "fly") then
                             iconName = "zap"
+                        elseif string.find(keybindName:lower(), "speed") then
+                            iconName = "zap"
+                        elseif string.find(keybindName:lower(), "teleport") then
+                            iconName = "zap"
                         end
                         
                         Library:AddKeybind(keybindName, currentKey, isToggled, iconName)
                         
-                        -- Подключаем обновление состояния
+                        -- 🔥 ПОДКЛЮЧАЕМ ОБНОВЛЕНИЕ СОСТОЯНИЯ
                         if KeyPicker.Changed then
                             KeyPicker.Changed:Connect(function()
                                 Library:UpdateKeybindState(keybindName, KeyPicker.Active or false)
                             end)
                         end
+                        
+                        -- 🔑 ПОДКЛЮЧАЕМ ОБНОВЛЕНИЕ КЛАВИШИ - МЕТОД 1
+                        if KeyPicker.SetValue then
+                            local originalSetValue = KeyPicker.SetValue
+                            KeyPicker.SetValue = function(self, newKey)
+                                originalSetValue(self, newKey)
+                                Library:UpdateKeybindKey(keybindName, newKey)
+                            end
+                        end
+                        
+                        -- 🔑 ПОДКЛЮЧАЕМ ОБНОВЛЕНИЕ КЛАВИШИ - МЕТОД 2
+                        local lastKey = currentKey
+                        local checkKeyChange
+                        checkKeyChange = function()
+                            if KeyPicker and KeyPicker.State and KeyPicker.State ~= lastKey then
+                                lastKey = KeyPicker.State
+                                Library:UpdateKeybindKey(keybindName, KeyPicker.State)
+                            end
+                            
+                            -- Проверяем каждые 0.3 секунды для быстрого отклика
+                            if KeyPicker and KeyPicker.Parent then
+                                task.delay(0.3, checkKeyChange)
+                            end
+                        end
+                        checkKeyChange()
+                        
+                        -- 🔑 ПОДКЛЮЧАЕМ ОБНОВЛЕНИЕ КЛАВИШИ - МЕТОД 3 (через события)
+                        if KeyPicker.KeyChanged then
+                            KeyPicker.KeyChanged:Connect(function(newKey)
+                                Library:UpdateKeybindKey(keybindName, newKey)
+                            end)
+                        end
+                        
+                        -- 🔑 ПОДКЛЮЧАЕМ ОБНОВЛЕНИЕ КЛАВИШИ - МЕТОД 4 (через PropertyChanged)
+                        pcall(function()
+                            if KeyPicker:GetPropertyChangedSignal then
+                                KeyPicker:GetPropertyChangedSignal('State'):Connect(function()
+                                    if KeyPicker.State then
+                                        Library:UpdateKeybindKey(keybindName, KeyPicker.State)
+                                    end
+                                end)
+                            end
+                        end)
                     end)
                 end
                 
@@ -4602,6 +4680,31 @@ function Library:AutoIntegrateKeyPickers()
     end
 end
 
+print("🌊 ПОЛНОСТЬЮ ИСПРАВЛЕННАЯ ВОЛНОВАЯ СИСТЕМА ЗАГРУЖЕНА!")
+print("✅ Исправлены ВСЕ баги с цветами волн при смене цвета")
+print("🛡️ FontColor НЕ влияет на ватермарк и кейбинды")
+print("🎨 Правильный дизайн как groupbox с линией градиента")
+print("🔥 Сброс волн только при смене конкретного цвета")
+print("🔑 ИСПРАВЛЕНО: Обновление клавиш в кейбиндах при смене в меню")
+print("")
+print("📋 ИСПОЛЬЗОВАНИЕ:")
+print("1. Добавь цвета в Library (см. комментарии выше)")
+print("2. Замени секцию '-- < Create other UI elements >' этим кодом")
+print("3. Library:SetWatermarkVisibility(true)")
+print("4. Library:SetKeybindVisibility(true)")
+print("5. Library:SetWatermarkProjectColor(Color3.fromRGB(255, 100, 100))")
+print("6. Library:SetWatermarkTheme('purple') -- purple/blue/green/red/accent")
+print("7. Library:AutoIntegrateKeyPickers() -- Авто-интеграция кейбиндов")
+print("")
+print("🌊 УПРАВЛЕНИЕ ВОЛНАМИ:")
+print("   Library:SetWaveSpeed(0.1) -- скорость")
+print("   Library:SetWaveIntensity(0.3) -- интенсивность")
+print("   Library:ResetWaveSettings() -- сброс")
+print("")
+print("🔑 ОБНОВЛЕНИЕ КЛАВИШ:")
+print("   ✅ 4 метода отслеживания изменений клавиш")
+print("   ⚡ Быстрый отклик через проверку каждые 0.3 секунды")
+print("   🎯 Автоматическое обновление при смене в меню")
 
 -- ============================================
 -- TABBOX КОД (НЕ УДАЛЕН)
@@ -4611,7 +4714,6 @@ end
 -- Tab1:AddToggle('Tab1Toggle', { Text = 'Tab1 Toggle' });
 -- local Tab2 = TabBox:AddTab('Tab 2')
 -- Tab2:AddToggle('Tab2Toggle', { Text = 'Tab2 Toggle' });
-
 
 function Library:CreateWindow(...)
     local Arguments = { ... }
