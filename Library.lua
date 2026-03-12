@@ -4843,22 +4843,134 @@ function Tab:AddGroupbox(Info)
         Parent = ContentSection;
     });
     
-    -- SCROLLING FRAME для контента (чтобы можно было скроллить)
+    -- SCROLLING FRAME для контента (только если не помещается)
     local ScrollFrame = Library:Create('ScrollingFrame', {
         BackgroundTransparency = 1;
         Position = UDim2.new(0, 0, 0, 0);
         Size = UDim2.new(1, 0, 1, 0);
         CanvasSize = UDim2.new(0, 0, 0, 0);
-        ScrollBarThickness = 4;
-        ScrollBarImageColor3 = Library.AccentColor;
+        ScrollBarThickness = 0; -- Скрываем стандартный scrollbar
         BorderSizePixel = 0;
+        ScrollingEnabled = true;
         ZIndex = 5;
         Parent = ContentSection;
     });
     
-    Library:AddToRegistry(ScrollFrame, {
-        ScrollBarImageColor3 = 'AccentColor';
+    -- КАСТОМНЫЙ SCROLLBAR (красивый)
+    local ScrollBarBackground = Library:Create('Frame', {
+        BackgroundColor3 = Color3.fromRGB(
+            math.max(0, Library.BackgroundColor.R * 255 - 10),
+            math.max(0, Library.BackgroundColor.G * 255 - 10),
+            math.max(0, Library.BackgroundColor.B * 255 - 10)
+        );
+        BorderSizePixel = 0;
+        Position = UDim2.new(1, -6, 0, 2);
+        Size = UDim2.new(0, 4, 1, -4);
+        Visible = false; -- Скрыт по умолчанию
+        ZIndex = 10;
+        Parent = ContentSection;
     });
+    
+    local ScrollBarCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(1, 0); -- Полностью закругленный
+        Parent = ScrollBarBackground;
+    });
+    
+    -- ПОЛЗУНОК SCROLLBAR
+    local ScrollBarThumb = Library:Create('Frame', {
+        BackgroundColor3 = Library.AccentColor;
+        BorderSizePixel = 0;
+        Position = UDim2.new(0, 0, 0, 0);
+        Size = UDim2.new(1, 0, 0, 50);
+        ZIndex = 11;
+        Parent = ScrollBarBackground;
+    });
+    
+    Library:AddToRegistry(ScrollBarThumb, {
+        BackgroundColor3 = 'AccentColor';
+    });
+    
+    local ThumbCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(1, 0); -- Полностью закругленный
+        Parent = ScrollBarThumb;
+    });
+    
+    -- ГРАДИЕНТ НА ПОЛЗУНКЕ
+    local ThumbGradient = Library:Create('UIGradient', {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Library.AccentColor),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(
+                math.min(255, Library.AccentColor.R * 255 * 1.2),
+                math.min(255, Library.AccentColor.G * 255 * 1.2),
+                math.min(255, Library.AccentColor.B * 255 * 1.2)
+            )),
+            ColorSequenceKeypoint.new(1, Library.AccentColor)
+        });
+        Rotation = 90;
+        Parent = ScrollBarThumb;
+    });
+    
+    Library:AddToRegistry(ThumbGradient, {
+        Color = function()
+            return ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Library.AccentColor),
+                ColorSequenceKeypoint.new(0.5, Color3.fromRGB(
+                    math.min(255, Library.AccentColor.R * 255 * 1.2),
+                    math.min(255, Library.AccentColor.G * 255 * 1.2),
+                    math.min(255, Library.AccentColor.B * 255 * 1.2)
+                )),
+                ColorSequenceKeypoint.new(1, Library.AccentColor)
+            });
+        end
+    });
+    
+    -- Обновление позиции и размера ползунка
+    local function UpdateScrollBar()
+        local canvasSize = ScrollFrame.CanvasSize.Y.Offset;
+        local frameSize = ScrollFrame.AbsoluteSize.Y;
+        
+        -- Показываем scrollbar только если контент не помещается
+        if canvasSize > frameSize then
+            ScrollBarBackground.Visible = true;
+            
+            -- Размер ползунка пропорционален видимой области
+            local thumbSize = math.max(30, (frameSize / canvasSize) * frameSize);
+            ScrollBarThumb.Size = UDim2.new(1, 0, 0, thumbSize);
+            
+            -- Позиция ползунка
+            local scrollPercent = ScrollFrame.CanvasPosition.Y / (canvasSize - frameSize);
+            local maxThumbPos = frameSize - thumbSize;
+            ScrollBarThumb.Position = UDim2.new(0, 0, 0, scrollPercent * maxThumbPos);
+        else
+            ScrollBarBackground.Visible = false;
+        end
+    end
+    
+    -- Обновляем scrollbar при скролле
+    ScrollFrame:GetPropertyChangedSignal('CanvasPosition'):Connect(UpdateScrollBar);
+    ScrollFrame:GetPropertyChangedSignal('CanvasSize'):Connect(UpdateScrollBar);
+    ScrollFrame:GetPropertyChangedSignal('AbsoluteSize'):Connect(UpdateScrollBar);
+    
+    -- HOVER ЭФФЕКТ на scrollbar
+    local scrollbarHovering = false;
+    
+    ScrollBarBackground.InputBegan:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseMovement then
+            scrollbarHovering = true;
+            TweenService:Create(ScrollBarThumb, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                Size = UDim2.new(1.5, 0, ScrollBarThumb.Size.Y.Scale, ScrollBarThumb.Size.Y.Offset)
+            }):Play();
+        end
+    end);
+    
+    ScrollBarBackground.InputEnded:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseMovement then
+            scrollbarHovering = false;
+            TweenService:Create(ScrollBarThumb, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                Size = UDim2.new(1, 0, ScrollBarThumb.Size.Y.Scale, ScrollBarThumb.Size.Y.Offset)
+            }):Play();
+        end
+    end);
     
     local Container = Library:Create('Frame', {
         BackgroundTransparency = 1;
@@ -4879,6 +4991,7 @@ function Tab:AddGroupbox(Info)
     -- Автоматическое обновление размера canvas при изменении контента
     Container:GetPropertyChangedSignal('AbsoluteSize'):Connect(function()
         ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, Container.AbsoluteSize.Y + 8);
+        UpdateScrollBar(); -- Обновляем scrollbar
     end);
     
     -- HOVER ЭФФЕКТ на заголовке
@@ -4949,13 +5062,17 @@ function Tab:AddGroupbox(Info)
         ContentSize = math.max(ContentSize, MinContentHeight);
         
         -- Максимальная высота groupbox (чтобы не был слишком большой)
-        local MaxContentHeight = 500;
+        local MaxContentHeight = 480; -- Уменьшил с 500 до 480
         local ActualContentHeight = math.min(ContentSize, MaxContentHeight);
         
         -- Обновляем размеры
         BoxOuter.Size = UDim2.new(1, 0, 0, 26 + ActualContentHeight + 8);
         ContentSection.Size = UDim2.new(1, 0, 0, ActualContentHeight + 8);
         ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, ContentSize + 8);
+        
+        -- Обновляем scrollbar
+        task.wait(0.1); -- Небольшая задержка для корректного расчета
+        UpdateScrollBar();
     end;
     
     Groupbox.Container = Container;
@@ -4974,6 +5091,8 @@ end;
 function Tab:AddRightGroupbox(Name)
     return Tab:AddGroupbox({ Side = 2; Name = Name; });
 end;
+
+
 
         function Tab:AddTabbox(Info)
             local Tabbox = {
