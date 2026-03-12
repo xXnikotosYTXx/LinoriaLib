@@ -1,9 +1,9 @@
-local InputService = game:GetService('UserInputService');
-local TextService = game:GetService('TextService');
-local CoreGui = game:GetService('CoreGui');
-local Teams = game:GetService('Teams');
-local Players = game:GetService('Players');
-local RunService = game:GetService('RunService')
+local InputService = cloneref(game:GetService('UserInputService'));
+local TextService = cloneref(game:GetService('TextService'));
+local CoreGui = cloneref(game:GetService('CoreGui'));
+local Teams = cloneref(game:GetService('Teams'));
+local Players = cloneref(game:GetService('Players'));
+local RunService = cloneref(game:GetService('RunService'));
 local TweenService = game:GetService('TweenService');
 local RenderStepped = RunService.RenderStepped;
 local LocalPlayer = Players.LocalPlayer;
@@ -4518,6 +4518,95 @@ function Library:AutoIntegrateKeyPickers()
                             end)
                         end
                         
+pcall(function()
+    if KeyPicker:GetPropertyChangedSignal then
+        KeyPicker:GetPropertyChangedSignal('State'):Connect(function()
+            if KeyPicker.State then
+                Library:UpdateKeybindKey(keybindName, KeyPicker.State)
+            end
+        end)
+    end
+end)
+
+-- ============================================
+-- ИСПРАВЛЕНИЕ 2: Функция Library:AutoIntegrateKeyPickers
+-- ============================================
+-- Замени всю функцию на эту:
+local OriginalAddKeyPicker = nil
+function Library:AutoIntegrateKeyPickers()
+    if not OriginalAddKeyPicker then
+        -- Находим оригинальную функцию AddKeyPicker
+        for _, tab in pairs(self.OpenedFrames or {}) do
+            if tab.AddKeyPicker then
+                OriginalAddKeyPicker = tab.AddKeyPicker
+                break
+            end
+        end
+        
+        if OriginalAddKeyPicker then
+            -- Заменяем функцию на нашу версию
+            local function NewAddKeyPicker(self, Idx, Info)
+                local KeyPicker = OriginalAddKeyPicker(self, Idx, Info)
+                
+                -- Автоматически добавляем в кейбинды при создании
+                if Info and Info.Text and KeyPicker then
+                    task.spawn(function()
+                        wait(0.1) -- Небольшая задержка для инициализации
+                        local keybindName = Info.Text or "Unknown"
+                        local currentKey = KeyPicker.State or "None"
+                        local isToggled = false
+                        
+                        -- Определяем иконку по названию
+                        local iconName = "key"
+                        if string.find(keybindName:lower(), "esp") then
+                            iconName = "eye"
+                        elseif string.find(keybindName:lower(), "aim") then
+                            iconName = "target"
+                        elseif string.find(keybindName:lower(), "menu") then
+                            iconName = "settings"
+                        elseif string.find(keybindName:lower(), "fly") then
+                            iconName = "zap"
+                        end
+                        
+                        Library:AddKeybind(keybindName, currentKey, isToggled, iconName)
+                        
+                        -- 🔥 ПОДКЛЮЧАЕМ ОБНОВЛЕНИЕ СОСТОЯНИЯ
+                        if KeyPicker.Changed then
+                            KeyPicker.Changed:Connect(function()
+                                Library:UpdateKeybindState(keybindName, KeyPicker.Active or false)
+                            end)
+                        end
+                        
+                        -- 🔑 ПОДКЛЮЧАЕМ ОБНОВЛЕНИЕ КЛАВИШИ - МЕТОД 1
+                        if KeyPicker.SetValue then
+                            local originalSetValue = KeyPicker.SetValue
+                            KeyPicker.SetValue = function(self, newKey)
+                                originalSetValue(self, newKey)
+                                Library:UpdateKeybindKey(keybindName, newKey)
+                            end
+                        end
+                        
+                        -- 🔑 ПОДКЛЮЧАЕМ ОБНОВЛЕНИЕ КЛАВИШИ - МЕТОД 2
+                        local lastKey = currentKey
+                        local function checkKeyChange()
+                            if KeyPicker and KeyPicker.State and KeyPicker.State ~= lastKey then
+                                lastKey = KeyPicker.State
+                                Library:UpdateKeybindKey(keybindName, KeyPicker.State)
+                            end
+                            -- Проверяем каждые 0.3 секунды для быстрого отклика
+                            if KeyPicker and KeyPicker.Parent then
+                                task.delay(0.3, checkKeyChange)
+                            end
+                        end
+                        checkKeyChange()
+                        
+                        -- 🔑 ПОДКЛЮЧАЕМ ОБНОВЛЕНИЕ КЛАВИШИ - МЕТОД 3 (через события)
+                        if KeyPicker.KeyChanged then
+                            KeyPicker.KeyChanged:Connect(function(newKey)
+                                Library:UpdateKeybindKey(keybindName, newKey)
+                            end)
+                        end
+                        
                         -- 🔑 ПОДКЛЮЧАЕМ ОБНОВЛЕНИЕ КЛАВИШИ - МЕТОД 4 (через PropertyChanged)
                         pcall(function()
                             if KeyPicker:GetPropertyChangedSignal then
@@ -4540,6 +4629,37 @@ function Library:AutoIntegrateKeyPickers()
                     tab.AddKeyPicker = NewAddKeyPicker
                 end
             end
+        end
+    end
+end
+
+-- ============================================
+-- ИСПРАВЛЕНИЕ 3: Функция UpdateKeybindKey
+-- ============================================
+function Library:UpdateKeybindKey(name, newKey)
+    for _, item in ipairs(Library.WaveSystem.KeybindItems) do
+        if item.Name == name then
+            item.Key = newKey
+            item.KeyLabel.Text = newKey
+            
+            -- Анимация подсветки при изменении клавиши
+            local highlightColor = Color3.fromRGB(100, 150, 255)
+            local normalColor = Library.KeybindKeyColor
+            
+            TweenService:Create(item.KeyLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                TextColor3 = highlightColor,
+                TextSize = 11,
+            }):Play()
+            
+            task.delay(0.8, function()
+                TweenService:Create(item.KeyLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    TextColor3 = normalColor,
+                    TextSize = 9,
+                }):Play()
+            end)
+            
+            print("🔑 Клавиша кейбинда '" .. name .. "' обновлена на: " .. newKey)
+            break
         end
     end
 end
