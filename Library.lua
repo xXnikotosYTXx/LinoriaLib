@@ -49,6 +49,233 @@ local Library = {
 local RainbowStep = 0
 local Hue = 0
 
+
+function Library:UpdateKeybindKey(name, newKey)
+    for _, item in ipairs(Library.WaveSystem.KeybindItems) do
+        if item.Name == name then
+            item.Key = newKey
+            item.KeyLabel.Text = newKey
+            
+            -- Анимация подсветки при изменении клавиши
+            local highlightColor = Color3.fromRGB(100, 150, 255)
+            local normalColor = Library.KeybindKeyColor
+            
+            TweenService:Create(item.KeyLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                TextColor3 = highlightColor,
+                TextSize = 11,
+            }):Play()
+            
+            task.delay(0.8, function()
+                TweenService:Create(item.KeyLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    TextColor3 = normalColor,
+                    TextSize = 9,
+                }):Play()
+            end)
+            
+            print("🔑 Клавиша кейбинда '" .. name .. "' обновлена на: " .. newKey)
+            break
+        end
+    end
+end
+
+-- ============================================
+-- АВТОМАТИЧЕСКАЯ ИНТЕГРАЦИЯ KEYPICKERS
+-- ============================================
+local OriginalAddKeyPicker = nil
+
+function Library:AutoIntegrateKeyPickers()
+    if not OriginalAddKeyPicker then
+        -- Находим оригинальную функцию AddKeyPicker
+        for _, tab in pairs(self.OpenedFrames or {}) do
+            if tab.AddKeyPicker then
+                OriginalAddKeyPicker = tab.AddKeyPicker
+                break
+            end
+        end
+        
+        if OriginalAddKeyPicker then
+            -- Заменяем функцию на нашу версию
+            local function NewAddKeyPicker(self, Idx, Info)
+                local KeyPicker = OriginalAddKeyPicker(self, Idx, Info)
+                
+                -- Автоматически добавляем в кейбинды при создании
+                if Info and Info.Text and KeyPicker then
+                    task.spawn(function()
+                        wait(0.1) -- Небольшая задержка для инициализации
+                        local keybindName = Info.Text or "Unknown"
+                        local currentKey = KeyPicker.State or "None"
+                        local isToggled = false
+                        
+                        -- Определяем иконку по названию
+                        local iconName = "key"
+                        if string.find(keybindName:lower(), "esp") then
+                            iconName = "eye"
+                        elseif string.find(keybindName:lower(), "aim") then
+                            iconName = "target"
+                        elseif string.find(keybindName:lower(), "menu") then
+                            iconName = "settings"
+                        elseif string.find(keybindName:lower(), "fly") then
+                            iconName = "zap"
+                        elseif string.find(keybindName:lower(), "speed") then
+                            iconName = "zap"
+                        elseif string.find(keybindName:lower(), "jump") then
+                            iconName = "zap"
+                        elseif string.find(keybindName:lower(), "noclip") then
+                            iconName = "shield"
+                        elseif string.find(keybindName:lower(), "teleport") then
+                            iconName = "zap"
+                        end
+                        
+                        -- 🌊 ДОБАВЛЯЕМ В НАШУ ВОЛНОВУЮ СИСТЕМУ КЕЙБИНДОВ
+                        Library:AddKeybind(keybindName, currentKey, isToggled, iconName)
+                        
+                        -- 🔥 ПОДКЛЮЧАЕМ ОБНОВЛЕНИЕ СОСТОЯНИЯ
+                        if KeyPicker.Changed then
+                            KeyPicker.Changed:Connect(function()
+                                Library:UpdateKeybindState(keybindName, KeyPicker.Active or false)
+                            end)
+                        end
+                        
+                        -- 🔑 ПОДКЛЮЧАЕМ ОБНОВЛЕНИЕ КЛАВИШИ - МЕТОД 1 (SetValue)
+                        if KeyPicker.SetValue then
+                            local originalSetValue = KeyPicker.SetValue
+                            KeyPicker.SetValue = function(self, newKey)
+                                originalSetValue(self, newKey)
+                                Library:UpdateKeybindKey(keybindName, newKey)
+                            end
+                        end
+                        
+                        -- 🔑 ПОДКЛЮЧАЕМ ОБНОВЛЕНИЕ КЛАВИШИ - МЕТОД 2 (Polling)
+                        local lastKey = currentKey
+                        local function checkKeyChange()
+                            if KeyPicker and KeyPicker.State and KeyPicker.State ~= lastKey then
+                                lastKey = KeyPicker.State
+                                Library:UpdateKeybindKey(keybindName, KeyPicker.State)
+                            end
+                            -- Проверяем каждые 0.3 секунды для быстрого отклика
+                            if KeyPicker and KeyPicker.Parent then
+                                task.delay(0.3, checkKeyChange)
+                            end
+                        end
+                        checkKeyChange()
+                        
+                        -- 🔑 ПОДКЛЮЧАЕМ ОБНОВЛЕНИЕ КЛАВИШИ - МЕТОД 3 (Events)
+                        if KeyPicker.KeyChanged then
+                            KeyPicker.KeyChanged:Connect(function(newKey)
+                                Library:UpdateKeybindKey(keybindName, newKey)
+                            end)
+                        end
+                        
+                        -- 🔑 ПОДКЛЮЧАЕМ ОБНОВЛЕНИЕ КЛАВИШИ - МЕТОД 4 (PropertyChanged)
+                        pcall(function()
+                            if KeyPicker:GetPropertyChangedSignal then
+                                KeyPicker:GetPropertyChangedSignal('State'):Connect(function()
+                                    if KeyPicker.State then
+                                        Library:UpdateKeybindKey(keybindName, KeyPicker.State)
+                                    end
+                                end)
+                            end
+                        end)
+                        
+                        print("🔑 Автоматически добавлен кейбинд:", keybindName, "(" .. currentKey .. ")")
+                    end)
+                end
+                
+                return KeyPicker
+            end
+            
+            -- Применяем новую функцию ко всем табам
+            for _, tab in pairs(self.OpenedFrames or {}) do
+                if tab.AddKeyPicker then
+                    tab.AddKeyPicker = NewAddKeyPicker
+                end
+            end
+            
+            print("🔑 Автоматическая интеграция кейбиндов активирована!")
+        else
+            print("⚠️ AddKeyPicker не найден в OpenedFrames")
+        end
+    else
+        print("🔑 Автоматическая интеграция уже активирована")
+    end
+end
+
+-- ============================================
+-- ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ УПРАВЛЕНИЯ
+-- ============================================
+function Library:SetWaveSpeed(speed)
+    if Library.WaveSystem then
+        local multiplier = speed / 0.08 -- Базовая скорость
+        Library.WaveSystem.ProjectWave.speed = 0.08 * multiplier
+        Library.WaveSystem.NicknameWave.speed = 0.07 * multiplier
+        Library.WaveSystem.FPSWave.speed = 0.06 * multiplier
+        Library.WaveSystem.PingWave.speed = 0.055 * multiplier
+        Library.WaveSystem.TimeWave.speed = 0.045 * multiplier
+        Library.WaveSystem.KeybindHeaderWave.speed = 0.065 * multiplier
+    end
+end
+
+function Library:SetWaveIntensity(intensity)
+    if Library.WaveSystem then
+        Library.WaveSystem.ProjectWave.intensity = intensity
+        Library.WaveSystem.NicknameWave.intensity = intensity * 0.9
+        Library.WaveSystem.FPSWave.intensity = intensity * 0.75
+        Library.WaveSystem.PingWave.intensity = intensity * 0.75
+        Library.WaveSystem.TimeWave.intensity = intensity * 0.6
+        Library.WaveSystem.KeybindHeaderWave.intensity = intensity * 0.9
+    end
+end
+
+function Library:SetWaveWidth(width)
+    if Library.WaveSystem then
+        Library.WaveSystem.ProjectWave.width = width
+        Library.WaveSystem.NicknameWave.width = width * 1.17
+        Library.WaveSystem.FPSWave.width = width * 0.83
+        Library.WaveSystem.PingWave.width = width * 0.83
+        Library.WaveSystem.TimeWave.width = width * 1.33
+        Library.WaveSystem.KeybindHeaderWave.width = width
+    end
+end
+
+function Library:ResetWaveSettings()
+    if Library.WaveSystem then
+        Library.WaveSystem.ProjectWave = {pos = 0, speed = 0.08, width = 3, intensity = 0.2}
+        Library.WaveSystem.NicknameWave = {pos = 0, speed = 0.07, width = 3.5, intensity = 0.18}
+        Library.WaveSystem.FPSWave = {pos = 0, speed = 0.06, width = 2.5, intensity = 0.15}
+        Library.WaveSystem.PingWave = {pos = 0, speed = 0.055, width = 2.5, intensity = 0.15}
+        Library.WaveSystem.TimeWave = {pos = 0, speed = 0.045, width = 4, intensity = 0.12}
+        Library.WaveSystem.KeybindHeaderWave = {pos = 0, speed = 0.065, width = 3, intensity = 0.18}
+    end
+end
+
+-- ============================================
+-- ЦВЕТОВЫЕ ТЕМЫ ДЛЯ ВАТЕРМАРКА
+-- ============================================
+function Library:SetWatermarkTheme(themeName)
+    if themeName == "purple" then
+        self.WatermarkProjectColor = Color3.fromRGB(180, 100, 220)
+        self.WatermarkNicknameColor = Color3.fromRGB(255, 255, 255)
+    elseif themeName == "blue" then
+        self.WatermarkProjectColor = Color3.fromRGB(100, 150, 255)
+        self.WatermarkNicknameColor = Color3.fromRGB(255, 255, 255)
+    elseif themeName == "green" then
+        self.WatermarkProjectColor = Color3.fromRGB(100, 220, 150)
+        self.WatermarkNicknameColor = Color3.fromRGB(255, 255, 255)
+    elseif themeName == "red" then
+        self.WatermarkProjectColor = Color3.fromRGB(255, 100, 120)
+        self.WatermarkNicknameColor = Color3.fromRGB(255, 255, 255)
+    elseif themeName == "accent" then
+        self.WatermarkProjectColor = self.AccentColor
+        self.WatermarkNicknameColor = Color3.fromRGB(255, 255, 255)
+    end
+    
+    -- Сбрасываем волны для применения новых цветов
+    if self.WaveSystem then
+        self.WaveSystem.ProjectWave.pos = -3
+        self.WaveSystem.NicknameWave.pos = -3
+    end
+end
+
 table.insert(Library.Signals, RenderStepped:Connect(function(Delta)
     RainbowStep = RainbowStep + Delta
 
