@@ -5208,6 +5208,418 @@ function Tab:AddRightGroupbox(Name)
     return Tab:AddGroupbox({ Side = 2; Name = Name; });
 end;
 
+local TweenService = game:GetService('TweenService')
+
+function Tab:AddTabbox(Info)
+    local Tabbox = {
+        Tabs = {};
+    };
+    
+    -- ОСНОВНОЙ КОНТЕЙНЕР (как в Matcha groupbox)
+    local BoxOuter = Library:Create('Frame', {
+        BackgroundColor3 = Color3.fromRGB(18, 18, 22); -- Темный фон как в Matcha
+        BorderSizePixel = 0;
+        Size = UDim2.new(1, 0, 0, 0);
+        ClipsDescendants = false;
+        ZIndex = 2;
+        Parent = Info.Side == 1 and LeftSide or RightSide;
+    });
+    
+    -- Закругленные углы
+    local OuterCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 4);
+        Parent = BoxOuter;
+    });
+    
+    -- МЯГКИЙ ГРАДИЕНТ НА ФОНЕ (сверху вниз)
+    local BackgroundGradient = Library:Create('UIGradient', {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 24)), -- Чуть светлее сверху
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 16, 20))  -- Чуть темнее снизу
+        });
+        Rotation = 90;
+        Parent = BoxOuter;
+    });
+    
+    -- ТОНКАЯ ЛИНИЯ АКЦЕНТА СВЕРХУ (как в Matcha)
+    local TopAccent = Library:Create('Frame', {
+        BackgroundColor3 = Library.AccentColor;
+        BorderSizePixel = 0;
+        Size = UDim2.new(1, 0, 0, 2);
+        ZIndex = 10;
+        Parent = BoxOuter;
+    });
+    
+    Library:AddToRegistry(TopAccent, {
+        BackgroundColor3 = 'AccentColor';
+    });
+    
+    local AccentCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 4);
+        Parent = TopAccent;
+    });
+    
+    -- МЯГКИЙ ГРАДИЕНТ НА ЛИНИИ АКЦЕНТА (слева направо)
+    local AccentGradient = Library:Create('UIGradient', {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(
+                Library.AccentColor.R * 255 * 0.5,
+                Library.AccentColor.G * 255 * 0.5,
+                Library.AccentColor.B * 255 * 0.5
+            )),
+            ColorSequenceKeypoint.new(0.5, Library.AccentColor),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(
+                Library.AccentColor.R * 255 * 0.5,
+                Library.AccentColor.G * 255 * 0.5,
+                Library.AccentColor.B * 255 * 0.5
+            ))
+        });
+        Rotation = 0;
+        Parent = TopAccent;
+    });
+    
+    Library:AddToRegistry(AccentGradient, {
+        Color = function()
+            return ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(
+                    Library.AccentColor.R * 255 * 0.5,
+                    Library.AccentColor.G * 255 * 0.5,
+                    Library.AccentColor.B * 255 * 0.5
+                )),
+                ColorSequenceKeypoint.new(0.5, Library.AccentColor),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(
+                    Library.AccentColor.R * 255 * 0.5,
+                    Library.AccentColor.G * 255 * 0.5,
+                    Library.AccentColor.B * 255 * 0.5
+                ))
+            });
+        end
+    });
+    
+    -- КОНТЕЙНЕР ДЛЯ КНОПОК ТАБОВ (минималистичный)
+    local TabboxButtons = Library:Create('Frame', {
+        BackgroundTransparency = 1; -- Прозрачный фон
+        Position = UDim2.new(0, 0, 0, 2);
+        Size = UDim2.new(1, 0, 0, 28); -- Увеличенная высота для красоты
+        ZIndex = 5;
+        Parent = BoxOuter;
+    });
+    
+    Library:Create('UIListLayout', {
+        FillDirection = Enum.FillDirection.Horizontal;
+        HorizontalAlignment = Enum.HorizontalAlignment.Left;
+        SortOrder = Enum.SortOrder.LayoutOrder;
+        Padding = UDim.new(0, 2); -- Небольшой отступ между кнопками
+        Parent = TabboxButtons;
+    });
+    
+    -- Тонкая разделительная линия под кнопками
+    local TabDivider = Library:Create('Frame', {
+        BackgroundColor3 = Color3.fromRGB(40, 40, 45);
+        BorderSizePixel = 0;
+        Position = UDim2.new(0, 8, 0, 30);
+        Size = UDim2.new(1, -16, 0, 1);
+        ZIndex = 5;
+        Parent = BoxOuter;
+    });
+    
+    function Tabbox:AddTab(Name)
+        local Tab = {};
+        
+        -- КНОПКА ТАБА (минималистичный дизайн)
+        local Button = Library:Create('Frame', {
+            BackgroundColor3 = Color3.fromRGB(25, 25, 30); -- Темнее основного фона
+            BorderSizePixel = 0;
+            Size = UDim2.new(0.5, -1, 1, -4); -- Отступы сверху и снизу
+            Position = UDim2.new(0, 0, 0, 2);
+            ZIndex = 6;
+            Parent = TabboxButtons;
+        });
+        
+        -- Закругленные углы для кнопки
+        local ButtonCorner = Library:Create('UICorner', {
+            CornerRadius = UDim.new(0, 3);
+            Parent = Button;
+        });
+        
+        -- ГРАДИЕНТ ДЛЯ НЕАКТИВНОЙ КНОПКИ (тонкий)
+        local ButtonGradient = Library:Create('UIGradient', {
+            Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 28, 33)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(22, 22, 27))
+            });
+            Rotation = 90;
+            Parent = Button;
+        });
+        
+        -- ТЕКСТ КНОПКИ (стильный)
+        local ButtonLabel = Library:CreateLabel({
+            Size = UDim2.new(1, 0, 1, 0);
+            TextSize = 13;
+            Text = Name;
+            TextColor3 = Color3.fromRGB(180, 180, 180); -- Приглушенный цвет
+            TextXAlignment = Enum.TextXAlignment.Center;
+            TextYAlignment = Enum.TextYAlignment.Center;
+            Font = Enum.Font.GothamMedium;
+            ZIndex = 7;
+            Parent = Button;
+        });
+        
+        -- ИНДИКАТОР АКТИВНОГО ТАБА (тонкая линия снизу)
+        local ActiveIndicator = Library:Create('Frame', {
+            BackgroundColor3 = Library.AccentColor;
+            BorderSizePixel = 0;
+            Position = UDim2.new(0, 0, 1, -2);
+            Size = UDim2.new(1, 0, 0, 2);
+            Visible = false;
+            ZIndex = 9;
+            Parent = Button;
+        });
+        
+        Library:AddToRegistry(ActiveIndicator, {
+            BackgroundColor3 = 'AccentColor';
+        });
+        
+        local IndicatorCorner = Library:Create('UICorner', {
+            CornerRadius = UDim.new(0, 1);
+            Parent = ActiveIndicator;
+        });
+        
+        -- ГРАДИЕНТ НА ИНДИКАТОРЕ (как на линии акцента)
+        local IndicatorGradient = Library:Create('UIGradient', {
+            Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(
+                    Library.AccentColor.R * 255 * 0.6,
+                    Library.AccentColor.G * 255 * 0.6,
+                    Library.AccentColor.B * 255 * 0.6
+                )),
+                ColorSequenceKeypoint.new(0.5, Library.AccentColor),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(
+                    Library.AccentColor.R * 255 * 0.6,
+                    Library.AccentColor.G * 255 * 0.6,
+                    Library.AccentColor.B * 255 * 0.6
+                ))
+            });
+            Rotation = 0;
+            Parent = ActiveIndicator;
+        });
+        
+        Library:AddToRegistry(IndicatorGradient, {
+            Color = function()
+                return ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(
+                        Library.AccentColor.R * 255 * 0.6,
+                        Library.AccentColor.G * 255 * 0.6,
+                        Library.AccentColor.B * 255 * 0.6
+                    )),
+                    ColorSequenceKeypoint.new(0.5, Library.AccentColor),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(
+                        Library.AccentColor.R * 255 * 0.6,
+                        Library.AccentColor.G * 255 * 0.6,
+                        Library.AccentColor.B * 255 * 0.6
+                    ))
+                });
+            end
+        });
+        
+        -- КОНТЕЙНЕР СОДЕРЖИМОГО ТАБА
+        local Container = Library:Create('Frame', {
+            BackgroundTransparency = 1;
+            Position = UDim2.new(0, 8, 0, 35); -- Отступ от разделителя
+            Size = UDim2.new(1, -16, 1, -35);
+            ZIndex = 1;
+            Visible = false;
+            Parent = BoxOuter;
+        });
+        
+        Library:Create('UIListLayout', {
+            FillDirection = Enum.FillDirection.Vertical;
+            SortOrder = Enum.SortOrder.LayoutOrder;
+            Padding = UDim.new(0, 4); -- Как в Matcha groupbox
+            Parent = Container;
+        });
+        
+        -- 🌟 HOVER ЭФФЕКТЫ НА КНОПКЕ ТАБА
+        local isHovering = false
+        
+        Button.InputBegan:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseMovement then
+                isHovering = true
+                
+                -- Подсветка кнопки
+                TweenService:Create(Button, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                    BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+                }):Play()
+                
+                -- Подсветка текста (как в Matcha)
+                TweenService:Create(ButtonLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                    TextColor3 = Library.AccentColor,
+                    TextSize = 14
+                }):Play()
+                
+                -- Если не активный таб, показываем слабый индикатор
+                if not ActiveIndicator.Visible then
+                    local HoverIndicator = Library:Create('Frame', {
+                        BackgroundColor3 = Color3.fromRGB(
+                            Library.AccentColor.R * 255 * 0.4,
+                            Library.AccentColor.G * 255 * 0.4,
+                            Library.AccentColor.B * 255 * 0.4
+                        );
+                        BorderSizePixel = 0;
+                        Position = UDim2.new(0, 0, 1, -1);
+                        Size = UDim2.new(1, 0, 0, 1);
+                        ZIndex = 8;
+                        Parent = Button;
+                    });
+                    
+                    local HoverCorner = Library:Create('UICorner', {
+                        CornerRadius = UDim.new(0, 1);
+                        Parent = HoverIndicator;
+                    });
+                    
+                    -- Удаляем hover индикатор через время
+                    task.delay(0.5, function()
+                        if HoverIndicator and HoverIndicator.Parent and not ActiveIndicator.Visible then
+                            TweenService:Create(HoverIndicator, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                                BackgroundTransparency = 1
+                            }):Play()
+                            task.delay(0.2, function()
+                                if HoverIndicator then HoverIndicator:Destroy() end
+                            end)
+                        end
+                    end)
+                end
+            end
+        end)
+        
+        Button.InputEnded:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseMovement then
+                isHovering = false
+                
+                -- Возврат к обычному состоянию (если не активный)
+                if not ActiveIndicator.Visible then
+                    TweenService:Create(Button, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                        BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+                    }):Play()
+                    
+                    TweenService:Create(ButtonLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                        TextColor3 = Color3.fromRGB(180, 180, 180),
+                        TextSize = 13
+                    }):Play()
+                end
+            end
+        end)
+        
+        function Tab:Show()
+            -- Скрыть все табы
+            for _, OtherTab in next, Tabbox.Tabs do
+                OtherTab:Hide();
+            end;
+            
+            -- Показать текущий таб
+            Container.Visible = true;
+            ActiveIndicator.Visible = true;
+            
+            -- Активный стиль кнопки
+            Button.BackgroundColor3 = Color3.fromRGB(35, 35, 40); -- Светлее
+            ButtonGradient.Enabled = false;
+            ButtonLabel.TextColor3 = Color3.fromRGB(220, 220, 220); -- Ярче текст
+            ButtonLabel.TextSize = 14;
+            
+            Tab:Resize();
+        end;
+        
+        function Tab:Hide()
+            Container.Visible = false;
+            ActiveIndicator.Visible = false;
+            
+            -- Неактивный стиль кнопки
+            Button.BackgroundColor3 = Color3.fromRGB(25, 25, 30);
+            ButtonGradient.Enabled = true;
+            ButtonLabel.TextColor3 = Color3.fromRGB(180, 180, 180);
+            ButtonLabel.TextSize = 13;
+        end;
+        
+        function Tab:Resize()
+            local TabCount = 0;
+            for _, Tab in next, Tabbox.Tabs do
+                TabCount = TabCount + 1;
+            end;
+            
+            -- Изменить размер кнопок (с отступами)
+            for _, TabButton in next, TabboxButtons:GetChildren() do
+                if not TabButton:IsA('UIListLayout') then
+                    TabButton.Size = UDim2.new(1 / TabCount, -2, 1, -4);
+                end;
+            end;
+            
+            if (not Container.Visible) then
+                return;
+            end;
+            
+            local Size = 0;
+            local ElementCount = 0;
+            for _, Element in next, Tab.Container:GetChildren() do
+                if (not Element:IsA('UIListLayout')) and Element.Visible then
+                    Size = Size + Element.Size.Y.Offset;
+                    ElementCount = ElementCount + 1;
+                end;
+            end;
+            
+            -- Добавляем отступы между элементами
+            if ElementCount > 1 then
+                Size = Size + (4 * (ElementCount - 1));
+            end;
+            
+            Size = math.max(Size, 40); -- Минимальная высота
+            
+            BoxOuter.Size = UDim2.new(1, 0, 0, 35 + Size + 8);
+        end;
+        
+        -- ОБРАБОТКА КЛИКА (с анимацией)
+        Button.InputBegan:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
+                -- Анимация нажатия
+                TweenService:Create(Button, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
+                    Size = UDim2.new(Button.Size.X.Scale, Button.Size.X.Offset, Button.Size.Y.Scale, Button.Size.Y.Offset - 2)
+                }):Play()
+                
+                task.delay(0.1, function()
+                    TweenService:Create(Button, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
+                        Size = UDim2.new(0.5, -1, 1, -4)
+                    }):Play()
+                end)
+                
+                Tab:Show();
+                Tab:Resize();
+            end;
+        end);
+        
+        Tab.Container = Container;
+        Tabbox.Tabs[Name] = Tab;
+        setmetatable(Tab, BaseGroupbox);
+        Tab:AddBlank(2); -- Как в Matcha
+        Tab:Resize();
+        
+        -- Показать первый таб по умолчанию
+        if #TabboxButtons:GetChildren() == 2 then
+            Tab:Show();
+        end;
+        
+        return Tab;
+    end;
+    
+    Tab.Tabboxes[Info.Name or ''] = Tabbox;
+    return Tabbox;
+end;
+
+        function Tab:AddLeftTabbox(Name)
+            return Tab:AddTabbox({ Name = Name, Side = 1; });
+        end;
+
+        function Tab:AddRightTabbox(Name)
+            return Tab:AddTabbox({ Name = Name, Side = 2; });
+        end;
 
         TabButton.InputBegan:Connect(function(Input)
             if Input.UserInputType == Enum.UserInputType.MouseButton1 then
