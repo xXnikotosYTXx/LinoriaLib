@@ -4616,36 +4616,36 @@ end
 -- 🎨 ПРЕМИУМ WINDOW В СТИЛЕ MATCHA
 -- Основан на оригинальном коде с добавлением современного дизайна
 
-local TweenService = game:GetService('TweenService')
-
 function Library:CreateWindow(...)
     local Arguments = { ... }
     local Config = { AnchorPoint = Vector2.zero }
-    
+
     if type(...) == 'table' then
         Config = ...;
     else
         Config.Title = Arguments[1]
         Config.AutoShow = Arguments[2] or false;
     end
-    
+
     if type(Config.Title) ~= 'string' then Config.Title = 'No title' end
     if type(Config.TabPadding) ~= 'number' then Config.TabPadding = 0 end
     if type(Config.MenuFadeTime) ~= 'number' then Config.MenuFadeTime = 0.2 end
+
     if typeof(Config.Position) ~= 'UDim2' then Config.Position = UDim2.fromOffset(175, 50) end
     if typeof(Config.Size) ~= 'UDim2' then Config.Size = UDim2.fromOffset(780, 600) end
-    
+
     if Config.Center then
         Config.AnchorPoint = Vector2.new(0.5, 0.5)
         Config.Position = UDim2.fromScale(0.5, 0.5)
     end
-    
-    local Window = {Tabs = {}};
-    
-    -- 🎨 ПРЕМИУМ OUTER (вместо черного)
+
+    local Window = {
+        Tabs = {};
+    };
+
     local Outer = Library:Create('Frame', {
         AnchorPoint = Config.AnchorPoint,
-        BackgroundColor3 = Color3.fromRGB(12, 12, 16); -- Темный вместо черного
+        BackgroundColor3 = Color3.new(0, 0, 0);
         BorderSizePixel = 0;
         Position = Config.Position,
         Size = Config.Size,
@@ -4653,40 +4653,11 @@ function Library:CreateWindow(...)
         ZIndex = 1;
         Parent = ScreenGui;
     });
-    
+
     Library:MakeDraggable(Outer, 25);
-    
-    -- Закругленные углы
-    local OuterCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 8);
-        Parent = Outer;
-    });
-    
-    -- Градиент на фоне
-    local OuterGradient = Library:Create('UIGradient', {
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 15, 20)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 14))
-        });
-        Rotation = 90;
-        Parent = Outer;
-    });
-    
-    -- Glow рамка
-    local GlowStroke = Library:Create('UIStroke', {
-        Color = Library.AccentColor,
-        Thickness = 1,
-        Transparency = 0.8,
-        Parent = Outer;
-    });
-    
-    Library:AddToRegistry(GlowStroke, {
-        Color = 'AccentColor';
-    });
-    
-    -- 🎨 ПРЕМИУМ INNER (как у тебя, но темнее)
+
     local Inner = Library:Create('Frame', {
-        BackgroundColor3 = Color3.fromRGB(18, 18, 22); -- Темнее Library.MainColor
+        BackgroundColor3 = Library.MainColor;
         BorderColor3 = Library.AccentColor;
         BorderMode = Enum.BorderMode.Inset;
         Position = UDim2.new(0, 1, 0, 1);
@@ -4694,135 +4665,37 @@ function Library:CreateWindow(...)
         ZIndex = 1;
         Parent = Outer;
     });
-    
+
     Library:AddToRegistry(Inner, {
         BackgroundColor3 = 'MainColor';
         BorderColor3 = 'AccentColor';
     });
-    
-    local InnerCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 6);
-        Parent = Inner;
-    });
-    
-    -- Линия акцента сверху
-    local TopAccent = Library:Create('Frame', {
-        BackgroundColor3 = Library.AccentColor;
-        BorderSizePixel = 0;
-        Size = UDim2.new(1, 0, 0, 2);
-        ZIndex = 2;
-        Parent = Inner;
-    });
-    
-    Library:AddToRegistry(TopAccent, {
-        BackgroundColor3 = 'AccentColor';
-    });
-    
-    local AccentCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 6);
-        Parent = TopAccent;
-    });
-    
-    -- Градиент на линии акцента
-    local AccentGradient = Library:Create('UIGradient', {
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(
-                Library.AccentColor.R * 255 * 0.5,
-                Library.AccentColor.G * 255 * 0.5,
-                Library.AccentColor.B * 255 * 0.5
-            )),
-            ColorSequenceKeypoint.new(0.5, Library.AccentColor),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(
-                Library.AccentColor.R * 255 * 0.5,
-                Library.AccentColor.G * 255 * 0.5,
-                Library.AccentColor.B * 255 * 0.5
-            ))
-        });
-        Rotation = 0;
-        Parent = TopAccent;
-    });
-    
-    Library:AddToRegistry(AccentGradient, {
-        Color = function()
-            return ColorSequence.new({
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(
-                    Library.AccentColor.R * 255 * 0.5,
-                    Library.AccentColor.G * 255 * 0.5,
-                    Library.AccentColor.B * 255 * 0.5
-                )),
-                ColorSequenceKeypoint.new(0.5, Library.AccentColor),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(
-                    Library.AccentColor.R * 255 * 0.5,
-                    Library.AccentColor.G * 255 * 0.5,
-                    Library.AccentColor.B * 255 * 0.5
-                ))
-            });
-        end
-    });
-    
-    -- ЗАГОЛОВОК (точно как у тебя)
+
     local WindowLabel = Library:CreateLabel({
-        Position = UDim2.new(0, 7, 0, 2); -- Чуть ниже из-за линии акцента
+        Position = UDim2.new(0, 7, 0, 0);
         Size = UDim2.new(0, 0, 0, 25);
         Text = Config.Title or '';
         TextXAlignment = Enum.TextXAlignment.Left;
-        TextSize = 16;
-        Font = Enum.Font.GothamBold;
-        TextColor3 = Color3.fromRGB(220, 220, 220);
-        ZIndex = 3;
+        ZIndex = 1;
         Parent = Inner;
     });
-    
-    -- Hover эффект на заголовке
-    WindowLabel.InputBegan:Connect(function(Input)
-        if Input.UserInputType == Enum.UserInputType.MouseMovement then
-            TweenService:Create(WindowLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-                TextColor3 = Library.AccentColor,
-                TextSize = 17
-            }):Play()
-            
-            TweenService:Create(TopAccent, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-                Size = UDim2.new(1, 0, 0, 3)
-            }):Play()
-        end
-    end)
-    
-    WindowLabel.InputEnded:Connect(function(Input)
-        if Input.UserInputType == Enum.UserInputType.MouseMovement then
-            TweenService:Create(WindowLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-                TextColor3 = Color3.fromRGB(220, 220, 220),
-                TextSize = 16
-            }):Play()
-            
-            TweenService:Create(TopAccent, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-                Size = UDim2.new(1, 0, 0, 2)
-            }):Play()
-        end
-    end)
-    
-    -- MAIN SECTION (точно как у тебя, но темнее)
+
     local MainSectionOuter = Library:Create('Frame', {
-        BackgroundColor3 = Color3.fromRGB(22, 22, 26); -- Темнее Library.BackgroundColor
-        BorderColor3 = Color3.fromRGB(40, 40, 45); -- Тонкая рамка
-        BorderSizePixel = 1;
+        BackgroundColor3 = Library.BackgroundColor;
+        BorderColor3 = Library.OutlineColor;
         Position = UDim2.new(0, 8, 0, 25);
         Size = UDim2.new(1, -16, 1, -33);
         ZIndex = 1;
         Parent = Inner;
     });
-    
+
     Library:AddToRegistry(MainSectionOuter, {
         BackgroundColor3 = 'BackgroundColor';
         BorderColor3 = 'OutlineColor';
     });
-    
-    local MainCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 4);
-        Parent = MainSectionOuter;
-    });
-    
+
     local MainSectionInner = Library:Create('Frame', {
-        BackgroundColor3 = Color3.fromRGB(25, 25, 30); -- Чуть светлее
+        BackgroundColor3 = Library.BackgroundColor;
         BorderColor3 = Color3.new(0, 0, 0);
         BorderMode = Enum.BorderMode.Inset;
         Position = UDim2.new(0, 0, 0, 0);
@@ -4830,17 +4703,11 @@ function Library:CreateWindow(...)
         ZIndex = 1;
         Parent = MainSectionOuter;
     });
-    
+
     Library:AddToRegistry(MainSectionInner, {
         BackgroundColor3 = 'BackgroundColor';
     });
-    
-    local MainInnerCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 3);
-        Parent = MainSectionInner;
-    });
-    
-    -- TAB AREA (точно как у тебя)
+
     local TabArea = Library:Create('Frame', {
         BackgroundTransparency = 1;
         Position = UDim2.new(0, 8, 0, 8);
@@ -4848,90 +4715,64 @@ function Library:CreateWindow(...)
         ZIndex = 1;
         Parent = MainSectionInner;
     });
-    
+
     local TabListLayout = Library:Create('UIListLayout', {
         Padding = UDim.new(0, Config.TabPadding);
         FillDirection = Enum.FillDirection.Horizontal;
         SortOrder = Enum.SortOrder.LayoutOrder;
         Parent = TabArea;
     });
-    
-    -- TAB CONTAINER (точно как у тебя, но темнее)
+
     local TabContainer = Library:Create('Frame', {
-        BackgroundColor3 = Color3.fromRGB(28, 28, 33); -- Темнее Library.MainColor
-        BorderColor3 = Color3.fromRGB(40, 40, 45); -- Тонкая рамка
-        BorderSizePixel = 1;
+        BackgroundColor3 = Library.MainColor;
+        BorderColor3 = Library.OutlineColor;
         Position = UDim2.new(0, 8, 0, 30);
         Size = UDim2.new(1, -16, 1, -38);
         ZIndex = 2;
         Parent = MainSectionInner;
     });
     
+
     Library:AddToRegistry(TabContainer, {
         BackgroundColor3 = 'MainColor';
         BorderColor3 = 'OutlineColor';
     });
-    
-    local TabContainerCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 4);
-        Parent = TabContainer;
-    });
-    
+
     function Window:SetWindowTitle(Title)
         WindowLabel.Text = Title;
     end;
-    
+
     function Window:AddTab(Name)
         local Tab = {
             Groupboxes = {};
             Tabboxes = {};
         };
-        
+
         local TabButtonWidth = Library:GetTextBounds(Name, Library.Font, 16);
-        
-        -- TAB BUTTON (точно как у тебя, но с дизайном)
+
         local TabButton = Library:Create('Frame', {
-            BackgroundColor3 = Color3.fromRGB(20, 20, 25); -- Темнее Library.BackgroundColor
-            BorderColor3 = Color3.fromRGB(40, 40, 45); -- Тонкая рамка
-            BorderSizePixel = 1;
+            BackgroundColor3 = Library.BackgroundColor;
+            BorderColor3 = Library.OutlineColor;
             Size = UDim2.new(0, TabButtonWidth + 8 + 4, 1, 0);
             ZIndex = 1;
             Parent = TabArea;
         });
-        
+
         Library:AddToRegistry(TabButton, {
             BackgroundColor3 = 'BackgroundColor';
             BorderColor3 = 'OutlineColor';
         });
-        
-        local TabButtonCorner = Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 4);
-            Parent = TabButton;
-        });
-        
-        -- Градиент на кнопке таба
-        local TabGradient = Library:Create('UIGradient', {
-            Color = ColorSequence.new({
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(22, 22, 27)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(18, 18, 23))
-            });
-            Rotation = 90;
-            Parent = TabButton;
-        });
-        
+
         local TabButtonLabel = Library:CreateLabel({
             Position = UDim2.new(0, 0, 0, 0);
             Size = UDim2.new(1, 0, 1, -1);
             Text = Name;
-            TextSize = 13;
-            Font = Enum.Font.GothamMedium;
-            TextColor3 = Color3.fromRGB(160, 160, 160);
             ZIndex = 1;
             Parent = TabButton;
         });
-        
+
         local Blocker = Library:Create('Frame', {
-            BackgroundColor3 = Color3.fromRGB(28, 28, 33); -- Цвет контейнера
+            BackgroundColor3 = Library.MainColor;
             BorderSizePixel = 0;
             Position = UDim2.new(0, 0, 1, 0);
             Size = UDim2.new(1, 0, 0, 1);
@@ -4939,45 +4780,11 @@ function Library:CreateWindow(...)
             ZIndex = 3;
             Parent = TabButton;
         });
-        
+
         Library:AddToRegistry(Blocker, {
             BackgroundColor3 = 'MainColor';
         });
-        
-        local BlockerCorner = Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 4);
-            Parent = Blocker;
-        });
-        
-        -- Hover эффекты на табе
-        TabButton.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseMovement then
-                TweenService:Create(TabButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-                    BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-                }):Play()
-                
-                TweenService:Create(TabButtonLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-                    TextColor3 = Color3.fromRGB(200, 200, 200),
-                    TextSize = 14
-                }):Play()
-            end
-        end)
-        
-        TabButton.InputEnded:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseMovement then
-                if Blocker.BackgroundTransparency == 1 then
-                    TweenService:Create(TabButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-                        BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-                    }):Play()
-                    
-                    TweenService:Create(TabButtonLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-                        TextColor3 = Color3.fromRGB(160, 160, 160),
-                        TextSize = 13
-                    }):Play()
-                end
-            end
-        end)
-        
+
         local TabFrame = Library:Create('Frame', {
             Name = 'TabFrame',
             BackgroundTransparency = 1;
@@ -4987,7 +4794,7 @@ function Library:CreateWindow(...)
             ZIndex = 2;
             Parent = TabContainer;
         });
-        
+
         local LeftSide = Library:Create('ScrollingFrame', {
             BackgroundTransparency = 1;
             BorderSizePixel = 0;
@@ -5000,7 +4807,7 @@ function Library:CreateWindow(...)
             ZIndex = 2;
             Parent = TabFrame;
         });
-        
+
         local RightSide = Library:Create('ScrollingFrame', {
             BackgroundTransparency = 1;
             BorderSizePixel = 0;
@@ -5013,7 +4820,7 @@ function Library:CreateWindow(...)
             ZIndex = 2;
             Parent = TabFrame;
         });
-        
+
         Library:Create('UIListLayout', {
             Padding = UDim.new(0, 8);
             FillDirection = Enum.FillDirection.Vertical;
@@ -5021,7 +4828,7 @@ function Library:CreateWindow(...)
             HorizontalAlignment = Enum.HorizontalAlignment.Center;
             Parent = LeftSide;
         });
-        
+
         Library:Create('UIListLayout', {
             Padding = UDim.new(0, 8);
             FillDirection = Enum.FillDirection.Vertical;
@@ -5029,50 +4836,35 @@ function Library:CreateWindow(...)
             HorizontalAlignment = Enum.HorizontalAlignment.Center;
             Parent = RightSide;
         });
-        
+
         for _, Side in next, { LeftSide, RightSide } do
             Side:WaitForChild('UIListLayout'):GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
                 Side.CanvasSize = UDim2.fromOffset(0, Side.UIListLayout.AbsoluteContentSize.Y);
             end);
         end;
-        
+
         function Tab:ShowTab()
             for _, Tab in next, Window.Tabs do
                 Tab:HideTab();
             end;
-            
+
             Blocker.BackgroundTransparency = 0;
-            TabButton.BackgroundColor3 = Color3.fromRGB(28, 28, 33); -- Цвет контейнера
-            TabGradient.Enabled = false;
-            TabButtonLabel.TextColor3 = Color3.fromRGB(220, 220, 220);
+            TabButton.BackgroundColor3 = Library.MainColor;
             Library.RegistryMap[TabButton].Properties.BackgroundColor3 = 'MainColor';
-            
             TabFrame.Visible = true;
         end;
-        
+
         function Tab:HideTab()
             Blocker.BackgroundTransparency = 1;
-            TabButton.BackgroundColor3 = Color3.fromRGB(20, 20, 25);
-            TabGradient.Enabled = true;
-            TabButtonLabel.TextColor3 = Color3.fromRGB(160, 160, 160);
+            TabButton.BackgroundColor3 = Library.BackgroundColor;
             Library.RegistryMap[TabButton].Properties.BackgroundColor3 = 'BackgroundColor';
-            
             TabFrame.Visible = false;
         end;
-        
+
         function Tab:SetLayoutOrder(Position)
             TabButton.LayoutOrder = Position;
             TabListLayout:ApplyLayout();
         end;
-        
-        Tab.LeftSide = LeftSide;
-        Tab.RightSide = RightSide;
-        
-        Window.Tabs[Name] = Tab;
-        
-        return Tab;
-    end;
-end;
 
 -- MATCHA STYLE GROUPBOX
 -- Минималистичный, чистый дизайн как в скриншоте
