@@ -4640,6 +4640,9 @@ function Library:CreateWindow(...)
             TabListLayout:ApplyLayout();
         end;
 
+-- ПРЕМИУМ GROUPBOX С УЛУЧШЕННЫМ ДИЗАЙНОМ
+-- Градиенты, закругления, тени, hover эффекты
+
 local TweenService = game:GetService('TweenService')
 
 function Tab:AddGroupbox(Info)
@@ -4812,6 +4815,7 @@ function Tab:AddGroupbox(Info)
         BorderSizePixel = 0;
         Position = UDim2.new(0, 0, 0, 26);
         Size = UDim2.new(1, 0, 1, -26);
+        ClipsDescendants = true; -- Обрезаем контент который выходит за границы
         ZIndex = 4;
         Parent = BoxInner;
     });
@@ -4839,13 +4843,30 @@ function Tab:AddGroupbox(Info)
         Parent = ContentSection;
     });
     
-    local Container = Library:Create('Frame', {
+    -- SCROLLING FRAME для контента (чтобы можно было скроллить)
+    local ScrollFrame = Library:Create('ScrollingFrame', {
         BackgroundTransparency = 1;
-        Position = UDim2.new(0, 4, 0, 4); -- Меньше отступ
-        Size = UDim2.new(1, -8, 1, -8); -- Больше места для контента
-        ClipsDescendants = false; -- НЕ обрезаем контент
+        Position = UDim2.new(0, 0, 0, 0);
+        Size = UDim2.new(1, 0, 1, 0);
+        CanvasSize = UDim2.new(0, 0, 0, 0);
+        ScrollBarThickness = 4;
+        ScrollBarImageColor3 = Library.AccentColor;
+        BorderSizePixel = 0;
         ZIndex = 5;
         Parent = ContentSection;
+    });
+    
+    Library:AddToRegistry(ScrollFrame, {
+        ScrollBarImageColor3 = 'AccentColor';
+    });
+    
+    local Container = Library:Create('Frame', {
+        BackgroundTransparency = 1;
+        Position = UDim2.new(0, 4, 0, 4);
+        Size = UDim2.new(1, -8, 1, 0); -- Высота будет автоматически
+        ClipsDescendants = false;
+        ZIndex = 6;
+        Parent = ScrollFrame;
     });
     
     Library:Create('UIListLayout', {
@@ -4854,6 +4875,11 @@ function Tab:AddGroupbox(Info)
         Padding = UDim.new(0, 2);
         Parent = Container;
     });
+    
+    -- Автоматическое обновление размера canvas при изменении контента
+    Container:GetPropertyChangedSignal('AbsoluteSize'):Connect(function()
+        ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, Container.AbsoluteSize.Y + 8);
+    end);
     
     -- HOVER ЭФФЕКТ на заголовке
     local isHovering = false
@@ -4898,16 +4924,38 @@ function Tab:AddGroupbox(Info)
     end)
     
     function Groupbox:Resize()
-        local Size = 0;
+        local ContentSize = 0;
+        
+        -- Считаем размер всех видимых элементов
         for _, Element in next, Groupbox.Container:GetChildren() do
             if (not Element:IsA('UIListLayout')) and Element.Visible then
-                Size = Size + Element.Size.Y.Offset;
+                ContentSize = ContentSize + Element.Size.Y.Offset;
             end;
         end;
         
-        -- Добавляем больше места для контента
-        BoxOuter.Size = UDim2.new(1, 0, 0, 26 + Size + 8 + 4);
-        ContentSection.Size = UDim2.new(1, 0, 0, Size + 8);
+        -- Добавляем padding между элементами (2px * количество элементов)
+        local ElementCount = 0;
+        for _, Element in next, Groupbox.Container:GetChildren() do
+            if (not Element:IsA('UIListLayout')) and Element.Visible then
+                ElementCount = ElementCount + 1;
+            end;
+        end;
+        if ElementCount > 1 then
+            ContentSize = ContentSize + (2 * (ElementCount - 1));
+        end;
+        
+        -- Минимальная высота контента
+        local MinContentHeight = 50;
+        ContentSize = math.max(ContentSize, MinContentHeight);
+        
+        -- Максимальная высота groupbox (чтобы не был слишком большой)
+        local MaxContentHeight = 500;
+        local ActualContentHeight = math.min(ContentSize, MaxContentHeight);
+        
+        -- Обновляем размеры
+        BoxOuter.Size = UDim2.new(1, 0, 0, 26 + ActualContentHeight + 8);
+        ContentSection.Size = UDim2.new(1, 0, 0, ActualContentHeight + 8);
+        ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, ContentSize + 8);
     end;
     
     Groupbox.Container = Container;
