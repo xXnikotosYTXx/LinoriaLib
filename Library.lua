@@ -2218,7 +2218,7 @@ function Funcs:AddSlider(Idx, Info)
     local SliderOuter = Library:Create('Frame', {
         BackgroundColor3 = Color3.new(0, 0, 0);
         BorderColor3 = Color3.new(0, 0, 0);
-        Size = UDim2.new(1, -4, 0, 13); -- Возвращаем тонкую полосу как в оригинале
+        Size = UDim2.new(1, -4, 0, 8); -- Очень тонкий как палка
         ZIndex = 5;
         Parent = Container;
     });
@@ -2229,7 +2229,7 @@ function Funcs:AddSlider(Idx, Info)
     
     -- Добавляем скругленные углы для внешней рамки
     local outerCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 6); -- Уменьшено для тонкой полосы
+        CornerRadius = UDim.new(0, 4); -- Для тонкой палки
         Parent = SliderOuter;
     });
     
@@ -2249,7 +2249,7 @@ function Funcs:AddSlider(Idx, Info)
     
     -- Добавляем скругленные углы для внутренней части
     local innerCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 5); -- Уменьшено для тонкой полосы
+        CornerRadius = UDim.new(0, 3); -- Для тонкой палки
         Parent = SliderInner;
     });
     
@@ -2268,7 +2268,7 @@ function Funcs:AddSlider(Idx, Info)
     
     -- Добавляем скругленные углы для заливки
     local fillCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 5); -- Уменьшено для тонкой полосы
+        CornerRadius = UDim.new(0, 3); -- Для тонкой палки
         Parent = Fill;
     });
     
@@ -2301,26 +2301,41 @@ function Funcs:AddSlider(Idx, Info)
         Parent = Handle;
     });
     
-    -- Создаем текст слева (название слайдера)
-    local SliderLabel = Library:CreateLabel({
-        Size = UDim2.new(0, 150, 1, 0);
-        Position = UDim2.new(0, -155, 0, 0);
-        TextSize = 14;
-        Text = Info.Text;
-        TextXAlignment = Enum.TextXAlignment.Left;
-        ZIndex = 9;
-        Parent = SliderOuter;
-    });
+    -- Создаем текст слева (название слайдера) - только для НЕ compact режима
+    local SliderLabel;
+    if not Info.Compact then
+        SliderLabel = Library:CreateLabel({
+            Size = UDim2.new(0, 150, 1, 0);
+            Position = UDim2.new(0, -155, 0, 0);
+            TextSize = 14;
+            Text = Info.Text;
+            TextXAlignment = Enum.TextXAlignment.Left;
+            ZIndex = 9;
+            Parent = SliderOuter;
+        });
+    end
     
-    -- Создаем текст справа (значения)
-    local ValueLabel = Library:CreateLabel({
-        Size = UDim2.new(0, 80, 1, 0);
-        Position = UDim2.new(1, 5, 0, 0);
-        TextSize = 14;
-        Text = '2000';
-        TextXAlignment = Enum.TextXAlignment.Right;
+    -- Создаем текст справа (значения) - только для НЕ compact режима
+    local ValueLabel;
+    if not Info.Compact then
+        ValueLabel = Library:CreateLabel({
+            Size = UDim2.new(0, 80, 1, 0);
+            Position = UDim2.new(1, 5, 0, 0);
+            TextSize = 14;
+            Text = '2000';
+            TextXAlignment = Enum.TextXAlignment.Right;
+            ZIndex = 9;
+            Parent = SliderOuter;
+        });
+    end
+    
+    -- Создаем основной текст НА слайдере (для compact и обычного режима)
+    local DisplayLabel = Library:CreateLabel({
+        Size = UDim2.new(1, 0, 1, 0);
+        TextSize = 12;
+        Text = 'Infinite';
         ZIndex = 9;
-        Parent = SliderOuter;
+        Parent = SliderInner;
     });
     
     Library:OnHighlight(SliderOuter, SliderOuter,
@@ -2340,14 +2355,21 @@ function Funcs:AddSlider(Idx, Info)
     function Slider:Display()
         local Suffix = Info.Suffix or '';
         
-        -- Обновляем текст справа в формате "текущее | максимальное"
         if Info.Compact then
-            SliderLabel.Text = Info.Text .. ': ' .. Slider.Value .. Suffix;
-            ValueLabel.Text = tostring(Slider.Value .. Suffix);
+            -- Compact режим: показываем название и значение НА слайдере
+            DisplayLabel.Text = Info.Text .. ': ' .. Slider.Value .. Suffix;
         elseif Info.HideMax then
-            ValueLabel.Text = tostring(Slider.Value .. Suffix);
+            -- HideMax режим: только текущее значение на слайдере
+            DisplayLabel.Text = Slider.Value .. Suffix;
+            if ValueLabel then
+                ValueLabel.Text = Slider.Value .. Suffix;
+            end
         else
-            ValueLabel.Text = Slider.Value .. Suffix .. ' | ' .. Slider.Max .. Suffix;
+            -- Обычный режим: текущее/максимальное на слайдере, и справа тоже
+            DisplayLabel.Text = Slider.Value .. Suffix .. '/' .. Slider.Max .. Suffix;
+            if ValueLabel then
+                ValueLabel.Text = Slider.Value .. Suffix .. ' | ' .. Slider.Max .. Suffix;
+            end
         end
         
         local X = math.ceil(Library:MapValue(Slider.Value, Slider.Min, Slider.Max, 0, Slider.MaxSize));
@@ -2386,25 +2408,59 @@ function Funcs:AddSlider(Idx, Info)
         Library:SafeCallback(Slider.Changed, Slider.Value);
     end;
     
-    -- Обработка клика по ValueLabel для ввода чисел
-    ValueLabel.InputBegan:Connect(function(Input)
+    -- Обработка клика по ValueLabel для ввода чисел (только если ValueLabel существует)
+    if ValueLabel then
+        ValueLabel.InputBegan:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+                -- Создаем временное текстовое поле для ввода
+                local tempInput = Library:Create('TextBox', {
+                    BackgroundTransparency = 1;
+                    Size = ValueLabel.Size;
+                    Position = ValueLabel.Position;
+                    TextSize = ValueLabel.TextSize;
+                    TextColor3 = ValueLabel.TextColor3;
+                    TextXAlignment = ValueLabel.TextXAlignment;
+                    Text = tostring(Slider.Value);
+                    ZIndex = 10;
+                    Parent = ValueLabel.Parent;
+                    Font = Enum.Font.Code;
+                    ClearTextOnFocus = true;
+                });
+                
+                ValueLabel.Visible = false;
+                tempInput:CaptureFocus();
+                
+                tempInput.FocusLost:Connect(function(enterPressed)
+                    local inputValue = tonumber(tempInput.Text);
+                    if inputValue then
+                        Slider:SetValue(inputValue);
+                        Library:AttemptSave();
+                    end
+                    ValueLabel.Visible = true;
+                    tempInput:Destroy();
+                end);
+            end
+        end);
+    end
+    
+    -- Также добавляем возможность клика по DisplayLabel для ввода
+    DisplayLabel.InputBegan:Connect(function(Input)
         if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-            -- Создаем временное текстовое поле для ввода
             local tempInput = Library:Create('TextBox', {
                 BackgroundTransparency = 1;
-                Size = ValueLabel.Size;
-                Position = ValueLabel.Position;
-                TextSize = ValueLabel.TextSize;
-                TextColor3 = ValueLabel.TextColor3;
-                TextXAlignment = ValueLabel.TextXAlignment;
+                Size = DisplayLabel.Size;
+                Position = DisplayLabel.Position;
+                TextSize = DisplayLabel.TextSize;
+                TextColor3 = DisplayLabel.TextColor3;
+                TextXAlignment = DisplayLabel.TextXAlignment;
                 Text = tostring(Slider.Value);
                 ZIndex = 10;
-                Parent = ValueLabel.Parent;
+                Parent = DisplayLabel.Parent;
                 Font = Enum.Font.Code;
                 ClearTextOnFocus = true;
             });
             
-            ValueLabel.Visible = false;
+            DisplayLabel.Visible = false;
             tempInput:CaptureFocus();
             
             tempInput.FocusLost:Connect(function(enterPressed)
@@ -2413,7 +2469,7 @@ function Funcs:AddSlider(Idx, Info)
                     Slider:SetValue(inputValue);
                     Library:AttemptSave();
                 end
-                ValueLabel.Visible = true;
+                DisplayLabel.Visible = true;
                 tempInput:Destroy();
             end);
         end
