@@ -1361,31 +1361,44 @@ function Funcs:AddKeyPicker(Idx, Info)
 
             wait(0.2);
 
-            local Event;
-            Event = InputService.InputBegan:Connect(function(Input)
-                local Key;
+local Event;
+Event = InputService.InputBegan:Connect(function(Input)
+    local Key;
 
-                if Input.UserInputType == Enum.UserInputType.Keyboard then
-                    Key = Input.KeyCode.Name;
-                elseif Input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    Key = 'MB1';
-                elseif Input.UserInputType == Enum.UserInputType.MouseButton2 then
-                    Key = 'MB2';
-                end;
+    if Input.UserInputType == Enum.UserInputType.Keyboard then
+        Key = Input.KeyCode.Name;
+    elseif Input.UserInputType == Enum.UserInputType.MouseButton1 then
+        Key = 'MB1';
+    elseif Input.UserInputType == Enum.UserInputType.MouseButton2 then
+        Key = 'MB2';
+    end;
 
-                Break = true;
-                Picking = false;
+    Break = true;
+    Picking = false;
 
-                DisplayLabel.Text = Key;
-                KeyPicker.Value = Key;
+    DisplayLabel.Text = Key;
+    KeyPicker.Value = Key;
 
-                Library:SafeCallback(KeyPicker.ChangedCallback, Input.KeyCode or Input.UserInputType)
-                Library:SafeCallback(KeyPicker.Changed, Input.KeyCode or Input.UserInputType)
+    -- Обновляем кнопку в WaveSystem
+    if Info.Text and Library.WaveSystem then
+        for _, item in ipairs(Library.WaveSystem.KeybindItems) do
+            if item.Name == Info.Text then
+                item.Key = Key
+                if item.KeyLabel then
+                    item.KeyLabel.Text = Key
+                end
+                break
+            end
+        end
+    end
 
-                Library:AttemptSave();
+    Library:SafeCallback(KeyPicker.ChangedCallback, Input.KeyCode or Input.UserInputType)
+    Library:SafeCallback(KeyPicker.Changed, Input.KeyCode or Input.UserInputType)
 
-                Event:Disconnect();
-            end);
+    Library:AttemptSave();
+
+    Event:Disconnect();
+end);
         elseif Input.UserInputType == Enum.UserInputType.MouseButton2 and not Library:MouseIsOverOpenedFrame() then
             ModeSelectOuter.Visible = true;
         end;
