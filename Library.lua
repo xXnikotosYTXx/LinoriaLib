@@ -4307,28 +4307,31 @@ end
 -- ============================================
 -- СОЗДАНИЕ КЕЙБИНДА
 -- ============================================
+-- ============================================
+-- СОЗДАНИЕ КЕЙБИНДА
+-- ============================================
 function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
     local keybindFrame = Library:Create('Frame', {
         BackgroundTransparency = 1;
-        Size = UDim2.new(1, 0, 0, 15);
+        Size = UDim2.new(1, 0, 0, 16);
         ZIndex = 103;
         Parent = Library.KeybindContainer;
     });
-    
+
     local customFont = Enum.Font.GothamBold
     local iconLabel = nil
-    local nameStartX = 0
-    
+
+    -- Иконка (опционально)
     if iconName then
         local iconData = Library:GetIcon(iconName)
         if type(iconData) == "table" and iconData.Url then
             iconLabel = Library:Create('ImageLabel', {
-                Position = UDim2.new(0, 0, 0, 1);
+                Position = UDim2.new(0, 0, 0.5, -6);
                 Size = UDim2.new(0, 12, 0, 12);
                 Image = iconData.Url;
                 ImageRectOffset = iconData.ImageRectOffset;
                 ImageRectSize = iconData.ImageRectSize;
-                ImageColor3 = Color3.fromRGB(120, 120, 120);
+                ImageColor3 = Color3.fromRGB(140, 140, 140);
                 BackgroundTransparency = 1;
                 ZIndex = 104;
                 Parent = keybindFrame;
@@ -4336,64 +4339,79 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
         else
             iconLabel = Library:CreateLabel({
                 Position = UDim2.new(0, 0, 0, 0);
-                Size = UDim2.new(0, 12, 1, 0);
-                Text = type(iconData) == "string" and iconData or "🔧";
-                TextSize = 10;
-                TextColor3 = Color3.fromRGB(120, 120, 120);
+                Size = UDim2.new(0, 14, 1, 0);
+                Text = type(iconData) == "string" and iconData or "•";
+                TextSize = 11;
+                TextColor3 = Color3.fromRGB(140, 140, 140);
                 TextXAlignment = Enum.TextXAlignment.Center;
                 Font = customFont;
                 ZIndex = 104;
                 Parent = keybindFrame;
             });
         end
-        nameStartX = 16
     end
-    
-    local containerWidth = 180
-    local availableWidth = containerWidth - nameStartX
 
-    -- Название кейбинда
+    local iconWidth = iconName and 16 or 0
+
+    -- Название — левая часть, обрезается если длинное
     local nameLabel = Library:CreateLabel({
-        Position = UDim2.new(0, nameStartX, 0, 0);
-        Size = UDim2.new(0, availableWidth * 0.4, 1, 0);
+        Position = UDim2.new(0, iconWidth, 0, 0);
+        Size = UDim2.new(0, 95, 1, 0);
         Text = name;
         TextSize = 10;
         TextColor3 = Library.KeybindNameColor;
         TextXAlignment = Enum.TextXAlignment.Left;
+        TextTruncate = Enum.TextTruncate.AtEnd;
         Font = customFont;
         ZIndex = 104;
         Parent = keybindFrame;
     });
 
-    -- Клавиша
+    -- Бейдж клавиши — выделяется на фоне названия
+    local keyBadge = Library:Create('Frame', {
+        Position = UDim2.new(1, -56, 0.5, -7);
+        Size = UDim2.new(0, 30, 0, 14);
+        BackgroundColor3 = Library.MainColor;
+        BorderColor3 = Library.AccentColor;
+        BorderMode = Enum.BorderMode.Inset;
+        ZIndex = 104;
+        Parent = keybindFrame;
+    });
+
+    Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 3);
+        Parent = keyBadge;
+    });
+
     local keyLabel = Library:CreateLabel({
-        Position = UDim2.new(0, nameStartX + availableWidth * 0.55, 0, 0);
-        Size = UDim2.new(0, availableWidth * 0.2, 1, 0);
+        Size = UDim2.new(1, 0, 1, 0);
         Text = key;
         TextSize = 9;
-        TextColor3 = Library.KeybindKeyColor;
+        TextColor3 = Library.AccentColor;
         TextXAlignment = Enum.TextXAlignment.Center;
         Font = customFont;
-        ZIndex = 104;
-        Parent = keybindFrame;
+        ZIndex = 105;
+        Parent = keyBadge;
     });
 
-    -- ON/OFF состояние
+    -- ON/OFF — крайний правый, буквы через wave
     local stateText = state and "ON" or "OFF"
     local stateLetters = {}
-    local stateStartX = nameStartX + availableWidth * 0.85
-    
+    -- "ON" = 2 буквы * 7px = 14px, "OFF" = 3 буквы * 7px = 21px
+    -- ставим так чтобы правый край был у -2px от правого края фрейма
+    local stateStartX = -23
+
     for i = 1, #stateText do
         local char = stateText:sub(i, i)
-        
+
         local letterFrame = Library:Create('Frame', {
             BackgroundTransparency = 1;
-            Position = UDim2.new(0, stateStartX + (i-1) * 8, 0, 0);
-            Size = UDim2.new(0, 8, 1, 0);
+            Position = UDim2.new(1, stateStartX + (i - 1) * 7, 0, 0);
+            Size = UDim2.new(0, 7, 1, 0);
             ZIndex = 104;
             Parent = keybindFrame;
         });
-        
+
         local letterLabel = Library:CreateLabel({
             Size = UDim2.new(1, 0, 1, 0);
             Text = char;
@@ -4404,12 +4422,12 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
             ZIndex = 105;
             Parent = letterFrame;
         });
-        
+
         stateLetters[i] = {
             Frame = letterFrame,
             Label = letterLabel,
-            OriginalPos = stateStartX + (i-1) * 8,
-            OriginalSize = 8,
+            OriginalPos = stateStartX + (i - 1) * 7,
+            OriginalSize = 7,
             Character = char,
         }
     end
@@ -4418,6 +4436,7 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
         Frame = keybindFrame,
         IconLabel = iconLabel,
         NameLabel = nameLabel,
+        KeyBadge = keyBadge,
         KeyLabel = keyLabel,
         StateLetters = stateLetters,
         Name = name,
@@ -4640,28 +4659,25 @@ function Library:UpdateKeybindState(name, state)
             local oldState = item.State
             item.State = state
 
-            -- Пересоздаем буквы ON/OFF
             for _, letter in pairs(item.StateLetters) do
                 letter.Frame:Destroy()
             end
 
             local stateText = state and "ON" or "OFF"
             local stateLetters = {}
-            local containerWidth = 180
-            local availableWidth = containerWidth - (item.Icon and 16 or 0)
-            local stateStartX = (item.Icon and 16 or 0) + availableWidth * 0.85
+            local stateStartX = -23
 
             for i = 1, #stateText do
                 local char = stateText:sub(i, i)
-                
+
                 local letterFrame = Library:Create('Frame', {
                     BackgroundTransparency = 1;
-                    Position = UDim2.new(0, stateStartX + (i-1) * 8, 0, 0);
-                    Size = UDim2.new(0, 8, 1, 0);
+                    Position = UDim2.new(1, stateStartX + (i - 1) * 7, 0, 0);
+                    Size = UDim2.new(0, 7, 1, 0);
                     ZIndex = 104;
                     Parent = item.Frame;
                 });
-                
+
                 local letterLabel = Library:CreateLabel({
                     Size = UDim2.new(1, 0, 1, 0);
                     Text = char;
@@ -4672,49 +4688,48 @@ function Library:UpdateKeybindState(name, state)
                     ZIndex = 105;
                     Parent = letterFrame;
                 });
-                
+
                 stateLetters[i] = {
                     Frame = letterFrame,
                     Label = letterLabel,
-                    OriginalPos = stateStartX + (i-1) * 8,
-                    OriginalSize = 8,
+                    OriginalPos = stateStartX + (i - 1) * 7,
+                    OriginalSize = 7,
                     Character = char,
                 }
             end
-            
+
             item.StateLetters = stateLetters
 
-            -- Анимация подсветки при изменении состояния
             if oldState ~= state then
                 local highlightColor = state and Color3.fromRGB(150, 255, 150) or Color3.fromRGB(255, 150, 150)
-                local normalColor = Library.KeybindNameColor
-                
+
                 TweenService:Create(item.NameLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                    TextColor3 = highlightColor,
-                    TextSize = 11,
+                    TextColor3 = highlightColor;
                 }):Play()
-                
-                TweenService:Create(item.KeyLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                    TextColor3 = highlightColor,
-                    TextSize = 10,
-                }):Play()
-                
+
+                -- Бейдж клавиши подсвечивается тоже
+                if item.KeyBadge then
+                    TweenService:Create(item.KeyBadge, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        BackgroundColor3 = highlightColor;
+                    }):Play()
+                end
+
                 task.delay(0.5, function()
                     TweenService:Create(item.NameLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                        TextColor3 = normalColor,
-                        TextSize = 10,
+                        TextColor3 = Library.KeybindNameColor;
                     }):Play()
-                    
-                    TweenService:Create(item.KeyLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                        TextColor3 = Library.KeybindKeyColor,
-                        TextSize = 9,
-                    }):Play()
+
+                    if item.KeyBadge then
+                        TweenService:Create(item.KeyBadge, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                            BackgroundColor3 = Library.MainColor;
+                        }):Play()
+                    end
                 end)
             end
             break
         end
     end
-end;
+end
 -- ============================================
 -- ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ УПРАВЛЕНИЯ ВОЛНАМИ
 -- ============================================
