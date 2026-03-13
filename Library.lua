@@ -4307,9 +4307,6 @@ end
 -- ============================================
 -- СОЗДАНИЕ КЕЙБИНДА
 -- ============================================
--- ============================================
--- СОЗДАНИЕ КЕЙБИНДА
--- ============================================
 function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
     local keybindFrame = Library:Create('Frame', {
         BackgroundTransparency = 1;
@@ -4321,7 +4318,6 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
     local customFont = Enum.Font.GothamBold
     local iconLabel = nil
 
-    -- Иконка (опционально)
     if iconName then
         local iconData = Library:GetIcon(iconName)
         if type(iconData) == "table" and iconData.Url then
@@ -4353,7 +4349,7 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
 
     local iconWidth = iconName and 16 or 0
 
-    -- Название — левая часть, обрезается если длинное
+    -- Название
     local nameLabel = Library:CreateLabel({
         Position = UDim2.new(0, iconWidth, 0, 0);
         Size = UDim2.new(0, 95, 1, 0);
@@ -4367,7 +4363,7 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
         Parent = keybindFrame;
     });
 
-    -- Бейдж клавиши — выделяется на фоне названия
+    -- Бейдж клавиши
     local keyBadge = Library:Create('Frame', {
         Position = UDim2.new(1, -56, 0.5, -7);
         Size = UDim2.new(0, 30, 0, 14);
@@ -4394,72 +4390,49 @@ function Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
         Parent = keyBadge;
     });
 
-    -- ON/OFF — крайний правый, буквы через wave
-    local stateText = state and "ON" or "OFF"
-    local stateLetters = {}
-    -- "ON" = 2 буквы * 7px = 14px, "OFF" = 3 буквы * 7px = 21px
-    -- ставим так чтобы правый край был у -2px от правого края фрейма
-    local stateStartX = -23
-
-    for i = 1, #stateText do
-        local char = stateText:sub(i, i)
-
-        local letterFrame = Library:Create('Frame', {
-            BackgroundTransparency = 1;
-            Position = UDim2.new(1, stateStartX + (i - 1) * 7, 0, 0);
-            Size = UDim2.new(0, 7, 1, 0);
-            ZIndex = 104;
-            Parent = keybindFrame;
-        });
-
-        local letterLabel = Library:CreateLabel({
-            Size = UDim2.new(1, 0, 1, 0);
-            Text = char;
-            TextSize = 10;
-            TextColor3 = state and Library.KeybindStateOnColor or Library.KeybindStateOffColor;
-            TextXAlignment = Enum.TextXAlignment.Center;
-            Font = customFont;
-            ZIndex = 105;
-            Parent = letterFrame;
-        });
-
-        stateLetters[i] = {
-            Frame = letterFrame,
-            Label = letterLabel,
-            OriginalPos = stateStartX + (i - 1) * 7,
-            OriginalSize = 7,
-            Character = char,
-        }
-    end
+    -- ON/OFF — один лейбл, без волны
+    local stateLabel = Library:CreateLabel({
+        Position = UDim2.new(1, -24, 0, 0);
+        Size = UDim2.new(0, 22, 1, 0);
+        Text = state and "ON" or "OFF";
+        TextSize = 10;
+        TextColor3 = state and Library.KeybindStateOnColor or Library.KeybindStateOffColor;
+        TextXAlignment = Enum.TextXAlignment.Right;
+        Font = customFont;
+        ZIndex = 105;
+        Parent = keybindFrame;
+    });
 
     table.insert(self.KeybindItems, {
-        Frame = keybindFrame,
-        IconLabel = iconLabel,
-        NameLabel = nameLabel,
-        KeyBadge = keyBadge,
-        KeyLabel = keyLabel,
-        StateLetters = stateLetters,
-        Name = name,
-        Key = key,
-        State = state,
-        Icon = iconName,
+        Frame = keybindFrame;
+        IconLabel = iconLabel;
+        NameLabel = nameLabel;
+        KeyBadge = keyBadge;
+        KeyLabel = keyLabel;
+        StateLabel = stateLabel;
+        StateLetters = {};
+        Name = name;
+        Key = key;
+        State = state;
+        Icon = iconName;
     })
 
     self:UpdateKeybindVisibility()
     return keybindFrame
 end
+
 -- ============================================
 -- ОБНОВЛЕНИЕ РАЗМЕРА КЕЙБИНДОВ
 -- ============================================
 function Library.WaveSystem:UpdateKeybindVisibility()
     local keybindCount = #self.KeybindItems
-    
+
     if keybindCount > 0 then
         local newHeight = 26 + (keybindCount * 16.5)
         TweenService:Create(Library.KeybindFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
             Size = UDim2.new(0, 200, 0, newHeight)
         }):Play()
-        
+
         for i, item in ipairs(self.KeybindItems) do
             if item.IconLabel then
                 if item.IconLabel.ClassName == "ImageLabel" then
@@ -4470,10 +4443,9 @@ function Library.WaveSystem:UpdateKeybindVisibility()
             end
             item.NameLabel.TextTransparency = 1
             item.KeyLabel.TextTransparency = 1
-            for _, letter in pairs(item.StateLetters) do
-                letter.Label.TextTransparency = 1
-            end
-            
+            if item.StateLabel then item.StateLabel.TextTransparency = 1 end
+            if item.KeyBadge then item.KeyBadge.BackgroundTransparency = 1 end
+
             task.delay(i * 0.05, function()
                 if item.IconLabel then
                     if item.IconLabel.ClassName == "ImageLabel" then
@@ -4486,18 +4458,24 @@ function Library.WaveSystem:UpdateKeybindVisibility()
                         }):Play()
                     end
                 end
-                
+
                 TweenService:Create(item.NameLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
                     TextTransparency = 0
                 }):Play()
-                
+
                 TweenService:Create(item.KeyLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
                     TextTransparency = 0
                 }):Play()
-                
-                for _, letter in pairs(item.StateLetters) do
-                    TweenService:Create(letter.Label, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+
+                if item.StateLabel then
+                    TweenService:Create(item.StateLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
                         TextTransparency = 0
+                    }):Play()
+                end
+
+                if item.KeyBadge then
+                    TweenService:Create(item.KeyBadge, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        BackgroundTransparency = 0
                     }):Play()
                 end
             end)
@@ -4510,137 +4488,102 @@ function Library.WaveSystem:UpdateKeybindVisibility()
 end
 
 -- ============================================
--- ЗАПУСК И ОСТАНОВКА
+-- ОБНОВЛЕНИЕ ВОЛН (без волны на ON/OFF)
 -- ============================================
-function Library.WaveSystem:Start()
-    if self.IsAnimating then return end
-    
-    self:CreateElements()
-    self:CreateKeybindHeader()
-    
-    self.IsAnimating = true
-    self.FrameCounter = 0
-    
-    self.Connections.Wave = RunService.Heartbeat:Connect(function()
-        self:UpdateWaves()
-    end)
-    
-    print("🌊 Волновая система запущена!")
-end
+function Library.WaveSystem:UpdateWaves()
+    if not self.IsAnimating then return end
+    if not self.Container or not self.Container.Parent then return end
 
-function Library.WaveSystem:Stop()
-    self.IsAnimating = false
-    
-    for _, connection in pairs(self.Connections) do
-        if connection then
-            connection:Disconnect()
-        end
+    local currentTime = tick()
+    if self.LastUpdateTime and (currentTime - self.LastUpdateTime) < 0.016 then
+        return
     end
-    self.Connections = {}
+    self.LastUpdateTime = currentTime
+
+    self.FrameCounter = self.FrameCounter + 1
+
+    self.ProjectWave.pos = self.ProjectWave.pos + self.ProjectWave.speed
+    self.NicknameWave.pos = self.NicknameWave.pos + self.NicknameWave.speed
+    self.FPSWave.pos = self.FPSWave.pos + self.FPSWave.speed
+    self.PingWave.pos = self.PingWave.pos + self.PingWave.speed
+    self.TimeWave.pos = self.TimeWave.pos + self.TimeWave.speed
+    self.KeybindHeaderWave.pos = self.KeybindHeaderWave.pos + self.KeybindHeaderWave.speed
+
+    local resetBuffer = 4
+    if self.ProjectWave.pos > #self.ProjectLetters + resetBuffer then self.ProjectWave.pos = -resetBuffer end
+    if self.NicknameWave.pos > #self.NicknameLetters + resetBuffer then self.NicknameWave.pos = -resetBuffer end
+    if self.FPSWave.pos > #self.FPSLetters + resetBuffer then self.FPSWave.pos = -resetBuffer end
+    if self.PingWave.pos > #self.PingLetters + resetBuffer then self.PingWave.pos = -resetBuffer end
+    if self.TimeWave.pos > #self.TimeLetters + resetBuffer then self.TimeWave.pos = -resetBuffer end
+    if self.KeybindHeaderWave.pos > #self.KeybindHeaderLetters + resetBuffer then self.KeybindHeaderWave.pos = -resetBuffer end
+
+    pcall(function()
+        if #self.ProjectLetters > 0 then
+            self:ApplyWave(self.ProjectLetters, self.ProjectWave, Color3.fromRGB(220, 150, 255), Library.WatermarkProjectColor)
+        end
+    end)
+
+    pcall(function()
+        if #self.NicknameLetters > 0 then
+            self:ApplyWave(self.NicknameLetters, self.NicknameWave, Color3.fromRGB(220, 220, 220), Library.WatermarkNicknameColor)
+        end
+    end)
+
+    pcall(function()
+        if #self.FPSLetters > 0 then
+            self:ApplyWaveWithColors(self.FPSLetters, self.FPSWave)
+        end
+    end)
+
+    pcall(function()
+        if #self.PingLetters > 0 then
+            self:ApplyWaveWithColors(self.PingLetters, self.PingWave)
+        end
+    end)
+
+    pcall(function()
+        if #self.TimeLetters > 0 then
+            self:ApplyWave(self.TimeLetters, self.TimeWave, Color3.fromRGB(160, 160, 160), Library.WatermarkTimeColor)
+        end
+    end)
+
+    pcall(function()
+        if #self.KeybindHeaderLetters > 0 then
+            self:ApplyWave(self.KeybindHeaderLetters, self.KeybindHeaderWave, Color3.fromRGB(255, 255, 255), Library.KeybindHeaderColor)
+        end
+    end)
+
+    -- Анимация иконки palette
+    pcall(function()
+        if self.PaletteIcon and self.PaletteIcon.Parent then
+            local pulse = math.sin(tick() * 2) * 0.1 + 1
+            if self.PaletteIcon.ClassName == "ImageLabel" then
+                local colorIntensity = math.sin(tick() * 1.5) * 0.3 + 0.7
+                TweenService:Create(self.PaletteIcon, TweenInfo.new(0.5, Enum.EasingStyle.Sine), {
+                    Size = UDim2.new(0, 16 * pulse, 0, 16 * pulse),
+                    ImageColor3 = Color3.fromRGB(
+                        Library.KeybindIconColor.R * 255 * colorIntensity,
+                        Library.KeybindIconColor.G * 255 * colorIntensity,
+                        Library.KeybindIconColor.B * 255
+                    ),
+                }):Play()
+            else
+                self.PaletteIcon.TextSize = 14 * pulse
+            end
+        end
+    end)
+
+    if self.FrameCounter % self.UpdateInterval == 0 then
+        self:UpdateStats()
+    end
 end
 
 -- ============================================
 -- ФУНКЦИИ LIBRARY
 -- ============================================
-function Library:SetWatermarkVisibility(Bool)
-    if Library.Watermark then
-        if Bool then
-            Library.Watermark.Visible = true;
-            Library.Watermark.Size = UDim2.new(0, 50, 0, 30)
-            Library.Watermark.Position = UDim2.new(0, 100 + 200, 0, -32)
-            
-            TweenService:Create(Library.Watermark, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-                Size = UDim2.new(0, 600, 0, 30),
-                Position = UDim2.new(0, 100, 0, -32)
-            }):Play()
-            
-            Library.WaveSystem:Start()
-        else
-            TweenService:Create(Library.Watermark, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
-                Size = UDim2.new(0, 50, 0, 30),
-                Position = UDim2.new(0, 100 + 200, 0, -32)
-            }):Play()
-            
-            task.delay(0.4, function()
-                Library.Watermark.Visible = false;
-            end)
-            
-            Library.WaveSystem:Stop()
-        end
-    end
-end;
-
-function Library:SetWatermark(Text, EnableWave)
-    if EnableWave ~= false then
-        Library.WaveSystem:Start()
-        Library:SetWatermarkVisibility(true)
-    elseif Library.Watermark then
-        Library.Watermark.Visible = true
-    end
-end;
-function Library:SetKeybindVisibility(Bool)
-    if Library.KeybindFrame then
-        if Bool then
-            Library.KeybindFrame.Visible = true;
-            Library.KeybindFrame.Size = UDim2.new(0, 50, 0, 10)
-            
-            for _, child in pairs(Library.KeybindFrame:GetDescendants()) do
-                if child:IsA("TextLabel") then
-                    child.TextTransparency = 1
-                elseif child:IsA("ImageLabel") then
-                    child.ImageTransparency = 1
-                end
-            end
-            
-            TweenService:Create(Library.KeybindFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-                Size = UDim2.new(0, 200, 0, 24)
-            }):Play()
-            
-            task.delay(0.2, function()
-                for _, child in pairs(Library.KeybindFrame:GetDescendants()) do
-                    if child:IsA("TextLabel") then
-                        TweenService:Create(child, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-                            TextTransparency = 0
-                        }):Play()
-                    elseif child:IsA("ImageLabel") then
-                        TweenService:Create(child, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-                            ImageTransparency = 0
-                        }):Play()
-                    end
-                end
-            end)
-            
-            Library.WaveSystem:CreateKeybindHeader()
-            Library.WaveSystem:UpdateKeybindVisibility()
-        else
-            for _, child in pairs(Library.KeybindFrame:GetDescendants()) do
-                if child:IsA("TextLabel") then
-                    TweenService:Create(child, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-                        TextTransparency = 1
-                    }):Play()
-                elseif child:IsA("ImageLabel") then
-                    TweenService:Create(child, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-                        ImageTransparency = 1
-                    }):Play()
-                end
-            end
-            
-            task.delay(0.2, function()
-                TweenService:Create(Library.KeybindFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
-                    Size = UDim2.new(0, 50, 0, 10)
-                }):Play()
-            end)
-            
-            task.delay(0.5, function()
-                Library.KeybindFrame.Visible = false;
-            end)
-        end
-    end
-end;
-
 function Library:AddKeybind(name, key, state, iconName)
     return Library.WaveSystem:CreateKeybindItem(name, key, state, iconName)
-end;
+end
 
 function Library:RemoveKeybind(name)
     for i, item in ipairs(Library.WaveSystem.KeybindItems) do
@@ -4651,7 +4594,7 @@ function Library:RemoveKeybind(name)
             break
         end
     end
-end;
+end
 
 function Library:UpdateKeybindState(name, state)
     for _, item in ipairs(Library.WaveSystem.KeybindItems) do
@@ -4659,55 +4602,19 @@ function Library:UpdateKeybindState(name, state)
             local oldState = item.State
             item.State = state
 
-            for _, letter in pairs(item.StateLetters) do
-                letter.Frame:Destroy()
+            -- Обновляем лейбл
+            if item.StateLabel then
+                item.StateLabel.Text = state and "ON" or "OFF"
+                item.StateLabel.TextColor3 = state and Library.KeybindStateOnColor or Library.KeybindStateOffColor
             end
-
-            local stateText = state and "ON" or "OFF"
-            local stateLetters = {}
-            local stateStartX = -23
-
-            for i = 1, #stateText do
-                local char = stateText:sub(i, i)
-
-                local letterFrame = Library:Create('Frame', {
-                    BackgroundTransparency = 1;
-                    Position = UDim2.new(1, stateStartX + (i - 1) * 7, 0, 0);
-                    Size = UDim2.new(0, 7, 1, 0);
-                    ZIndex = 104;
-                    Parent = item.Frame;
-                });
-
-                local letterLabel = Library:CreateLabel({
-                    Size = UDim2.new(1, 0, 1, 0);
-                    Text = char;
-                    TextSize = 10;
-                    TextColor3 = state and Library.KeybindStateOnColor or Library.KeybindStateOffColor;
-                    TextXAlignment = Enum.TextXAlignment.Center;
-                    Font = Enum.Font.GothamBold;
-                    ZIndex = 105;
-                    Parent = letterFrame;
-                });
-
-                stateLetters[i] = {
-                    Frame = letterFrame,
-                    Label = letterLabel,
-                    OriginalPos = stateStartX + (i - 1) * 7,
-                    OriginalSize = 7,
-                    Character = char,
-                }
-            end
-
-            item.StateLetters = stateLetters
 
             if oldState ~= state then
-                local highlightColor = state and Color3.fromRGB(150, 255, 150) or Color3.fromRGB(255, 150, 150)
+                local highlightColor = state and Color3.fromRGB(100, 255, 120) or Color3.fromRGB(255, 80, 80)
 
                 TweenService:Create(item.NameLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
                     TextColor3 = highlightColor;
                 }):Play()
 
-                -- Бейдж клавиши подсвечивается тоже
                 if item.KeyBadge then
                     TweenService:Create(item.KeyBadge, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
                         BackgroundColor3 = highlightColor;
@@ -4715,6 +4622,8 @@ function Library:UpdateKeybindState(name, state)
                 end
 
                 task.delay(0.5, function()
+                    if not item.Frame or not item.Frame.Parent then return end
+
                     TweenService:Create(item.NameLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
                         TextColor3 = Library.KeybindNameColor;
                     }):Play()
