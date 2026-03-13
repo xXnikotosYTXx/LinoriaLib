@@ -28,10 +28,10 @@ local ThemeManager = {} do
             end
         end
 
-        self:ThemeUpdate(false) -- мгновенно при выборе темы из списка
+        self:ThemeUpdate()
     end
 
-    function ThemeManager:ThemeUpdate(animated)
+    function ThemeManager:ThemeUpdate()
         local options = { "FontColor", "MainColor", "AccentColor", "BackgroundColor", "OutlineColor", "WatermarkProjectColor", "WatermarkNicknameColor", "WatermarkTimeColor", "WatermarkIconColor" }
         for i, field in next, options do
             if Options and Options[field] then
@@ -40,30 +40,7 @@ local ThemeManager = {} do
         end
 
         self.Library.AccentColorDark = self.Library:GetDarkerColor(self.Library.AccentColor)
-
-        if animated then
-            local TweenService = game:GetService('TweenService')
-            local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-
-            for Idx, Object in next, self.Library.Registry do
-                local tweenProps = {}
-                for Property, ColorIdx in next, Object.Properties do
-                    if type(ColorIdx) == 'string' then
-                        local color = self.Library[ColorIdx]
-                        if color and typeof(color) == 'Color3' then
-                            tweenProps[Property] = color
-                        end
-                    end
-                end
-                if next(tweenProps) then
-                    pcall(function()
-                        TweenService:Create(Object.Instance, tweenInfo, tweenProps):Play()
-                    end)
-                end
-            end
-        else
-            self.Library:UpdateColorsUsingRegistry()
-        end
+        self.Library:UpdateColorsUsingRegistry()
 
         pcall(function()
             if self.Library.SetWatermarkProjectColor then
@@ -172,7 +149,7 @@ local ThemeManager = {} do
 
         ThemeManager:LoadDefault()
 
-        -- Дебаунс: ThemeUpdate не чаще раз в 0.05s + плавная анимация
+        -- Дебаунс: не вызываем ThemeUpdate чаще раз в 0.05s
         local debounceThread = nil
 
         local function UpdateTheme()
@@ -180,7 +157,7 @@ local ThemeManager = {} do
                 task.cancel(debounceThread)
             end
             debounceThread = task.delay(0.05, function()
-                self:ThemeUpdate(true)
+                self:ThemeUpdate()
                 debounceThread = nil
             end)
         end
