@@ -2179,7 +2179,7 @@ end;
 
 function Funcs:AddSlider(Idx, Info)
     local TweenService = game:GetService("TweenService")
-    
+
     assert(Info.Default, 'AddSlider: Missing default value.');
     assert(Info.Text, 'AddSlider: Missing slider text.');
     assert(Info.Min, 'AddSlider: Missing minimum value.');
@@ -2252,9 +2252,8 @@ function Funcs:AddSlider(Idx, Info)
         Parent = Fill;
     });
 
-    -- Handle: внешний круг (тень/обводка)
     local HandleOuter = Library:Create('Frame', {
-        BackgroundColor3 = Color3.fromRGB(60, 60, 60);
+        BackgroundColor3 = Color3.fromRGB(55, 55, 55);
         BorderSizePixel = 0;
         AnchorPoint = Vector2.new(0.5, 0.5);
         Size = UDim2.new(0, 14, 0, 14);
@@ -2268,7 +2267,6 @@ function Funcs:AddSlider(Idx, Info)
         Parent = HandleOuter;
     });
 
-    -- Handle: внутренний круг (белый)
     local Handle = Library:Create('Frame', {
         BackgroundColor3 = Color3.fromRGB(240, 240, 240);
         BorderSizePixel = 0;
@@ -2307,22 +2305,7 @@ function Funcs:AddSlider(Idx, Info)
         Fill.BackgroundColor3 = Library.AccentColor;
     end;
 
-    local currentX = 0;
-    local isDragging = false;
-
-    local function tweenToX(X, duration)
-        duration = duration or 0.12;
-        TweenService:Create(Fill,
-            TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-            { Size = UDim2.new(0, X, 1, 0) }
-        ):Play();
-        TweenService:Create(HandleOuter,
-            TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-            { Position = UDim2.new(0, X, 0.5, 0) }
-        ):Play();
-    end;
-
-    function Slider:Display(fromDrag)
+    function Slider:Display(instant)
         local Suffix = Info.Suffix or '';
 
         if Info.Compact then
@@ -2334,15 +2317,19 @@ function Funcs:AddSlider(Idx, Info)
         end
 
         local X = math.ceil(Library:MapValue(Slider.Value, Slider.Min, Slider.Max, 0, Slider.MaxSize));
-        currentX = X;
 
-        if fromDrag then
-            -- Drag: прямо, без твинов
+        if instant then
             Fill.Size = UDim2.new(0, X, 1, 0);
             HandleOuter.Position = UDim2.new(0, X, 0.5, 0);
         else
-            -- Программное: плавно
-            tweenToX(X, 0.15);
+            TweenService:Create(Fill,
+                TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                { Size = UDim2.new(0, X, 1, 0) }
+            ):Play();
+            TweenService:Create(HandleOuter,
+                TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                { Position = UDim2.new(0, X, 0.5, 0) }
+            ):Play();
         end
     end;
 
@@ -2367,12 +2354,11 @@ function Funcs:AddSlider(Idx, Info)
         if (not Num) then return; end;
         Num = math.clamp(Num, Slider.Min, Slider.Max);
         Slider.Value = Num;
-        Slider:Display();
+        Slider:Display(false);
         Library:SafeCallback(Slider.Callback, Slider.Value);
         Library:SafeCallback(Slider.Changed, Slider.Value);
     end;
 
-    -- Ввод числа кликом по лейблу
     ValueLabel.InputBegan:Connect(function(Input)
         if Input.UserInputType == Enum.UserInputType.MouseButton1 then
             local tempInput = Library:Create('TextBox', {
@@ -2404,7 +2390,8 @@ function Funcs:AddSlider(Idx, Info)
         end
     end);
 
-    -- Hover handle
+    local isDragging = false;
+
     HandleOuter.MouseEnter:Connect(function()
         if not isDragging then
             TweenService:Create(HandleOuter,
@@ -2431,40 +2418,66 @@ function Funcs:AddSlider(Idx, Info)
         end
     end);
 
-    -- Drag
     SliderOuter.InputBegan:Connect(function(Input)
         if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
             isDragging = true;
 
-            -- Нажатие: handle сжимается внутрь
+            -- Нажатие: внутренний круг сжимается
             TweenService:Create(HandleOuter,
                 TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
                 { Size = UDim2.new(0, 16, 0, 16) }
             ):Play();
             TweenService:Create(Handle,
                 TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                { Size = UDim2.new(0, 8, 0, 8) }
+                { Size = UDim2.new(0, 7, 0, 7) }
             ):Play();
 
-            -- Плавный прыжок к месту клика
-            local clickX = math.clamp(Mouse.X - Fill.AbsolutePosition.X, 0, Slider.MaxSize);
-            tweenToX(clickX, 0.1);
-            Slider.Value = Slider:GetValueFromXOffset(clickX);
+            -- Плавный прыжок к месту клика через ручной easing loop
+            local targetX = math.clamp(Mouse.X - Fill.AbsolutePosition.X, 0, Slider.MaxSize);
+            local startX = Fill.Size.X.Offset;
+            local jumpDuration = 0.12;
+            local jumpStart = tick();
+
+            while tick() - jumpStart < jumpDuration do
+                local t = (tick() - jumpStart) / jumpDuration;
+                t = 1 - (1 - t) * (1 - t); -- ease out quad
+                local interpX = startX + (targetX - startX) * t;
+
+                Fill.Size = UDim2.new(0, interpX, 1, 0);
+                HandleOuter.Position = UDim2.new(0, interpX, 0.5, 0);
+
+                RenderStepped:Wait();
+            end
+
+            -- Фиксируем финальную позицию прыжка
+            Fill.Size = UDim2.new(0, targetX, 1, 0);
+            HandleOuter.Position = UDim2.new(0, targetX, 0.5, 0);
+
+            Slider.Value = Slider:GetValueFromXOffset(targetX);
+            local Suffix = Info.Suffix or '';
+            ValueLabel.Text = Slider.Value .. Suffix;
             Library:SafeCallback(Slider.Callback, Slider.Value);
             Library:SafeCallback(Slider.Changed, Slider.Value);
 
             local mPos = Mouse.X;
-            local gPos = clickX;
-            local Diff = 0;
+            local gPos = targetX;
 
+            -- Drag loop с lerp для плавного следования
             while InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
                 local nMPos = Mouse.X;
                 local nX = math.clamp(gPos + (nMPos - mPos), 0, Slider.MaxSize);
                 local nValue = Slider:GetValueFromXOffset(nX);
                 local OldValue = Slider.Value;
 
+                -- Lerp: плавное следование за мышью
+                local curX = Fill.Size.X.Offset;
+                local smoothX = curX + (nX - curX) * 0.4;
+
+                Fill.Size = UDim2.new(0, smoothX, 1, 0);
+                HandleOuter.Position = UDim2.new(0, smoothX, 0.5, 0);
+
                 Slider.Value = nValue;
-                Slider:Display(true);
+                ValueLabel.Text = nValue .. Suffix;
 
                 if nValue ~= OldValue then
                     Library:SafeCallback(Slider.Callback, Slider.Value);
@@ -2474,7 +2487,18 @@ function Funcs:AddSlider(Idx, Info)
                 RenderStepped:Wait();
             end;
 
-            -- Отпускание: handle возвращается
+            -- Snap к точной финальной позиции
+            local finalX = math.ceil(Library:MapValue(Slider.Value, Slider.Min, Slider.Max, 0, Slider.MaxSize));
+            TweenService:Create(Fill,
+                TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                { Size = UDim2.new(0, finalX, 1, 0) }
+            ):Play();
+            TweenService:Create(HandleOuter,
+                TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                { Position = UDim2.new(0, finalX, 0.5, 0) }
+            ):Play();
+
+            -- Handle возвращается к нормальному размеру
             TweenService:Create(HandleOuter,
                 TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
                 { Size = UDim2.new(0, 14, 0, 14) }
