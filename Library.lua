@@ -1995,7 +1995,7 @@ function Funcs:AddToggle(Idx, Info)
     local ToggleOuter = Library:Create('Frame', {
         BackgroundColor3 = Color3.new(0, 0, 0);
         BorderColor3 = Color3.new(0, 0, 0);
-        Size = UDim2.new(0, 13, 0, 13);
+        Size = UDim2.new(0, 15, 0, 15); -- Увеличено с 13 до 15
         ZIndex = 5;
         Parent = Container;
     });
@@ -2006,7 +2006,7 @@ function Funcs:AddToggle(Idx, Info)
     
     -- ЕДИНСТВЕННОЕ добавление - скругленные углы
     local outerCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 3);
+        CornerRadius = UDim.new(0, 4); -- Увеличено для большего toggle
         Parent = ToggleOuter;
     });
     
@@ -2026,8 +2026,24 @@ function Funcs:AddToggle(Idx, Info)
     
     -- ЕДИНСТВЕННОЕ добавление - скругленные углы для внутренней части
     local innerCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 2);
+        CornerRadius = UDim.new(0, 3); -- Увеличено для большего toggle
         Parent = ToggleInner;
+    });
+    
+    -- Добавляем аккуратное свечение (НЕ мешает layout)
+    local glowEffect = Library:Create('Frame', {
+        BackgroundColor3 = Library.AccentColor;
+        BackgroundTransparency = 1;
+        BorderSizePixel = 0;
+        Size = UDim2.new(0, 19, 0, 19); -- Фиксированный размер
+        Position = UDim2.new(0, -2, 0, -2); -- Относительно ToggleOuter
+        ZIndex = 4; -- Под ToggleOuter
+        Parent = ToggleOuter.Parent; -- Parent = Container
+    });
+    
+    local glowCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 5);
+        Parent = glowEffect;
     });
     
     local ToggleLabel = Library:CreateLabel({
@@ -2072,17 +2088,39 @@ function Funcs:AddToggle(Idx, Info)
     function Toggle:Display()
         local targetColor = Toggle.Value and Library.AccentColor or Library.MainColor;
         local targetBorderColor = Toggle.Value and Library.AccentColorDark or Library.OutlineColor;
+        local targetGlowTransparency = Toggle.Value and 0.4 or 1; -- Свечение
+        local targetTextColor = Toggle.Value and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200); -- Яркость текста
         
-        -- Плавная анимация вместо мгновенного изменения
-        local tween = TweenService:Create(
+        -- Плавная анимация toggle
+        local toggleTween = TweenService:Create(
             ToggleInner,
-            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
             {
                 BackgroundColor3 = targetColor;
                 BorderColor3 = targetBorderColor;
             }
         );
-        tween:Play();
+        
+        -- Плавная анимация свечения
+        local glowTween = TweenService:Create(
+            glowEffect,
+            TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {BackgroundTransparency = targetGlowTransparency}
+        );
+        
+        -- Плавная анимация текста (затухание-загорание)
+        local textTween = TweenService:Create(
+            ToggleLabel,
+            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {TextColor3 = targetTextColor}
+        );
+        
+        toggleTween:Play();
+        glowTween:Play();
+        textTween:Play();
+        
+        -- Обновляем цвет свечения под текущий AccentColor
+        glowEffect.BackgroundColor3 = Library.AccentColor;
         
         -- Оригинальные обновления реестра
         Library.RegistryMap[ToggleInner].Properties.BackgroundColor3 = Toggle.Value and 'AccentColor' or 'MainColor';
