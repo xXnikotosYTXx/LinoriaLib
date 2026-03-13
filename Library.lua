@@ -2177,7 +2177,6 @@ function Funcs:AddToggle(Idx, Info)
 end;
     
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 
 function Funcs:AddSlider(Idx, Info)
     assert(Info.Default, 'AddSlider: Missing default value.');
@@ -2212,46 +2211,42 @@ function Funcs:AddSlider(Idx, Info)
         Groupbox:AddBlank(3);
     end
 
+    -- Невидимый большой хитбокс (оригинальная высота)
     local SliderOuter = Library:Create('Frame', {
-        BackgroundColor3 = Color3.new(0, 0, 0);
-        BorderColor3 = Color3.new(0, 0, 0);
-        Size = UDim2.new(1, -4, 0, 6);
+        BackgroundTransparency = 1;
+        BorderSizePixel = 0;
+        Size = UDim2.new(1, -4, 0, 13);
         ZIndex = 5;
         Parent = Container;
     });
 
-    Library:AddToRegistry(SliderOuter, {
-        BorderColor3 = 'Black';
-    });
-
-    Library:Create('UICorner', {
-        CornerRadius = UDim.new(1, 0);
-        Parent = SliderOuter;
-    });
-
-    local SliderInner = Library:Create('Frame', {
+    -- Визуальная тонкая полоска по центру
+    local SliderTrack = Library:Create('Frame', {
         BackgroundColor3 = Library.MainColor;
         BorderSizePixel = 0;
-        Size = UDim2.new(1, 0, 1, 0);
+        AnchorPoint = Vector2.new(0, 0.5);
+        Position = UDim2.new(0, 0, 0.5, 0);
+        Size = UDim2.new(1, 0, 0, 4);
         ZIndex = 6;
         Parent = SliderOuter;
     });
 
-    Library:AddToRegistry(SliderInner, {
+    Library:AddToRegistry(SliderTrack, {
         BackgroundColor3 = 'MainColor';
     });
 
     Library:Create('UICorner', {
         CornerRadius = UDim.new(1, 0);
-        Parent = SliderInner;
+        Parent = SliderTrack;
     });
 
+    -- Заливка прогресса
     local Fill = Library:Create('Frame', {
         BackgroundColor3 = Library.AccentColor;
         BorderSizePixel = 0;
         Size = UDim2.new(0, 0, 1, 0);
         ZIndex = 7;
-        Parent = SliderInner;
+        Parent = SliderTrack;
     });
 
     Library:AddToRegistry(Fill, {
@@ -2263,14 +2258,15 @@ function Funcs:AddSlider(Idx, Info)
         Parent = Fill;
     });
 
-    -- Handle круглый, позиционируется относительно SliderInner
+    -- Handle
     local Handle = Library:Create('Frame', {
         BackgroundColor3 = Color3.fromRGB(255, 255, 255);
         BorderSizePixel = 0;
+        AnchorPoint = Vector2.new(0.5, 0.5);
         Size = UDim2.new(0, 10, 0, 10);
-        Position = UDim2.new(0, -5, 0.5, -5);
+        Position = UDim2.new(0, 0, 0.5, 0);
         ZIndex = 10;
-        Parent = SliderInner; -- родитель SliderInner, не Fill!
+        Parent = SliderTrack;
     });
 
     Library:Create('UICorner', {
@@ -2278,7 +2274,7 @@ function Funcs:AddSlider(Idx, Info)
         Parent = Handle;
     });
 
-    -- Значение справа от лейбла, на той же строке что и текст
+    -- Лейбл значения справа сверху
     local ValueLabel = Library:CreateLabel({
         Size = UDim2.new(0, 60, 0, 10);
         Position = UDim2.new(1, -60, 0, -13);
@@ -2302,20 +2298,34 @@ function Funcs:AddSlider(Idx, Info)
         Fill.BackgroundColor3 = Library.AccentColor;
     end;
 
-    function Slider:Display()
+    function Slider:Display(fromDrag)
         local Suffix = Info.Suffix or '';
 
         if Info.Compact then
             ValueLabel.Text = Info.Text .. ': ' .. Slider.Value .. Suffix;
+        elseif Info.HideMax then
+            ValueLabel.Text = Slider.Value .. Suffix;
         else
             ValueLabel.Text = Slider.Value .. Suffix;
         end
 
         local X = math.ceil(Library:MapValue(Slider.Value, Slider.Min, Slider.Max, 0, Slider.MaxSize));
 
-        -- Без твинов — прямое обновление, чтобы не дёргалось
-        Fill.Size = UDim2.new(0, X, 1, 0);
-        Handle.Position = UDim2.new(0, X - 5, 0.5, -5);
+        if fromDrag then
+            -- Drag: прямое обновление без твинов — не конфликтует с colorpicker
+            Fill.Size = UDim2.new(0, X, 1, 0);
+            Handle.Position = UDim2.new(0, X, 0.5, 0);
+        else
+            -- SetValue / программное: плавная анимация
+            TweenService:Create(Fill,
+                TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                { Size = UDim2.new(0, X, 1, 0) }
+            ):Play();
+            TweenService:Create(Handle,
+                TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                { Position = UDim2.new(0, X, 0.5, 0) }
+            ):Play();
+        end
     end;
 
     function Slider:OnChanged(Func)
@@ -2339,12 +2349,12 @@ function Funcs:AddSlider(Idx, Info)
         if (not Num) then return; end;
         Num = math.clamp(Num, Slider.Min, Slider.Max);
         Slider.Value = Num;
-        Slider:Display();
+        Slider:Display(); -- без fromDrag = плавно
         Library:SafeCallback(Slider.Callback, Slider.Value);
         Library:SafeCallback(Slider.Changed, Slider.Value);
     end;
 
-    -- Клик по значению — ввод числа вручную
+    -- Клик по лейблу — ввод числа вручную
     ValueLabel.InputBegan:Connect(function(Input)
         if Input.UserInputType == Enum.UserInputType.MouseButton1 then
             local tempInput = Library:Create('TextBox', {
@@ -2376,34 +2386,37 @@ function Funcs:AddSlider(Idx, Info)
         end
     end);
 
-    -- Hover анимации handle (только size, не мешают позиции)
     local isDragging = false;
 
+    -- Hover: только размер, никогда позицию
     Handle.MouseEnter:Connect(function()
         if not isDragging then
-            TweenService:Create(Handle, TweenInfo.new(0.12), {
-                Size = UDim2.new(0, 12, 0, 12),
-                Position = UDim2.new(0, Handle.Position.X.Offset - 1, 0.5, -6)
-            }):Play();
+            TweenService:Create(Handle,
+                TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                { Size = UDim2.new(0, 13, 0, 13) }
+            ):Play();
         end
     end);
 
     Handle.MouseLeave:Connect(function()
         if not isDragging then
-            TweenService:Create(Handle, TweenInfo.new(0.12), {
-                Size = UDim2.new(0, 10, 0, 10),
-                Position = UDim2.new(0, Handle.Position.X.Offset + 1, 0.5, -5)
-            }):Play();
+            TweenService:Create(Handle,
+                TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                { Size = UDim2.new(0, 10, 0, 10) }
+            ):Play();
         end
     end);
 
-    SliderInner.InputBegan:Connect(function(Input)
+    -- Drag
+    SliderOuter.InputBegan:Connect(function(Input)
         if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
             isDragging = true;
 
-            TweenService:Create(Handle, TweenInfo.new(0.1), {
-                Size = UDim2.new(0, 13, 0, 13)
-            }):Play();
+            -- Handle увеличивается при нажатии
+            TweenService:Create(Handle,
+                TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                { Size = UDim2.new(0, 13, 0, 13) }
+            ):Play();
 
             local mPos = Mouse.X;
             local gPos = Fill.Size.X.Offset;
@@ -2416,7 +2429,7 @@ function Funcs:AddSlider(Idx, Info)
                 local OldValue = Slider.Value;
 
                 Slider.Value = nValue;
-                Slider:Display();
+                Slider:Display(true); -- true = drag, прямое обновление
 
                 if nValue ~= OldValue then
                     Library:SafeCallback(Slider.Callback, Slider.Value);
@@ -2426,16 +2439,18 @@ function Funcs:AddSlider(Idx, Info)
                 RenderStepped:Wait();
             end;
 
-            TweenService:Create(Handle, TweenInfo.new(0.12), {
-                Size = UDim2.new(0, 10, 0, 10)
-            }):Play();
+            -- Handle возвращается после отпускания
+            TweenService:Create(Handle,
+                TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                { Size = UDim2.new(0, 10, 0, 10) }
+            ):Play();
 
             isDragging = false;
             Library:AttemptSave();
         end;
     end);
 
-    Slider:Display();
+    Slider:Display(true);
     Groupbox:AddBlank(Info.BlankSize or 6);
     Groupbox:Resize();
 
