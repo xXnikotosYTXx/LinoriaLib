@@ -15,20 +15,78 @@ local ThemeManager = {} do
         ['Quartz'] = { 8, httpService:JSONDecode('{"FontColor":"ffffff","MainColor":"232330","AccentColor":"426e87","BackgroundColor":"1d1b26","OutlineColor":"27232f","WatermarkProjectColor":"426e87","WatermarkNicknameColor":"ffffff","WatermarkTimeColor":"c0c0c0","WatermarkIconColor":"426e87"}') },
     }
 
+    local animThread = nil
+
     function ThemeManager:ApplyTheme(theme)
         local customThemeData = self:GetCustomTheme(theme)
         local data = customThemeData or self.BuiltInThemes[theme]
         if not data then return end
 
         local scheme = data[2]
+
+        -- Собираем старые и новые цвета
+        local fromColors = {}
+        local toColors = {}
+
         for idx, col in next, customThemeData or scheme do
-            self.Library[idx] = Color3.fromHex(col)
-            if Options[idx] then
-                Options[idx]:SetValueRGB(Color3.fromHex(col))
-            end
+            fromColors[idx] = self.Library[idx] or Color3.fromHex(col)
+            toColors[idx] = Color3.fromHex(col)
         end
 
-        self:ThemeUpdate()
+        -- Отменяем предыдущую анимацию если есть
+        if animThread then
+            task.cancel(animThread)
+            animThread = nil
+        end
+
+        animThread = task.spawn(function()
+            local duration = 0.35
+            local startTime = tick()
+
+            while true do
+                local t = math.min((tick() - startTime) / duration, 1)
+                local ease = 1 - (1 - t) * (1 - t) -- ease out quad
+
+                for idx, toColor in next, toColors do
+                    local fromColor = fromColors[idx]
+                    self.Library[idx] = fromColor:Lerp(toColor, ease)
+                    if Options[idx] then
+                        Options[idx]:SetValueRGB(self.Library[idx])
+                    end
+                end
+
+                self.Library.AccentColorDark = self.Library:GetDarkerColor(self.Library.AccentColor)
+                self.Library:UpdateColorsUsingRegistry()
+
+                pcall(function()
+                    if self.Library.SetWatermarkProjectColor then
+                        self.Library:SetWatermarkProjectColor(self.Library.WatermarkProjectColor)
+                    end
+                end)
+                pcall(function()
+                    if self.Library.SetWatermarkNicknameColor then
+                        self.Library:SetWatermarkNicknameColor(self.Library.WatermarkNicknameColor)
+                    end
+                end)
+                pcall(function()
+                    if self.Library.SetWatermarkTimeColor then
+                        self.Library:SetWatermarkTimeColor(self.Library.WatermarkTimeColor)
+                    end
+                end)
+                pcall(function()
+                    if self.Library.SetWatermarkIconColor then
+                        self.Library:SetWatermarkIconColor(self.Library.WatermarkIconColor)
+                    end
+                end)
+
+                if t >= 1 then
+                    animThread = nil
+                    break
+                end
+
+                RenderStepped:Wait()
+            end
+        end)
     end
 
     function ThemeManager:ThemeUpdate()
@@ -149,7 +207,7 @@ local ThemeManager = {} do
 
         ThemeManager:LoadDefault()
 
-        -- Дебаунс: не вызываем ThemeUpdate чаще раз в 0.05s
+        -- Дебаунс для colorpicker
         local debounceThread = nil
 
         local function UpdateTheme()
