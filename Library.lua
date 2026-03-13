@@ -2218,7 +2218,7 @@ function Funcs:AddSlider(Idx, Info)
     local SliderOuter = Library:Create('Frame', {
         BackgroundColor3 = Color3.new(0, 0, 0);
         BorderColor3 = Color3.new(0, 0, 0);
-        Size = UDim2.new(1, -4, 0, 8); -- Очень тонкий как палка
+        Size = UDim2.new(1, -4, 0, 6); -- Еще тоньше!
         ZIndex = 5;
         Parent = Container;
     });
@@ -2285,12 +2285,12 @@ function Funcs:AddSlider(Idx, Info)
         BackgroundColor3 = 'AccentColor';
     });
     
-    -- Создаем круглый handle
+    -- Создаем круглый handle (меньше и приятнее)
     local Handle = Library:Create('Frame', {
         BackgroundColor3 = Color3.fromRGB(255, 255, 255);
         BorderSizePixel = 0;
-        Size = UDim2.new(0, 12, 0, 12);
-        Position = UDim2.new(0, -6, 0.5, -6);
+        Size = UDim2.new(0, 10, 0, 10); -- Меньше handle
+        Position = UDim2.new(0, -5, 0.5, -5);
         ZIndex = 10;
         Parent = Fill;
     });
@@ -2301,41 +2301,15 @@ function Funcs:AddSlider(Idx, Info)
         Parent = Handle;
     });
     
-    -- Создаем текст слева (название слайдера) - только для НЕ compact режима
-    local SliderLabel;
-    if not Info.Compact then
-        SliderLabel = Library:CreateLabel({
-            Size = UDim2.new(0, 150, 1, 0);
-            Position = UDim2.new(0, -155, 0, 0);
-            TextSize = 14;
-            Text = Info.Text;
-            TextXAlignment = Enum.TextXAlignment.Left;
-            ZIndex = 9;
-            Parent = SliderOuter;
-        });
-    end
-    
-    -- Создаем текст справа (значения) - только для НЕ compact режима
-    local ValueLabel;
-    if not Info.Compact then
-        ValueLabel = Library:CreateLabel({
-            Size = UDim2.new(0, 80, 1, 0);
-            Position = UDim2.new(1, 5, 0, 0);
-            TextSize = 14;
-            Text = '2000';
-            TextXAlignment = Enum.TextXAlignment.Right;
-            ZIndex = 9;
-            Parent = SliderOuter;
-        });
-    end
-    
-    -- Создаем основной текст НА слайдере (для compact и обычного режима)
-    local DisplayLabel = Library:CreateLabel({
-        Size = UDim2.new(1, 0, 1, 0);
+    -- Создаем текст сверху справа (НЕ на слайдере!)
+    local ValueLabel = Library:CreateLabel({
+        Size = UDim2.new(0, 80, 0, 14);
+        Position = UDim2.new(1, -80, 0, -18); -- Сверху справа от слайдера
         TextSize = 12;
-        Text = 'Infinite';
+        Text = '2000';
+        TextXAlignment = Enum.TextXAlignment.Right;
         ZIndex = 9;
-        Parent = SliderInner;
+        Parent = SliderOuter;
     });
     
     Library:OnHighlight(SliderOuter, SliderOuter,
@@ -2355,29 +2329,34 @@ function Funcs:AddSlider(Idx, Info)
     function Slider:Display()
         local Suffix = Info.Suffix or '';
         
+        -- Обновляем текст сверху справа
         if Info.Compact then
-            -- Compact режим: показываем название и значение НА слайдере
-            DisplayLabel.Text = Info.Text .. ': ' .. Slider.Value .. Suffix;
+            ValueLabel.Text = Info.Text .. ': ' .. Slider.Value .. Suffix;
         elseif Info.HideMax then
-            -- HideMax режим: только текущее значение на слайдере
-            DisplayLabel.Text = Slider.Value .. Suffix;
-            if ValueLabel then
-                ValueLabel.Text = Slider.Value .. Suffix;
-            end
+            ValueLabel.Text = Slider.Value .. Suffix;
         else
-            -- Обычный режим: текущее/максимальное на слайдере, и справа тоже
-            DisplayLabel.Text = Slider.Value .. Suffix .. '/' .. Slider.Max .. Suffix;
-            if ValueLabel then
-                ValueLabel.Text = Slider.Value .. Suffix .. ' | ' .. Slider.Max .. Suffix;
-            end
+            ValueLabel.Text = Slider.Value .. Suffix;
         end
         
         local X = math.ceil(Library:MapValue(Slider.Value, Slider.Min, Slider.Max, 0, Slider.MaxSize));
-        Fill.Size = UDim2.new(0, X, 1, 0);
+        
+        -- ПЛАВНАЯ анимация заливки слайдера
+        local fillTween = TweenService:Create(
+            Fill,
+            TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {Size = UDim2.new(0, X, 1, 0)}
+        );
+        fillTween:Play();
+        
         HideBorderRight.Visible = not (X == Slider.MaxSize or X == 0);
         
-        -- Позиционируем handle
-        Handle.Position = UDim2.new(0, X - 6, 0.5, -6);
+        -- ПЛАВНАЯ анимация позиции handle
+        local handleTween = TweenService:Create(
+            Handle,
+            TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {Position = UDim2.new(0, X - 5, 0.5, -5)}
+        );
+        handleTween:Play();
     end;
     
     function Slider:OnChanged(Func)
@@ -2408,59 +2387,24 @@ function Funcs:AddSlider(Idx, Info)
         Library:SafeCallback(Slider.Changed, Slider.Value);
     end;
     
-    -- Обработка клика по ValueLabel для ввода чисел (только если ValueLabel существует)
-    if ValueLabel then
-        ValueLabel.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-                -- Создаем временное текстовое поле для ввода
-                local tempInput = Library:Create('TextBox', {
-                    BackgroundTransparency = 1;
-                    Size = ValueLabel.Size;
-                    Position = ValueLabel.Position;
-                    TextSize = ValueLabel.TextSize;
-                    TextColor3 = ValueLabel.TextColor3;
-                    TextXAlignment = ValueLabel.TextXAlignment;
-                    Text = tostring(Slider.Value);
-                    ZIndex = 10;
-                    Parent = ValueLabel.Parent;
-                    Font = Enum.Font.Code;
-                    ClearTextOnFocus = true;
-                });
-                
-                ValueLabel.Visible = false;
-                tempInput:CaptureFocus();
-                
-                tempInput.FocusLost:Connect(function(enterPressed)
-                    local inputValue = tonumber(tempInput.Text);
-                    if inputValue then
-                        Slider:SetValue(inputValue);
-                        Library:AttemptSave();
-                    end
-                    ValueLabel.Visible = true;
-                    tempInput:Destroy();
-                end);
-            end
-        end);
-    end
-    
-    -- Также добавляем возможность клика по DisplayLabel для ввода
-    DisplayLabel.InputBegan:Connect(function(Input)
+    -- Обработка клика по ValueLabel для ввода чисел
+    ValueLabel.InputBegan:Connect(function(Input)
         if Input.UserInputType == Enum.UserInputType.MouseButton1 then
             local tempInput = Library:Create('TextBox', {
                 BackgroundTransparency = 1;
-                Size = DisplayLabel.Size;
-                Position = DisplayLabel.Position;
-                TextSize = DisplayLabel.TextSize;
-                TextColor3 = DisplayLabel.TextColor3;
-                TextXAlignment = DisplayLabel.TextXAlignment;
+                Size = ValueLabel.Size;
+                Position = ValueLabel.Position;
+                TextSize = ValueLabel.TextSize;
+                TextColor3 = ValueLabel.TextColor3;
+                TextXAlignment = ValueLabel.TextXAlignment;
                 Text = tostring(Slider.Value);
                 ZIndex = 10;
-                Parent = DisplayLabel.Parent;
+                Parent = ValueLabel.Parent;
                 Font = Enum.Font.Code;
                 ClearTextOnFocus = true;
             });
             
-            DisplayLabel.Visible = false;
+            ValueLabel.Visible = false;
             tempInput:CaptureFocus();
             
             tempInput.FocusLost:Connect(function(enterPressed)
@@ -2469,21 +2413,21 @@ function Funcs:AddSlider(Idx, Info)
                     Slider:SetValue(inputValue);
                     Library:AttemptSave();
                 end
-                DisplayLabel.Visible = true;
+                ValueLabel.Visible = true;
                 tempInput:Destroy();
             end);
         end
     end);
     
-    -- Анимация handle при наведении и перетаскивании
+    -- Плавные анимации handle при наведении и перетаскивании
     local isDragging = false;
     
     Handle.MouseEnter:Connect(function()
         if not isDragging then
             local hoverTween = TweenService:Create(
                 Handle,
-                TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                {Size = UDim2.new(0, 14, 0, 14); Position = UDim2.new(0, Handle.Position.X.Offset - 1, 0.5, -7)}
+                TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                {Size = UDim2.new(0, 12, 0, 12)}
             );
             hoverTween:Play();
         end
@@ -2493,8 +2437,8 @@ function Funcs:AddSlider(Idx, Info)
         if not isDragging then
             local hoverTween = TweenService:Create(
                 Handle,
-                TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                {Size = UDim2.new(0, 12, 0, 12); Position = UDim2.new(0, Handle.Position.X.Offset + 1, 0.5, -6)}
+                TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                {Size = UDim2.new(0, 10, 0, 10)}
             );
             hoverTween:Play();
         end
@@ -2504,11 +2448,11 @@ function Funcs:AddSlider(Idx, Info)
         if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
             isDragging = true;
             
-            -- Увеличиваем handle при перетаскивании
+            -- Плавно увеличиваем handle при перетаскивании
             local dragTween = TweenService:Create(
                 Handle,
-                TweenInfo.new(0.1, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-                {Size = UDim2.new(0, 16, 0, 16)}
+                TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                {Size = UDim2.new(0, 14, 0, 14)}
             );
             dragTween:Play();
             
@@ -2533,11 +2477,11 @@ function Funcs:AddSlider(Idx, Info)
                 RenderStepped:Wait();
             end;
             
-            -- Возвращаем handle к нормальному размеру
+            -- Плавно возвращаем handle к нормальному размеру
             local releaseTween = TweenService:Create(
                 Handle,
-                TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                {Size = UDim2.new(0, 12, 0, 12)}
+                TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                {Size = UDim2.new(0, 10, 0, 10)}
             );
             releaseTween:Play();
             
