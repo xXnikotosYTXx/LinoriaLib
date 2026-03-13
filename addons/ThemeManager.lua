@@ -3,7 +3,7 @@ local httpService = game:GetService('HttpService')
 local ThemeManager = {} do
     ThemeManager.Folder = 'LinoriaLibSettings'
     ThemeManager.Library = nil
-    
+
     ThemeManager.BuiltInThemes = {
         ['Default'] = { 1, httpService:JSONDecode('{"FontColor":"ffffff","MainColor":"1c1c1c","AccentColor":"0055ff","BackgroundColor":"141414","OutlineColor":"323232","WatermarkProjectColor":"b464dc","WatermarkNicknameColor":"c0c0c0","WatermarkTimeColor":"787878","WatermarkIconColor":"ff78c8"}') },
         ['BBot'] = { 2, httpService:JSONDecode('{"FontColor":"ffffff","MainColor":"1e1e1e","AccentColor":"7e48a3","BackgroundColor":"232323","OutlineColor":"141414","WatermarkProjectColor":"7e48a3","WatermarkNicknameColor":"ffffff","WatermarkTimeColor":"c0c0c0","WatermarkIconColor":"7e48a3"}') },
@@ -28,13 +28,10 @@ local ThemeManager = {} do
             end
         end
 
-        self:ThemeUpdate()
+        self:ThemeUpdate(false) -- мгновенно при выборе темы из списка
     end
 
     function ThemeManager:ThemeUpdate(animated)
-        local TweenService = game:GetService('TweenService')
-        local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-
         local options = { "FontColor", "MainColor", "AccentColor", "BackgroundColor", "OutlineColor", "WatermarkProjectColor", "WatermarkNicknameColor", "WatermarkTimeColor", "WatermarkIconColor" }
         for i, field in next, options do
             if Options and Options[field] then
@@ -45,21 +42,23 @@ local ThemeManager = {} do
         self.Library.AccentColorDark = self.Library:GetDarkerColor(self.Library.AccentColor)
 
         if animated then
-            -- Плавное обновление через твины для каждого элемента в Registry
-            for element, props in next, self.Library.Registry do
-                if element and element.Parent then
-                    local tweenProps = {}
-                    for prop, colorKey in next, props do
-                        local color = self.Library[colorKey]
-                        if color then
-                            tweenProps[prop] = color
+            local TweenService = game:GetService('TweenService')
+            local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+            for Idx, Object in next, self.Library.Registry do
+                local tweenProps = {}
+                for Property, ColorIdx in next, Object.Properties do
+                    if type(ColorIdx) == 'string' then
+                        local color = self.Library[ColorIdx]
+                        if color and typeof(color) == 'Color3' then
+                            tweenProps[Property] = color
                         end
                     end
-                    if next(tweenProps) then
-                        pcall(function()
-                            TweenService:Create(element, tweenInfo, tweenProps):Play()
-                        end)
-                    end
+                end
+                if next(tweenProps) then
+                    pcall(function()
+                        TweenService:Create(Object.Instance, tweenInfo, tweenProps):Play()
+                    end)
                 end
             end
         else
@@ -98,7 +97,7 @@ local ThemeManager = {} do
                 theme = content
             elseif self:GetCustomTheme(content) then
                 theme = content
-                isDefault = false;
+                isDefault = false
             end
         elseif self.BuiltInThemes[self.DefaultTheme] then
             theme = self.DefaultTheme
@@ -116,17 +115,17 @@ local ThemeManager = {} do
     end
 
     function ThemeManager:CreateThemeManager(groupbox)
-        groupbox:AddLabel('Background color'):AddColorPicker('BackgroundColor', { Default = self.Library.BackgroundColor });
-        groupbox:AddLabel('Main color'):AddColorPicker('MainColor', { Default = self.Library.MainColor });
-        groupbox:AddLabel('Accent color'):AddColorPicker('AccentColor', { Default = self.Library.AccentColor });
-        groupbox:AddLabel('Outline color'):AddColorPicker('OutlineColor', { Default = self.Library.OutlineColor });
-        groupbox:AddLabel('Font color'):AddColorPicker('FontColor', { Default = self.Library.FontColor });
+        groupbox:AddLabel('Background color'):AddColorPicker('BackgroundColor', { Default = self.Library.BackgroundColor })
+        groupbox:AddLabel('Main color'):AddColorPicker('MainColor', { Default = self.Library.MainColor })
+        groupbox:AddLabel('Accent color'):AddColorPicker('AccentColor', { Default = self.Library.AccentColor })
+        groupbox:AddLabel('Outline color'):AddColorPicker('OutlineColor', { Default = self.Library.OutlineColor })
+        groupbox:AddLabel('Font color'):AddColorPicker('FontColor', { Default = self.Library.FontColor })
 
         groupbox:AddDivider()
-        groupbox:AddLabel('Watermark project color'):AddColorPicker('WatermarkProjectColor', { Default = self.Library.WatermarkProjectColor });
-        groupbox:AddLabel('Watermark nickname color'):AddColorPicker('WatermarkNicknameColor', { Default = self.Library.WatermarkNicknameColor });
-        groupbox:AddLabel('Watermark time color'):AddColorPicker('WatermarkTimeColor', { Default = self.Library.WatermarkTimeColor });
-        groupbox:AddLabel('Watermark icon color'):AddColorPicker('WatermarkIconColor', { Default = self.Library.WatermarkIconColor });
+        groupbox:AddLabel('Watermark project color'):AddColorPicker('WatermarkProjectColor', { Default = self.Library.WatermarkProjectColor })
+        groupbox:AddLabel('Watermark nickname color'):AddColorPicker('WatermarkNicknameColor', { Default = self.Library.WatermarkNicknameColor })
+        groupbox:AddLabel('Watermark time color'):AddColorPicker('WatermarkTimeColor', { Default = self.Library.WatermarkTimeColor })
+        groupbox:AddLabel('Watermark icon color'):AddColorPicker('WatermarkIconColor', { Default = self.Library.WatermarkIconColor })
 
         local ThemesArray = {}
         for Name, Theme in next, self.BuiltInThemes do
@@ -173,7 +172,7 @@ local ThemeManager = {} do
 
         ThemeManager:LoadDefault()
 
-        -- Дебаунс: не вызываем ThemeUpdate чаще чем раз в 0.05s
+        -- Дебаунс: ThemeUpdate не чаще раз в 0.05s + плавная анимация
         local debounceThread = nil
 
         local function UpdateTheme()
@@ -181,7 +180,7 @@ local ThemeManager = {} do
                 task.cancel(debounceThread)
             end
             debounceThread = task.delay(0.05, function()
-                self:ThemeUpdate(true) -- true = плавная анимация
+                self:ThemeUpdate(true)
                 debounceThread = nil
             end)
         end
