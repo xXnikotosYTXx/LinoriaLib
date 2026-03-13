@@ -1973,144 +1973,224 @@ do
         return Textbox;
     end;
 
-    function Funcs:AddToggle(Idx, Info)
-        assert(Info.Text, 'AddInput: Missing `Text` string.')
+ -- Идеальная стильная замена AddToggle
+-- Точная копия оригинала + стильные эффекты
 
-        local Toggle = {
-            Value = Info.Default or false;
-            Type = 'Toggle';
+local TweenService = game:GetService("TweenService")
 
-            Callback = Info.Callback or function(Value) end;
-            Addons = {},
-            Risky = Info.Risky,
-        };
-
-        local Groupbox = self;
-        local Container = Groupbox.Container;
-
-        local ToggleOuter = Library:Create('Frame', {
-            BackgroundColor3 = Color3.new(0, 0, 0);
-            BorderColor3 = Color3.new(0, 0, 0);
-            Size = UDim2.new(0, 13, 0, 13);
-            ZIndex = 5;
-            Parent = Container;
-        });
-
-        Library:AddToRegistry(ToggleOuter, {
-            BorderColor3 = 'Black';
-        });
-
-        local ToggleInner = Library:Create('Frame', {
-            BackgroundColor3 = Library.MainColor;
-            BorderColor3 = Library.OutlineColor;
-            BorderMode = Enum.BorderMode.Inset;
-            Size = UDim2.new(1, 0, 1, 0);
-            ZIndex = 6;
-            Parent = ToggleOuter;
-        });
-
-        Library:AddToRegistry(ToggleInner, {
-            BackgroundColor3 = 'MainColor';
-            BorderColor3 = 'OutlineColor';
-        });
-
-        local ToggleLabel = Library:CreateLabel({
-            Size = UDim2.new(0, 216, 1, 0);
-            Position = UDim2.new(1, 6, 0, 0);
-            TextSize = 14;
-            Text = Info.Text;
-            TextXAlignment = Enum.TextXAlignment.Left;
-            ZIndex = 6;
-            Parent = ToggleInner;
-        });
-
-        Library:Create('UIListLayout', {
-            Padding = UDim.new(0, 4);
-            FillDirection = Enum.FillDirection.Horizontal;
-            HorizontalAlignment = Enum.HorizontalAlignment.Right;
-            SortOrder = Enum.SortOrder.LayoutOrder;
-            Parent = ToggleLabel;
-        });
-
-        local ToggleRegion = Library:Create('Frame', {
-            BackgroundTransparency = 1;
-            Size = UDim2.new(0, 170, 1, 0);
-            ZIndex = 8;
-            Parent = ToggleOuter;
-        });
-
-        Library:OnHighlight(ToggleRegion, ToggleOuter,
-            { BorderColor3 = 'AccentColor' },
-            { BorderColor3 = 'Black' }
-        );
-
-        function Toggle:UpdateColors()
-            Toggle:Display();
-        end;
-
-        if type(Info.Tooltip) == 'string' then
-            Library:AddToolTip(Info.Tooltip, ToggleRegion)
-        end
-
-        function Toggle:Display()
-            ToggleInner.BackgroundColor3 = Toggle.Value and Library.AccentColor or Library.MainColor;
-            ToggleInner.BorderColor3 = Toggle.Value and Library.AccentColorDark or Library.OutlineColor;
-
-            Library.RegistryMap[ToggleInner].Properties.BackgroundColor3 = Toggle.Value and 'AccentColor' or 'MainColor';
-            Library.RegistryMap[ToggleInner].Properties.BorderColor3 = Toggle.Value and 'AccentColorDark' or 'OutlineColor';
-        end;
-
-        function Toggle:OnChanged(Func)
-            Toggle.Changed = Func;
-            Func(Toggle.Value);
-        end;
-
-        function Toggle:SetValue(Bool)
-            Bool = (not not Bool);
-
-            Toggle.Value = Bool;
-            Toggle:Display();
-
-            for _, Addon in next, Toggle.Addons do
-                if Addon.Type == 'KeyPicker' and Addon.SyncToggleState then
-                    Addon.Toggled = Bool
-                    Addon:Update()
-                end
-            end
-
-            Library:SafeCallback(Toggle.Callback, Toggle.Value);
-            Library:SafeCallback(Toggle.Changed, Toggle.Value);
-            Library:UpdateDependencyBoxes();
-        end;
-
-        ToggleRegion.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
-                Toggle:SetValue(not Toggle.Value) -- Why was it not like this from the start?
-                Library:AttemptSave();
-            end;
-        end);
-
-        if Toggle.Risky then
-            Library:RemoveFromRegistry(ToggleLabel)
-            ToggleLabel.TextColor3 = Library.RiskColor
-            Library:AddToRegistry(ToggleLabel, { TextColor3 = 'RiskColor' })
-        end
-
+function Funcs:AddToggle(Idx, Info)
+    assert(Info.Text, 'AddInput: Missing `Text` string.')
+    
+    local Toggle = {
+        Value = Info.Default or false;
+        Type = 'Toggle';
+        Callback = Info.Callback or function(Value) end;
+        Addons = {};
+        Risky = Info.Risky;
+    };
+    
+    local Groupbox = self;
+    local Container = Groupbox.Container;
+    
+    -- Увеличиваем размер toggle
+    local ToggleOuter = Library:Create('Frame', {
+        BackgroundColor3 = Color3.new(0, 0, 0);
+        BorderColor3 = Color3.new(0, 0, 0);
+        Size = UDim2.new(0, 16, 0, 16); -- Увеличено с 13 до 16
+        ZIndex = 5;
+        Parent = Container;
+    });
+    
+    Library:AddToRegistry(ToggleOuter, {
+        BorderColor3 = 'Black';
+    });
+    
+    -- Добавляем скругленные углы
+    local outerCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 4);
+        Parent = ToggleOuter;
+    });
+    
+    local ToggleInner = Library:Create('Frame', {
+        BackgroundColor3 = Library.MainColor;
+        BorderColor3 = Library.OutlineColor;
+        BorderMode = Enum.BorderMode.Inset;
+        Size = UDim2.new(1, 0, 1, 0);
+        ZIndex = 6;
+        Parent = ToggleOuter;
+    });
+    
+    Library:AddToRegistry(ToggleInner, {
+        BackgroundColor3 = 'MainColor';
+        BorderColor3 = 'OutlineColor';
+    });
+    
+    -- Добавляем скругленные углы для внутренней части
+    local innerCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 3);
+        Parent = ToggleInner;
+    });
+    
+    -- Создаем эффект свечения (только для toggle, не для текста)
+    local glowEffect = Library:Create('Frame', {
+        BackgroundColor3 = Library.AccentColor; -- Используем AccentColor
+        BackgroundTransparency = 1;
+        BorderSizePixel = 0;
+        Size = UDim2.new(1, 8, 1, 8);
+        Position = UDim2.new(0, -4, 0, -4);
+        ZIndex = 4;
+        Parent = Container; -- Parent = Container, не ToggleOuter.Parent
+    });
+    
+    local glowCorner = Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 6);
+        Parent = glowEffect;
+    });
+    
+    local ToggleLabel = Library:CreateLabel({
+        Size = UDim2.new(0, 216, 1, 0);
+        Position = UDim2.new(1, 6, 0, 0);
+        TextSize = 14;
+        Text = Info.Text;
+        TextXAlignment = Enum.TextXAlignment.Left;
+        ZIndex = 6;
+        Parent = ToggleInner;
+    });
+    
+    Library:Create('UIListLayout', {
+        Padding = UDim.new(0, 4);
+        FillDirection = Enum.FillDirection.Horizontal;
+        HorizontalAlignment = Enum.HorizontalAlignment.Right;
+        SortOrder = Enum.SortOrder.LayoutOrder;
+        Parent = ToggleLabel;
+    });
+    
+    local ToggleRegion = Library:Create('Frame', {
+        BackgroundTransparency = 1;
+        Size = UDim2.new(0, 170, 1, 0);
+        ZIndex = 8;
+        Parent = ToggleOuter;
+    });
+    
+    Library:OnHighlight(ToggleRegion, ToggleOuter,
+        { BorderColor3 = 'AccentColor' },
+        { BorderColor3 = 'Black' }
+    );
+    
+    function Toggle:UpdateColors()
         Toggle:Display();
-        Groupbox:AddBlank(Info.BlankSize or 5 + 2);
-        Groupbox:Resize();
-
-        Toggle.TextLabel = ToggleLabel;
-        Toggle.Container = Container;
-        setmetatable(Toggle, BaseAddons);
-
-        Toggles[Idx] = Toggle;
-
-        Library:UpdateDependencyBoxes();
-
-        return Toggle;
     end;
-
+    
+    if type(Info.Tooltip) == 'string' then
+        Library:AddToolTip(Info.Tooltip, ToggleRegion)
+    end
+    
+    function Toggle:Display()
+        -- Используем AccentColor вместо фиксированного цвета
+        local targetColor = Toggle.Value and Library.AccentColor or Library.MainColor;
+        local targetBorderColor = Toggle.Value and Library.AccentColorDark or Library.OutlineColor;
+        local targetGlowTransparency = Toggle.Value and 0.2 or 1; -- Менее интенсивное свечение
+        
+        -- Анимация основного цвета
+        local colorTween = TweenService:Create(
+            ToggleInner,
+            TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+            {BackgroundColor3 = targetColor; BorderColor3 = targetBorderColor}
+        );
+        
+        -- Анимация свечения
+        local glowTween = TweenService:Create(
+            glowEffect,
+            TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+            {BackgroundTransparency = targetGlowTransparency}
+        );
+        
+        -- Анимация текста (делаем ярче при включении)
+        local textTween = TweenService:Create(
+            ToggleLabel,
+            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {TextColor3 = Toggle.Value and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)}
+        );
+        
+        colorTween:Play();
+        glowTween:Play();
+        textTween:Play();
+        
+        -- Обновляем цвет свечения под текущий AccentColor
+        glowEffect.BackgroundColor3 = Library.AccentColor;
+        
+        -- Оригинальные обновления реестра
+        Library.RegistryMap[ToggleInner].Properties.BackgroundColor3 = Toggle.Value and 'AccentColor' or 'MainColor';
+        Library.RegistryMap[ToggleInner].Properties.BorderColor3 = Toggle.Value and 'AccentColorDark' or 'OutlineColor';
+        
+        -- Эффект пульсации при включении
+        if Toggle.Value then
+            local pulseScale = TweenService:Create(
+                ToggleOuter,
+                TweenInfo.new(0.1, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+                {Size = UDim2.new(0, 18, 0, 18)}
+            );
+            pulseScale:Play();
+            
+            pulseScale.Completed:Connect(function()
+                local pulseBack = TweenService:Create(
+                    ToggleOuter,
+                    TweenInfo.new(0.1, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+                    {Size = UDim2.new(0, 16, 0, 16)}
+                );
+                pulseBack:Play();
+            end);
+        end
+    end;
+    
+    function Toggle:OnChanged(Func)
+        Toggle.Changed = Func;
+        Func(Toggle.Value);
+    end;
+    
+    function Toggle:SetValue(Bool)
+        Bool = (not not Bool);
+        Toggle.Value = Bool;
+        Toggle:Display();
+        
+        for _, Addon in next, Toggle.Addons do
+            if Addon.Type == 'KeyPicker' and Addon.SyncToggleState then
+                Addon.Toggled = Bool
+                Addon:Update()
+            end
+        end
+        
+        Library:SafeCallback(Toggle.Callback, Toggle.Value);
+        Library:SafeCallback(Toggle.Changed, Toggle.Value);
+        Library:UpdateDependencyBoxes();
+    end;
+    
+    ToggleRegion.InputBegan:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
+            Toggle:SetValue(not Toggle.Value) -- Why was it not like this from the start?
+            Library:AttemptSave();
+        end;
+    end);
+    
+    if Toggle.Risky then
+        Library:RemoveFromRegistry(ToggleLabel)
+        ToggleLabel.TextColor3 = Library.RiskColor
+        Library:AddToRegistry(ToggleLabel, { TextColor3 = 'RiskColor' })
+    end
+    
+    Toggle:Display();
+    Groupbox:AddBlank(Info.BlankSize or 5 + 2);
+    Groupbox:Resize();
+    
+    Toggle.TextLabel = ToggleLabel;
+    Toggle.Container = Container;
+    
+    setmetatable(Toggle, BaseAddons);
+    Toggles[Idx] = Toggle;
+    Library:UpdateDependencyBoxes();
+    
+    return Toggle;
+end;
     
     function Funcs:AddSlider(Idx, Info)
         assert(Info.Default, 'AddSlider: Missing default value.');
