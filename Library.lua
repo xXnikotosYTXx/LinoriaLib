@@ -2035,10 +2035,10 @@ function Funcs:AddToggle(Idx, Info)
         BackgroundColor3 = Library.AccentColor;
         BackgroundTransparency = 1;
         BorderSizePixel = 0;
-        Size = UDim2.new(0, 19, 0, 19); -- Фиксированный размер
-        Position = UDim2.new(0, -2, 0, -2); -- Относительно ToggleOuter
+        Size = UDim2.new(1, 6, 1, 6); -- Относительный размер
+        Position = UDim2.new(0, -3, 0, -3); -- Относительно ToggleOuter
         ZIndex = 4; -- Под ToggleOuter
-        Parent = ToggleOuter.Parent; -- Parent = Container
+        Parent = ToggleOuter; -- Parent = ToggleOuter, не Container!
     });
     
     local glowCorner = Library:Create('UICorner', {
