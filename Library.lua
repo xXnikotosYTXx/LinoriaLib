@@ -1973,6 +1973,9 @@ do
         return Textbox;
     end;
 
+-- Исправленная стильная замена для AddToggle
+-- Фиксит проблемы с отображением и добавляет свечение текста
+
 local TweenService = game:GetService("TweenService")
 
 -- Стильные цвета
@@ -2059,6 +2062,7 @@ function Funcs:AddToggle(Idx, Info)
     -- Создаем эффект свечения
     local glowEffect = CreateGlow(ToggleOuter, StyleColors.EnabledGlow)
     
+    -- ИСПРАВЛЕНО: Правильное создание текста
     local ToggleLabel = Library:CreateLabel({
         Size = UDim2.new(0, 216, 1, 0),
         Position = UDim2.new(1, 6, 0, 0),
@@ -2066,7 +2070,23 @@ function Funcs:AddToggle(Idx, Info)
         Text = Info.Text,
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = 6,
+        Parent = ToggleInner, -- Возвращаем как в оригинале
+    })
+    
+    -- Создаем дублирующий текст для эффекта свечения
+    local textGlow = Library:Create('TextLabel', {
+        Size = UDim2.new(0, 216, 1, 0),
+        Position = UDim2.new(1, 6, 0, 0),
+        TextSize = 14,
+        Text = Info.Text,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextColor3 = StyleColors.EnabledColor,
+        TextTransparency = 1, -- Изначально невидимый
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ZIndex = 5, -- Под основным текстом
         Parent = ToggleInner,
+        Font = ToggleLabel.Font
     })
     
     Library:Create('UIListLayout', {
@@ -2097,11 +2117,12 @@ function Funcs:AddToggle(Idx, Info)
         Library:AddToolTip(Info.Tooltip, ToggleRegion)
     end
     
-    -- Улучшенная функция Display с анимациями
+    -- Улучшенная функция Display с анимациями и свечением текста
     function Toggle:Display()
         local targetColor = Toggle.Value and StyleColors.EnabledColor or Library.MainColor
         local targetBorderColor = Toggle.Value and StyleColors.EnabledColor or Library.OutlineColor
         local targetGlowTransparency = Toggle.Value and (1 - StyleColors.GlowIntensity) or 1
+        local targetTextGlowTransparency = Toggle.Value and 0.4 or 1 -- Свечение текста
         
         -- Анимация основного цвета
         local colorTween = TweenService:Create(
@@ -2110,17 +2131,33 @@ function Funcs:AddToggle(Idx, Info)
             {BackgroundColor3 = targetColor, BorderColor3 = targetBorderColor}
         )
         
-        -- Анимация свечения
+        -- Анимация свечения toggle
         local glowTween = TweenService:Create(
             glowEffect,
             TweenInfo.new(StyleColors.AnimationSpeed, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
             {BackgroundTransparency = targetGlowTransparency}
         )
         
+        -- Анимация свечения текста
+        local textGlowTween = TweenService:Create(
+            textGlow,
+            TweenInfo.new(StyleColors.AnimationSpeed, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+            {TextTransparency = targetTextGlowTransparency}
+        )
+        
+        -- Анимация цвета основного текста
+        local textColorTween = TweenService:Create(
+            ToggleLabel,
+            TweenInfo.new(StyleColors.AnimationSpeed * 0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {TextColor3 = Toggle.Value and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)}
+        )
+        
         colorTween:Play()
         glowTween:Play()
+        textGlowTween:Play()
+        textColorTween:Play()
         
-        -- Обновляем реестр
+        -- Обновляем реестр как в оригинале
         Library.RegistryMap[ToggleInner].Properties.BackgroundColor3 = Toggle.Value and 'AccentColor' or 'MainColor'
         Library.RegistryMap[ToggleInner].Properties.BorderColor3 = Toggle.Value and 'AccentColorDark' or 'OutlineColor'
         
@@ -2177,6 +2214,8 @@ function Funcs:AddToggle(Idx, Info)
         Library:RemoveFromRegistry(ToggleLabel)
         ToggleLabel.TextColor3 = Library.RiskColor
         Library:AddToRegistry(ToggleLabel, { TextColor3 = 'RiskColor' })
+        -- Также обновляем свечение для risky
+        textGlow.TextColor3 = Library.RiskColor
     end
     
     Toggle:Display()
@@ -2192,6 +2231,7 @@ function Funcs:AddToggle(Idx, Info)
     
     return Toggle
 end
+    
     function Funcs:AddSlider(Idx, Info)
         assert(Info.Default, 'AddSlider: Missing default value.');
         assert(Info.Text, 'AddSlider: Missing slider text.');
