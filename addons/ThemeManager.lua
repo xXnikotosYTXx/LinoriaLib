@@ -1,13 +1,9 @@
--- ИСПРАВЛЕННЫЙ THEMEMANAGER С ЦВЕТАМИ ВАТЕРМАРКА
--- Заменяет стандартный ThemeManager
-
 local httpService = game:GetService('HttpService')
 
 local ThemeManager = {} do
     ThemeManager.Folder = 'LinoriaLibSettings'
     ThemeManager.Library = nil
     
-    -- ✨ ОБНОВЛЕННЫЕ ВСТРОЕННЫЕ ТЕМЫ С ЦВЕТАМИ ВАТЕРМАРКА
     ThemeManager.BuiltInThemes = {
         ['Default'] = { 1, httpService:JSONDecode('{"FontColor":"ffffff","MainColor":"1c1c1c","AccentColor":"0055ff","BackgroundColor":"141414","OutlineColor":"323232","WatermarkProjectColor":"b464dc","WatermarkNicknameColor":"c0c0c0","WatermarkTimeColor":"787878","WatermarkIconColor":"ff78c8"}') },
         ['BBot'] = { 2, httpService:JSONDecode('{"FontColor":"ffffff","MainColor":"1e1e1e","AccentColor":"7e48a3","BackgroundColor":"232323","OutlineColor":"141414","WatermarkProjectColor":"7e48a3","WatermarkNicknameColor":"ffffff","WatermarkTimeColor":"c0c0c0","WatermarkIconColor":"7e48a3"}') },
@@ -31,22 +27,45 @@ local ThemeManager = {} do
                 Options[idx]:SetValueRGB(Color3.fromHex(col))
             end
         end
-        
+
         self:ThemeUpdate()
     end
 
-    function ThemeManager:ThemeUpdate()
+    function ThemeManager:ThemeUpdate(animated)
+        local TweenService = game:GetService('TweenService')
+        local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
         local options = { "FontColor", "MainColor", "AccentColor", "BackgroundColor", "OutlineColor", "WatermarkProjectColor", "WatermarkNicknameColor", "WatermarkTimeColor", "WatermarkIconColor" }
         for i, field in next, options do
             if Options and Options[field] then
                 self.Library[field] = Options[field].Value
             end
         end
-        
-        self.Library.AccentColorDark = self.Library:GetDarkerColor(self.Library.AccentColor);
-        self.Library:UpdateColorsUsingRegistry()
-        
-        -- ✨ ОБНОВЛЯЕМ ЦВЕТА ВАТЕРМАРКА БЕЗ ОШИБОК
+
+        self.Library.AccentColorDark = self.Library:GetDarkerColor(self.Library.AccentColor)
+
+        if animated then
+            -- Плавное обновление через твины для каждого элемента в Registry
+            for element, props in next, self.Library.Registry do
+                if element and element.Parent then
+                    local tweenProps = {}
+                    for prop, colorKey in next, props do
+                        local color = self.Library[colorKey]
+                        if color then
+                            tweenProps[prop] = color
+                        end
+                    end
+                    if next(tweenProps) then
+                        pcall(function()
+                            TweenService:Create(element, tweenInfo, tweenProps):Play()
+                        end)
+                    end
+                end
+            end
+        else
+            self.Library:UpdateColorsUsingRegistry()
+        end
+
         pcall(function()
             if self.Library.SetWatermarkProjectColor then
                 self.Library:SetWatermarkProjectColor(self.Library.WatermarkProjectColor)
@@ -68,11 +87,12 @@ local ThemeManager = {} do
             end
         end)
     end
-    function ThemeManager:LoadDefault()		
+
+    function ThemeManager:LoadDefault()
         local theme = 'Default'
         local content = isfile(self.Folder .. '/themes/default.txt') and readfile(self.Folder .. '/themes/default.txt')
         local isDefault = true
-        
+
         if content then
             if self.BuiltInThemes[content] then
                 theme = content
@@ -101,8 +121,7 @@ local ThemeManager = {} do
         groupbox:AddLabel('Accent color'):AddColorPicker('AccentColor', { Default = self.Library.AccentColor });
         groupbox:AddLabel('Outline color'):AddColorPicker('OutlineColor', { Default = self.Library.OutlineColor });
         groupbox:AddLabel('Font color'):AddColorPicker('FontColor', { Default = self.Library.FontColor });
-        
-        -- ✨ ДОБАВЛЯЕМ ЦВЕТА ВАТЕРМАРКА
+
         groupbox:AddDivider()
         groupbox:AddLabel('Watermark project color'):AddColorPicker('WatermarkProjectColor', { Default = self.Library.WatermarkProjectColor });
         groupbox:AddLabel('Watermark nickname color'):AddColorPicker('WatermarkNicknameColor', { Default = self.Library.WatermarkNicknameColor });
@@ -132,12 +151,12 @@ local ThemeManager = {} do
         groupbox:AddDropdown('ThemeManager_CustomThemeList', { Text = 'Custom themes', Values = self:ReloadCustomThemes(), AllowNull = true, Default = 1 })
 
         groupbox:AddDivider()
-        groupbox:AddButton('Save theme', function() 
+        groupbox:AddButton('Save theme', function()
             self:SaveCustomTheme(Options.ThemeManager_CustomThemeName.Value)
             Options.ThemeManager_CustomThemeList:SetValues(self:ReloadCustomThemes())
             Options.ThemeManager_CustomThemeList:SetValue(nil)
-        end):AddButton('Load theme', function() 
-            self:ApplyTheme(Options.ThemeManager_CustomThemeList.Value) 
+        end):AddButton('Load theme', function()
+            self:ApplyTheme(Options.ThemeManager_CustomThemeList.Value)
         end)
 
         groupbox:AddButton('Refresh list', function()
@@ -154,8 +173,17 @@ local ThemeManager = {} do
 
         ThemeManager:LoadDefault()
 
+        -- Дебаунс: не вызываем ThemeUpdate чаще чем раз в 0.05s
+        local debounceThread = nil
+
         local function UpdateTheme()
-            self:ThemeUpdate()
+            if debounceThread then
+                task.cancel(debounceThread)
+            end
+            debounceThread = task.delay(0.05, function()
+                self:ThemeUpdate(true) -- true = плавная анимация
+                debounceThread = nil
+            end)
         end
 
         Options.BackgroundColor:OnChanged(UpdateTheme)
@@ -163,13 +191,13 @@ local ThemeManager = {} do
         Options.AccentColor:OnChanged(UpdateTheme)
         Options.OutlineColor:OnChanged(UpdateTheme)
         Options.FontColor:OnChanged(UpdateTheme)
-        
-        -- ✨ ПОДКЛЮЧАЕМ ОБНОВЛЕНИЕ ЦВЕТОВ ВАТЕРМАРКА
+
         Options.WatermarkProjectColor:OnChanged(UpdateTheme)
         Options.WatermarkNicknameColor:OnChanged(UpdateTheme)
         Options.WatermarkTimeColor:OnChanged(UpdateTheme)
         Options.WatermarkIconColor:OnChanged(UpdateTheme)
     end
+
     function ThemeManager:GetCustomTheme(file)
         local path = self.Folder .. '/themes/' .. file
         if not isfile(path) then
@@ -191,9 +219,8 @@ local ThemeManager = {} do
         end
 
         local theme = {}
-        -- ✨ ДОБАВЛЯЕМ ЦВЕТА ВАТЕРМАРКА В СОХРАНЕНИЕ
         local fields = { "FontColor", "MainColor", "AccentColor", "BackgroundColor", "OutlineColor", "WatermarkProjectColor", "WatermarkNicknameColor", "WatermarkTimeColor", "WatermarkIconColor" }
-        
+
         for _, field in next, fields do
             if Options[field] then
                 theme[field] = Options[field].Value:ToHex()
@@ -268,14 +295,5 @@ local ThemeManager = {} do
 
     ThemeManager:BuildFolderTree()
 end
-
-print("🎨 Исправленный ThemeManager загружен!")
-print("✨ Теперь включает цвета ватермарка:")
-print("  • WatermarkProjectColor")
-print("  • WatermarkNicknameColor") 
-print("  • WatermarkTimeColor")
-print("  • WatermarkIconColor")
-print("🔧 Все встроенные темы обновлены!")
-print("💾 Кастомные темы сохраняют цвета ватермарка!")
 
 return ThemeManager
