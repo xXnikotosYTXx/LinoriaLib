@@ -2176,7 +2176,6 @@ function Funcs:AddToggle(Idx, Info)
     return Toggle;
 end;
     
-local TweenService = game:GetService("TweenService")
 
 function Funcs:AddSlider(Idx, Info)
     assert(Info.Default, 'AddSlider: Missing default value.');
