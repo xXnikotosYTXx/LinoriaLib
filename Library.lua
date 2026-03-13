@@ -1973,8 +1973,8 @@ do
         return Textbox;
     end;
 
--- Минимальные изменения к оригинальному AddToggle
--- Только скругленные углы, анимации и немного больший размер
+-- Точная копия оригинала + только скругленные углы и анимации
+-- НИКАКИХ других изменений
 
 local TweenService = game:GetService("TweenService")
 
@@ -1992,11 +1992,10 @@ function Funcs:AddToggle(Idx, Info)
     local Groupbox = self;
     local Container = Groupbox.Container;
     
-    -- Немного увеличиваем размер
     local ToggleOuter = Library:Create('Frame', {
         BackgroundColor3 = Color3.new(0, 0, 0);
         BorderColor3 = Color3.new(0, 0, 0);
-        Size = UDim2.new(0, 15, 0, 15); -- Увеличено с 13 до 15
+        Size = UDim2.new(0, 13, 0, 13);
         ZIndex = 5;
         Parent = Container;
     });
@@ -2005,7 +2004,7 @@ function Funcs:AddToggle(Idx, Info)
         BorderColor3 = 'Black';
     });
     
-    -- Добавляем скругленные углы
+    -- ЕДИНСТВЕННОЕ добавление - скругленные углы
     local outerCorner = Library:Create('UICorner', {
         CornerRadius = UDim.new(0, 3);
         Parent = ToggleOuter;
@@ -2025,26 +2024,10 @@ function Funcs:AddToggle(Idx, Info)
         BorderColor3 = 'OutlineColor';
     });
     
-    -- Добавляем скругленные углы для внутренней части
+    -- ЕДИНСТВЕННОЕ добавление - скругленные углы для внутренней части
     local innerCorner = Library:Create('UICorner', {
         CornerRadius = UDim.new(0, 2);
         Parent = ToggleInner;
-    });
-    
-    -- ПРОСТОЕ свечение - только вокруг toggle, не мешает другим элементам
-    local glowEffect = Library:Create('Frame', {
-        BackgroundColor3 = Library.AccentColor;
-        BackgroundTransparency = 1;
-        BorderSizePixel = 0;
-        Size = UDim2.new(1, 4, 1, 4);
-        Position = UDim2.new(0, -2, 0, -2);
-        ZIndex = 4; -- Под ToggleOuter
-        Parent = ToggleOuter.Parent; -- Parent = Container
-    });
-    
-    local glowCorner = Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 4);
-        Parent = glowEffect;
     });
     
     local ToggleLabel = Library:CreateLabel({
@@ -2085,31 +2068,21 @@ function Funcs:AddToggle(Idx, Info)
         Library:AddToolTip(Info.Tooltip, ToggleRegion)
     end
     
+    -- ЕДИНСТВЕННОЕ изменение - анимированная версия Display
     function Toggle:Display()
-        -- Анимированная версия оригинальной Display функции
         local targetColor = Toggle.Value and Library.AccentColor or Library.MainColor;
         local targetBorderColor = Toggle.Value and Library.AccentColorDark or Library.OutlineColor;
-        local targetGlowTransparency = Toggle.Value and 0.3 or 1;
         
-        -- Плавная анимация цвета
-        local colorTween = TweenService:Create(
+        -- Плавная анимация вместо мгновенного изменения
+        local tween = TweenService:Create(
             ToggleInner,
-            TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-            {BackgroundColor3 = targetColor; BorderColor3 = targetBorderColor}
+            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {
+                BackgroundColor3 = targetColor;
+                BorderColor3 = targetBorderColor;
+            }
         );
-        
-        -- Плавная анимация свечения
-        local glowTween = TweenService:Create(
-            glowEffect,
-            TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-            {BackgroundTransparency = targetGlowTransparency}
-        );
-        
-        colorTween:Play();
-        glowTween:Play();
-        
-        -- Обновляем цвет свечения
-        glowEffect.BackgroundColor3 = Library.AccentColor;
+        tween:Play();
         
         -- Оригинальные обновления реестра
         Library.RegistryMap[ToggleInner].Properties.BackgroundColor3 = Toggle.Value and 'AccentColor' or 'MainColor';
